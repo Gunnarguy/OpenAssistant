@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B0EEE7152C9932590012F2BA /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0EEE7142C9932590012F2BA /* Preview Assets.xcassets */; };
 		B0EEE73F2C99326A0012F2BA /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */; };
 		B0EEE7402C99326A0012F2BA /* VectorStoreManagerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7302C99326A0012F2BA /* VectorStoreManagerViewModel.swift */; };
 		B0EEE7412C99326A0012F2BA /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE72A2C99326A0012F2BA /* ChatView.swift */; };
@@ -256,7 +255,6 @@
 			files = (
 				B0EEE75B2C99326A0012F2BA /* PrivacyInfo.xcprivacy in Resources */,
 				B0EEE75C2C99326A0012F2BA /* Assets.xcassets in Resources */,
-				B0EEE7152C9932590012F2BA /* Preview Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -431,6 +429,8 @@
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = OpenAssistant;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -465,6 +465,8 @@
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = OpenAssistant;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
