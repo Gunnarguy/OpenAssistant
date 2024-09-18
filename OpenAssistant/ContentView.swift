@@ -7,29 +7,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            TabView {
-                AssistantPickerView(messageStore: messageStore)
-                    .tabItem {
-                        Label("Assistants", systemImage: "person.3")
-                    }
-                AssistantManagerView()
-                    .tabItem {
-                        Label("Manage", systemImage: "person.2.badge.gearshape")
-                    }
-                VectorStoreListView(viewModel: VectorStoreManagerViewModel())
-                    .tabItem {
-                        Label("Vector Stores", systemImage: "folder")
-                    }
-                SettingsView()
-                    .tabItem {
-                        Label("Settings", systemImage: "gear")
-                    }
-            }
-            .sheet(item: $selectedAssistant) { assistant in
-                NavigationView {
-                    ChatView(assistant: assistant, messageStore: messageStore)
-                }
-            }
+            MainTabView(selectedAssistant: $selectedAssistant, messageStore: messageStore)
             if isLoading {
                 LoadingView()
                     .onAppear {
@@ -41,6 +19,37 @@ struct ContentView: View {
         }
         .onAppear {
             print("ContentView appeared")
+        }
+    }
+}
+
+struct MainTabView: View {
+    @Binding var selectedAssistant: Assistant?
+    @ObservedObject var messageStore: MessageStore
+
+    var body: some View {
+        TabView {
+            AssistantPickerView(messageStore: messageStore)
+                .tabItem {
+                    Label("Assistants", systemImage: "person.3")
+                }
+            AssistantManagerView()
+                .tabItem {
+                    Label("Manage", systemImage: "person.2.badge.gearshape")
+                }
+            VectorStoreListView(viewModel: VectorStoreManagerViewModel())
+                .tabItem {
+                    Label("Vector Stores", systemImage: "folder")
+                }
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
+        }
+        .sheet(item: $selectedAssistant) { assistant in
+            NavigationView {
+                ChatView(assistant: assistant, messageStore: messageStore)
+            }
         }
     }
 }

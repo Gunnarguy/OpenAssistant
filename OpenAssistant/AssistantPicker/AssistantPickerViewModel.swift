@@ -11,16 +11,22 @@ class AssistantPickerViewModel: ObservableObject {
     @Published var navigateToChat = false
 
     // MARK: - Private Properties
-    private lazy var openAIService = OpenAIService(apiKey: apiKey)
+    private var openAIService: OpenAIService?
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
 
     // MARK: - Initializer
     init() {
+        initializeService()
         fetchAssistants()
     }
 
     // MARK: - Public Methods
     func fetchAssistants() {
+        guard let openAIService = openAIService else {
+            updateErrorState(with: "OpenAIService is not initialized.")
+            return
+        }
+        
         isLoading = true
         errorMessage = nil
 
@@ -37,6 +43,14 @@ class AssistantPickerViewModel: ObservableObject {
     }
 
     // MARK: - Private Methods
+    private func initializeService() {
+        guard !apiKey.isEmpty else {
+            updateErrorState(with: "API key is missing.")
+            return
+        }
+        openAIService = OpenAIService(apiKey: apiKey)
+    }
+
     private func handleFetchResult(_ result: Result<[Assistant], OpenAIServiceError>) {
         switch result {
         case .success(let assistants):
@@ -63,5 +77,9 @@ class AssistantPickerViewModel: ObservableObject {
             return "An unknown error occurred."
         }
     }
-}
 
+    private func updateErrorState(with message: String) {
+        errorMessage = message
+        isLoading = false
+    }
+}

@@ -25,22 +25,16 @@ struct CreateAssistantView: View {
             .navigationTitle("Create Assistant")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        presentationMode.wrappedValue.dismiss()
-                    }
+                    Button("Cancel") { presentationMode.wrappedValue.dismiss() }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        handleSave()
-                    }
+                    Button("Save") { handleSave() }
                 }
             }
             .alert(isPresented: $showAlert) {
                 Alert(title: Text("Validation Error"), message: Text("Please fill in all required fields."), dismissButton: .default(Text("OK")))
             }
-            .onAppear {
-                viewModel.fetchAvailableModels()
-            }
+            .onAppear { viewModel.fetchAvailableModels() }
         }
     }
     
@@ -48,16 +42,20 @@ struct CreateAssistantView: View {
         Section(header: Text("Assistant Details")) {
             TextField("Name", text: $name)
             TextField("Instructions", text: $instructions)
-            Picker("Model", selection: $model) {
-                ForEach(viewModel.availableModels, id: \.self) { model in
-                    Text(model).tag(model)
-                }
-            }
-            .pickerStyle(MenuPickerStyle())
+            modelPicker
             TextField("Description", text: $description)
             temperatureSlider
             topPSlider
         }
+    }
+    
+    private var modelPicker: some View {
+        Picker("Model", selection: $model) {
+            ForEach(viewModel.availableModels, id: \.self) { model in
+                Text(model).tag(model)
+            }
+        }
+        .pickerStyle(MenuPickerStyle())
     }
     
     private var toolsSection: some View {
@@ -83,15 +81,13 @@ struct CreateAssistantView: View {
     
     private func handleSave() {
         if validateAssistant() {
-            let tools = createTools()
-            let toolResources = createToolResources()
             viewModel.createAssistant(
                 model: model,
                 name: name,
                 description: description.isEmpty ? nil : description,
                 instructions: instructions.isEmpty ? nil : instructions,
-                tools: tools,
-                toolResources: toolResources,
+                tools: createTools(),
+                toolResources: createToolResources(),
                 metadata: nil,
                 temperature: temperature,
                 topP: topP,
@@ -104,17 +100,13 @@ struct CreateAssistantView: View {
     }
     
     private func validateAssistant() -> Bool {
-        return !name.isEmpty && !model.isEmpty
+        !name.isEmpty && !model.isEmpty
     }
     
     private func createTools() -> [Tool] {
         var tools: [Tool] = []
-        if enableFileSearch {
-            tools.append(Tool(type: "file_search"))
-        }
-        if enableCodeInterpreter {
-            tools.append(Tool(type: "code_interpreter"))
-        }
+        if enableFileSearch { tools.append(Tool(type: "file_search")) }
+        if enableCodeInterpreter { tools.append(Tool(type: "code_interpreter")) }
         return tools
     }
     

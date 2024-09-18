@@ -8,37 +8,38 @@ struct AssistantPickerView: View {
 
     var body: some View {
         NavigationView {
-            Group {
-                if viewModel.isLoading {
-                    ProgressView("Loading...")
-                } else if let errorMessage = viewModel.errorMessage {
-                    ErrorView(message: errorMessage)
-                } else {
-                    assistantList
+            content
+                .navigationTitle("Select Assistant")
+                .sheet(item: $viewModel.selectedAssistant) { assistant in
+                    ChatView(assistant: assistant, messageStore: messageStore)
                 }
-            }
-            .navigationTitle("Select Assistant")
-            .sheet(item: $viewModel.selectedAssistant) { assistant in
-                ChatView(assistant: assistant, messageStore: messageStore)
-            }
+        }
+    }
+    
+    @ViewBuilder
+    private var content: some View {
+        if viewModel.isLoading {
+            ProgressView("Loading...")
+        } else if let errorMessage = viewModel.errorMessage {
+            ErrorView(message: errorMessage, retryAction: viewModel.fetchAssistants)
+        } else {
+            assistantList
         }
     }
     
     private var assistantList: some View {
         List(viewModel.assistants) { assistant in
-            Button(action: {
-                viewModel.selectAssistant(assistant)
-            }) {
+            Button(action: { viewModel.selectAssistant(assistant) }) {
                 HStack {
                     Text(assistant.name)
                         .font(.headline)
-                        .padding(.vertical, 6) // Increased vertical padding for easier tapping
+                        .padding(.vertical, 6)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .foregroundColor(.gray)
                 }
-                .padding(.horizontal, 8) // Added horizontal padding to increase tappable area
-                .contentShape(Rectangle()) // Ensures the whole area is tappable
+                .padding(.horizontal, 8)
+                .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
         }
@@ -48,6 +49,7 @@ struct AssistantPickerView: View {
 
 struct ErrorView: View {
     let message: String
+    let retryAction: () -> Void
     
     var body: some View {
         VStack {
@@ -60,10 +62,8 @@ struct ErrorView: View {
                 .font(.body)
                 .foregroundColor(.red)
                 .padding()
-            Button("Retry") {
-                // Add retry action here
-            }
-            .padding(.top, 10)
+            Button("Retry", action: retryAction)
+                .padding(.top, 10)
         }
     }
 }

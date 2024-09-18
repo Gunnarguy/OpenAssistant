@@ -785,6 +785,13 @@ class OpenAIService {
             }
         }.resume()
     }
+    func fetchThreadDetails(threadId: String, completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
+        let endpoint = "threads/\(threadId)"
+        let request = makeRequest(endpoint: endpoint)
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
+    }
 
     func fetchAvailableModels(completion: @escaping (Result<[String], Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/models") else {

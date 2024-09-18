@@ -106,7 +106,6 @@
 			children = (
 				B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */,
 				B0EEE71C2C99326A0012F2BA /* ContentView.swift */,
-				B0EEE7202C99326A0012F2BA /* AssistantDetail */,
 				B0EEE7232C99326A0012F2BA /* AssistantManager */,
 				B0EEE7262C99326A0012F2BA /* AssistantPicker */,
 				B0EEE72B2C99326A0012F2BA /* ChatView */,
@@ -128,20 +127,13 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
-		B0EEE7202C99326A0012F2BA /* AssistantDetail */ = {
+		B0EEE7232C99326A0012F2BA /* AssistantManager */ = {
 			isa = PBXGroup;
 			children = (
 				B0EEE71D2C99326A0012F2BA /* CreateAssistantView.swift */,
 				B0EEE71E2C99326A0012F2BA /* UpdateAssistantView.swift */,
-				B0EEE71F2C99326A0012F2BA /* AssistantDetailViewModel.swift */,
-			);
-			path = AssistantDetail;
-			sourceTree = "<group>";
-		};
-		B0EEE7232C99326A0012F2BA /* AssistantManager */ = {
-			isa = PBXGroup;
-			children = (
 				B0EEE7212C99326A0012F2BA /* AssistantManagerView.swift */,
+				B0EEE71F2C99326A0012F2BA /* AssistantDetailViewModel.swift */,
 				B0EEE7222C99326A0012F2BA /* AssistantManagerViewModel.swift */,
 			);
 			path = AssistantManager;

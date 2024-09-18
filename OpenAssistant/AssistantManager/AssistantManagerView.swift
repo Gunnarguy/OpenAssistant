@@ -18,24 +18,22 @@ struct AssistantManagerView: View {
             .navigationTitle("Manage Assistants")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showingCreateAssistantSheet = true
-                    }) {
+                    Button(action: { showingCreateAssistantSheet.toggle() }) {
                         Image(systemName: "plus")
                     }
                 }
             }
         }
-        .onAppear {
-            viewModel.fetchAssistants()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .assistantCreated)) { notification in
-            if let createdAssistant = notification.object as? Assistant {
-                viewModel.assistants.append(createdAssistant)
-            }
-        }
+        .onAppear(perform: viewModel.fetchAssistants)
+        .onReceive(NotificationCenter.default.publisher(for: .assistantCreated), perform: handleAssistantCreated)
         .sheet(isPresented: $showingCreateAssistantSheet) {
             CreateAssistantView(viewModel: viewModel)
+        }
+    }
+    
+    private func handleAssistantCreated(notification: Notification) {
+        if let createdAssistant = notification.object as? Assistant {
+            viewModel.assistants.append(createdAssistant)
         }
     }
 }

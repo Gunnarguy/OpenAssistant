@@ -25,21 +25,19 @@ class AssistantDetailViewModel: ObservableObject {
         openAIService = OpenAIService(apiKey: apiKey)
     }
     
-    
-    
     func updateAssistant() {
         performServiceAction { openAIService in
             openAIService.updateAssistant(
-                assistantId: self.assistant.id,
-                model: self.assistant.model,
-                name: self.assistant.name,
-                description: self.assistant.description,
-                instructions: self.assistant.instructions,
-                tools: self.assistant.tools.map { $0.toDictionary() },
-                toolResources: self.assistant.tool_resources?.toDictionary(),
-                metadata: self.assistant.metadata,
-                temperature: self.assistant.temperature,
-                topP: self.assistant.top_p
+                assistantId: assistant.id,
+                model: assistant.model,
+                name: assistant.name,
+                description: assistant.description,
+                instructions: assistant.instructions,
+                tools: assistant.tools.map { $0.toDictionary() },
+                toolResources: assistant.tool_resources?.toDictionary(),
+                metadata: assistant.metadata,
+                temperature: assistant.temperature,
+                topP: assistant.top_p
             ) { [weak self] result in
                 DispatchQueue.main.async {
                     self?.handleUpdateResult(result)
@@ -50,7 +48,7 @@ class AssistantDetailViewModel: ObservableObject {
 
     func deleteAssistant() {
         performServiceAction { openAIService in
-            openAIService.deleteAssistant(assistantId: self.assistant.id) { [weak self] result in
+            openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
                 DispatchQueue.main.async {
                     self?.handleDeleteResult(result)
                 }
@@ -69,7 +67,7 @@ class AssistantDetailViewModel: ObservableObject {
     private func handleUpdateResult(_ result: Result<Assistant, OpenAIServiceError>) {
         switch result {
         case .success(let updatedAssistant):
-            self.assistant = updatedAssistant
+            assistant = updatedAssistant
             NotificationCenter.default.post(name: .assistantUpdated, object: updatedAssistant)
         case .failure(let error):
             handleError("Update failed: \(error.localizedDescription)")
@@ -79,7 +77,7 @@ class AssistantDetailViewModel: ObservableObject {
     private func handleDeleteResult(_ result: Result<Void, OpenAIServiceError>) {
         switch result {
         case .success:
-            NotificationCenter.default.post(name: .assistantDeleted, object: self.assistant)
+            NotificationCenter.default.post(name: .assistantDeleted, object: assistant)
             handleError("Assistant deleted successfully")
         case .failure(let error):
             handleError("Delete failed: \(error.localizedDescription)")
