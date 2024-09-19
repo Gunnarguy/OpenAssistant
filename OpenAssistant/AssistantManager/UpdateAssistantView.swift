@@ -7,12 +7,12 @@ struct UpdateAssistantView: View {
     @StateObject private var assistantDetailViewModel: AssistantDetailViewModel
     @Environment(\.presentationMode) var presentationMode
     @State private var showAlert = false
-
+    
     init(viewModel: AssistantManagerViewModel, assistant: Assistant) {
         self.viewModel = viewModel
         _assistantDetailViewModel = StateObject(wrappedValue: AssistantDetailViewModel(assistant: assistant))
     }
-
+    
     var body: some View {
         NavigationView {
             Form {
@@ -34,7 +34,6 @@ struct UpdateAssistantView: View {
         }
     }
     
-    // MARK: - Assistant Details Section
     private var assistantDetailsSection: some View {
         Section(header: Text("Assistant Details")) {
             TextField("Name", text: $assistantDetailViewModel.assistant.name)
@@ -55,27 +54,17 @@ struct UpdateAssistantView: View {
         .pickerStyle(MenuPickerStyle())
     }
     
-    // MARK: - Tools Section
     private var toolsSection: some View {
         Section(header: Text("Tools")) {
-            toolToggle(isOn: Binding(
+            Toggle("Enable File Search", isOn: Binding(
                 get: { assistantDetailViewModel.assistant.tools.contains(where: { $0.type == "file_search" }) },
-                set: { isEnabled in
-                    updateToolState(isEnabled: isEnabled, type: "file_search")
-                }
-            ), label: "Enable File Search")
-            
-            toolToggle(isOn: Binding(
+                set: { isEnabled in updateToolState(isEnabled: isEnabled, type: "file_search") }
+            ))
+            Toggle("Enable Code Interpreter", isOn: Binding(
                 get: { assistantDetailViewModel.assistant.tools.contains(where: { $0.type == "code_interpreter" }) },
-                set: { isEnabled in
-                    updateToolState(isEnabled: isEnabled, type: "code_interpreter")
-                }
-            ), label: "Enable Code Interpreter")
+                set: { isEnabled in updateToolState(isEnabled: isEnabled, type: "code_interpreter") }
+            ))
         }
-    }
-    
-    private func toolToggle(isOn: Binding<Bool>, label: String) -> some View {
-        Toggle(label, isOn: isOn)
     }
     
     private func updateToolState(isEnabled: Bool, type: String) {
@@ -88,23 +77,20 @@ struct UpdateAssistantView: View {
         }
     }
     
-    // MARK: - Sliders
     private var temperatureSlider: some View {
-        sliderView(value: $assistantDetailViewModel.assistant.temperature, range: 0.0...2.0, label: "Temperature")
-    }
-    
-    private var topPSlider: some View {
-        sliderView(value: $assistantDetailViewModel.assistant.top_p, range: 0.0...1.0, label: "Top P")
-    }
-    
-    private func sliderView(value: Binding<Double>, range: ClosedRange<Double>, label: String) -> some View {
         VStack {
-            Text("\(label): \(value.wrappedValue, specifier: "%.2f")")
-            Slider(value: value, in: range, step: 0.01)
+            Text("Temperature: \(assistantDetailViewModel.assistant.temperature, specifier: "%.2f")")
+            Slider(value: $assistantDetailViewModel.assistant.temperature, in: 0.0...2.0, step: 0.01)
         }
     }
     
-    // MARK: - Save Handler
+    private var topPSlider: some View {
+        VStack {
+            Text("Top P: \(assistantDetailViewModel.assistant.top_p, specifier: "%.2f")")
+            Slider(value: $assistantDetailViewModel.assistant.top_p, in: 0.0...1.0, step: 0.01)
+        }
+    }
+    
     private func handleSave() {
         if validateAssistant() {
             viewModel.updateAssistant(assistant: assistantDetailViewModel.assistant)
@@ -114,7 +100,6 @@ struct UpdateAssistantView: View {
         }
     }
     
-    // MARK: - Validation
     private func validateAssistant() -> Bool {
         !assistantDetailViewModel.assistant.name.isEmpty && !assistantDetailViewModel.assistant.model.isEmpty
     }

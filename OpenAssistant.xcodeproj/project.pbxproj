@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */; };
+		B0BFE4442C9BDC8800EB6D81 /* FormFieldsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* FormFieldsView.swift */; };
 		B0EEE73F2C99326A0012F2BA /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */; };
 		B0EEE7402C99326A0012F2BA /* VectorStoreManagerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7302C99326A0012F2BA /* VectorStoreManagerViewModel.swift */; };
 		B0EEE7412C99326A0012F2BA /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE72A2C99326A0012F2BA /* ChatView.swift */; };
@@ -40,6 +42,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailView.swift; sourceTree = "<group>"; };
+		B0BFE4432C9BDC8800EB6D81 /* FormFieldsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormFieldsView.swift; sourceTree = "<group>"; };
 		B0EEE70A2C9932580012F2BA /* OpenAssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenAssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0EEE7142C9932590012F2BA /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAssistantApp.swift; sourceTree = "<group>"; };
@@ -130,10 +134,12 @@
 		B0EEE7232C99326A0012F2BA /* AssistantManager */ = {
 			isa = PBXGroup;
 			children = (
+				B0BFE4432C9BDC8800EB6D81 /* FormFieldsView.swift */,
 				B0EEE71D2C99326A0012F2BA /* CreateAssistantView.swift */,
 				B0EEE71E2C99326A0012F2BA /* UpdateAssistantView.swift */,
-				B0EEE7212C99326A0012F2BA /* AssistantManagerView.swift */,
+				B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */,
 				B0EEE71F2C99326A0012F2BA /* AssistantDetailViewModel.swift */,
+				B0EEE7212C99326A0012F2BA /* AssistantManagerView.swift */,
 				B0EEE7222C99326A0012F2BA /* AssistantManagerViewModel.swift */,
 			);
 			path = AssistantManager;
@@ -268,6 +274,7 @@
 				B0EEE7472C99326A0012F2BA /* ChatViewModel.swift in Sources */,
 				B0EEE7482C99326A0012F2BA /* AssistantPickerView.swift in Sources */,
 				B0EEE7492C99326A0012F2BA /* ResponseFormat.swift in Sources */,
+				B0BFE4442C9BDC8800EB6D81 /* FormFieldsView.swift in Sources */,
 				B0EEE74A2C99326A0012F2BA /* UpdateAssistantView.swift in Sources */,
 				B0EEE74B2C99326A0012F2BA /* ContentView.swift in Sources */,
 				B0EEE74C2C99326A0012F2BA /* SettingsView.swift in Sources */,
@@ -277,6 +284,7 @@
 				B0EEE7502C99326A0012F2BA /* AssistantDetailViewModel.swift in Sources */,
 				B0EEE7512C99326A0012F2BA /* FileDetailView.swift in Sources */,
 				B0EEE7522C99326A0012F2BA /* AssistantManagerViewModel.swift in Sources */,
+				B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */,
 				B0EEE7532C99326A0012F2BA /* AssistantPickerViewModel.swift in Sources */,
 				B0EEE7542C99326A0012F2BA /* AddFileView.swift in Sources */,
 				B0EEE7552C99326A0012F2BA /* Assistant.swift in Sources */,
