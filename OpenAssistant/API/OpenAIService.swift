@@ -24,6 +24,17 @@ class OpenAIService {
 
     // MARK: - Request Creation
 
+    /**
+     Creates a URL request for the specified endpoint with the given HTTP method and optional body.
+
+     - Parameters:
+        - endpoint: The endpoint to which the request will be made.
+        - httpMethod: The HTTP method for the request (default is "GET").
+        - body: The optional body of the request, as a dictionary of key-value pairs.
+
+     - Returns:
+        A URLRequest object configured with the specified endpoint, HTTP method, headers, and body.
+     */
     func makeRequest(endpoint: String, httpMethod: String = "GET", body: [String: Any]? = nil) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent(endpoint))
         request.httpMethod = httpMethod
@@ -42,6 +53,19 @@ class OpenAIService {
         return request
     }
 
+    // MARK: - API Calls
+    /**
+     Handles the response from the OpenAI API.
+
+     - Parameters:
+        - data: The data received from the API response.
+        - response: The URLResponse received from the API request.
+        - error: The error received from the API request, if any.
+        - completion: The completion handler to be called with the result.
+
+     This function decodes the response data into the specified type, checks for errors, and logs relevant information.
+     It also calls the completion handler with the result on the main queue.
+     */
     private func handleResponse<T: Decodable>(_ data: Data?, _ response: URLResponse?, _ error: Error?, completion: @escaping (Result<T, OpenAIServiceError>) -> Void) {
         if let error = error {
             logError("Network error: \(error.localizedDescription)")
@@ -105,6 +129,21 @@ class OpenAIService {
         }
     }
 
+    // MARK: - GET Requests
+    /**
+     Handles the response for DELETE requests.
+
+     - Parameters:
+        - data: The data received in the response.
+        - response: The URL response received.
+        - error: The error, if any, received during the request.
+        - completion: The completion handler to be called with the result.
+
+     This function checks for network errors, invalid responses, and successful deletions.
+     If no error is received and the HTTP status code is in the 200-299 range, it calls the completion handler with a success result.
+     If an error is received, it logs the error and calls the completion handler with a network error result.
+     If an invalid response is received, it logs the response and calls the completion handler with an invalid response result.
+     */
     func handleDeleteResponse(_ data: Data?, _ response: URLResponse?, _ error: Error?, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
         if let error = error {
             logError("Network error: \(error.localizedDescription)")
@@ -129,13 +168,27 @@ class OpenAIService {
 
     // MARK: - Logging
 
+    /**
+     Logs the details of a network request, including the request URL and body.
+
+     - Parameters:
+        - request: The URL request to be logged.
+        - body: The body of the request, if any.
+     */
     private func logRequestDetails(_ request: URLRequest, body: [String: Any]?) {
         print("Request URL: \(request.url?.absoluteString ?? "No URL")")
         if let body = body {
             print("Request Body: \(body)")
         }
-    }
+    }   
 
+    /**
+     Logs the response data received from the OpenAI API.
+
+     This function is used to print the response data in a human-readable format. It converts the data to a JSON string and prints it. If the conversion fails, it prints an error message.
+
+     - Parameter data: The response data received from the OpenAI API.
+     */
     private func logResponseData(_ data: Data) {
         if let jsonString = String(data: data, encoding: .utf8) {
             print("Response JSON: \(jsonString)")
@@ -144,16 +197,36 @@ class OpenAIService {
         }
     }
 
+    /**
+     Logs an error message to the console.
+
+     - Parameter message: The error message to be logged.
+     */
     private func logError(_ message: String) {
         print("Error: \(message)")
     }
 
+    /**
+     Logs an informational message.
+
+     - Parameter message: The message to be logged.
+     */
     private func logInfo(_ message: String) {
         print("Info: \(message)")
     }
 
     // MARK: - API Methods
 
+    /**
+     Fetches a list of assistants from the OpenAI API.
+
+     - Parameter completion: A closure that will be called when the request is completed.
+     The closure takes a Result parameter, which will be a Result containing an array of Assistant objects
+     if the request is successful, or an OpenAIServiceError if the request fails.
+
+     - Important: This function does not handle authentication. You should ensure that the API key
+     is set in the `apiKey` property of the `OpenAIService` instance before calling this function.
+     */
     func fetchAssistants(completion: @escaping (Result<[Assistant], OpenAIServiceError>) -> Void) {
         let endpoint = "assistants"
         let request = makeRequest(endpoint: endpoint)
@@ -169,9 +242,28 @@ class OpenAIService {
         }.resume()
     }
 
+    /**
+     Creates a new assistant with the provided parameters.
+
+     - Parameters:
+        - model: The model of the assistant.
+        - name: The name of the assistant.
+        - description: The description of the assistant.
+        - instructions: The instructions for the assistant.
+        - tools: The tools available to the assistant.
+        - toolResources: The resources for the tools.
+        - metadata: The metadata for the assistant.
+        - temperature: The temperature for the assistant.
+        - topP: The top-p value for the assistant.
+        - responseFormat: The format of the response.
+        - completion: A closure that receives the result of the request.
+
+     - Returns:
+        A closure that will be called with the result of the request. The closure will receive a `Result` containing either an `Assistant` or an `OpenAIServiceError`.
+     */
     func createAssistant(model: String, name: String? = nil, description: String? = nil, instructions: String? = nil, tools: [[String: Any]]? = nil, toolResources: [String: Any]? = nil, metadata: [String: String]? = nil, temperature: Double? = nil, topP: Double? = nil, responseFormat: ResponseFormat? = nil, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void) {
         var body: [String: Any] = ["model": model]
-        
+
         body["name"] = name
         body["description"] = description
         body["instructions"] = instructions
@@ -181,16 +273,35 @@ class OpenAIService {
         body["temperature"] = temperature
         body["top_p"] = topP
         body["response_format"] = responseFormat?.toAny()
-        
+
         let request = makeRequest(endpoint: "assistants", httpMethod: "POST", body: body)
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
 
+    /**
+     Updates an existing assistant with the provided parameters.
+
+     - Parameters:
+        - assistantId: The unique identifier of the assistant to update.
+        - model: The model to use for the assistant.
+        - name: The name of the assistant.
+        - description: A description of the assistant.
+        - instructions: Instructions for the assistant.
+        - tools: Tools to be used by the assistant.
+        - toolResources: Resources for the tools.
+        - metadata: Metadata for the assistant.
+        - temperature: The temperature for the assistant.
+        - topP: The top-p value for the assistant.
+        - responseFormat: The format of the assistant's response.
+        - completion: A closure to be executed when the request is completed. The closure receives a Result containing either an Assistant or an OpenAIServiceError.
+
+     - Returns: Void
+     */
     func updateAssistant(assistantId: String, model: String? = nil, name: String? = nil, description: String? = nil, instructions: String? = nil, tools: [[String: Any]]? = nil, toolResources: [String: Any]? = nil, metadata: [String: String]? = nil, temperature: Double? = nil, topP: Double? = nil, responseFormat: ResponseFormat? = nil, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void) {
         var body: [String: Any] = [:]
-        
+
         body["model"] = model
         body["name"] = name
         body["description"] = description
@@ -201,13 +312,21 @@ class OpenAIService {
         body["temperature"] = temperature
         body["top_p"] = topP
         body["response_format"] = responseFormat?.toAny()
-        
+
         let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "POST", body: body)
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
 
+    /**
+     Deletes an assistant with the given assistant ID.
+
+     - Parameter assistantId: The unique identifier of the assistant to delete.
+     - Parameter completion: A closure that will be executed when the request is completed. The closure receives a Result containing either a Void (indicating success) or an OpenAIServiceError (indicating failure).
+
+     - Important: This function does not return a value. Instead, it calls the provided completion closure when the request is completed.
+     */
     func deleteAssistant(assistantId: String, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
         guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "DELETE") else {
             completion(.failure(.invalidRequest))
@@ -218,6 +337,14 @@ class OpenAIService {
         }.resume()
     }
 
+    /**
+     Fetches the settings for the assistant with the given assistant ID.
+
+     - Parameter assistantId: The unique identifier of the assistant.
+     - Parameter completion: A closure that will be executed when the request is completed. The closure receives a Result containing either an AssistantSettings (indicating success) or an OpenAIServiceError (indicating failure).
+
+     - Important: This function does not return a value. Instead, it calls the provided completion closure when the request is completed.
+     */
     func fetchAssistantSettings(assistantId: String, completion: @escaping (Result<AssistantSettings, OpenAIServiceError>) -> Void) {
         let request = makeRequest(endpoint: "assistants/\(assistantId)/settings")
         session.dataTask(with: request) { data, response, error in
@@ -225,6 +352,12 @@ class OpenAIService {
         }.resume()
     }
 
+    /**
+     Fetches a list of vector stores from the OpenAI API.
+
+     - Parameter completion: A closure that will be called when the request is completed.
+     - Parameter promise: A result containing an array of VectorStore objects if the request is successful, or an error if the request fails.
+     */
     func fetchVectorStores() -> Future<[VectorStore], Error> {
         return Future { promise in
             let url = self.baseURL.appendingPathComponent("vector_stores")
@@ -261,6 +394,15 @@ class OpenAIService {
         }
     }
     
+    /**
+     Fetches files associated with a specific vector store.
+
+     - Parameters:
+        - vectorStoreId: The ID of the vector store.
+
+     - Returns:
+        A Future that resolves to an array of File objects if successful, or an Error if unsuccessful.
+     */
     func fetchFiles(for vectorStoreId: String) -> Future<[File], Error> {
         return Future { promise in
             let url = self.baseURL.appendingPathComponent("vector_stores/\(vectorStoreId)/files")
@@ -297,6 +439,15 @@ class OpenAIService {
         }
     }
     
+    /**
+     Deletes a file from the OpenAI platform.
+
+     - Parameters:
+        - fileID: The unique identifier of the file to be deleted.
+
+     - Returns:
+        An AnyPublisher that emits a Void value when the file is successfully deleted, or an Error if the deletion fails.
+     */
     func deleteFile(fileID: String) -> AnyPublisher<Void, Error> {
         guard let url = URL(string: "https://api.openai.com/v1/files/\(fileID)") else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
@@ -312,6 +463,17 @@ class OpenAIService {
             .eraseToAnyPublisher()
     }
 
+    /**
+     Creates a new vector store on the OpenAI platform.
+
+     - Parameters:
+        - name: The name of the vector store.
+        - files: An array of dictionaries representing the files to be added to the vector store. Each dictionary should contain the file's "name" and "file" (as Data).
+        - completion: A closure that will be called with the result of the API call. The closure takes a Result parameter, which will be either a `.success` containing the created VectorStore or a `.failure` containing an Error.
+
+     - Important:
+        This function requires the `apiKey` property to be set with a valid OpenAI API key.
+     */
     func createVectorStore(name: String, files: [[String: Any]], completion: @escaping (Result<VectorStore, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -357,6 +519,17 @@ class OpenAIService {
         }.resume()
     }
 
+    /**
+     Updates an existing Vector Store with the provided name and/or files.
+
+     - Parameters:
+        - vectorStoreId: The unique identifier of the Vector Store.
+        - name: The new name for the Vector Store. If `nil`, the name will not be updated.
+        - files: An array of dictionaries representing the files to be added to the Vector Store. If `nil`, the files will not be updated.
+        - completion: A closure that will be called with the result of the operation. The closure will receive a `Result` object, which will be either a `.success` case containing the updated `VectorStore` or a `.failure` case containing an `Error`.
+
+     - Important: This function requires an active internet connection and may incur network data charges.
+     */
     func updateVectorStore(vectorStoreId: String, name: String? = nil, files: [[String: Any]]? = nil, completion: @escaping (Result<VectorStore, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -404,6 +577,15 @@ class OpenAIService {
         }.resume()
     }
 
+    /**
+     Deletes a Vector Store with the provided ID.
+
+     - Parameters:
+        - vectorStoreId: The unique identifier of the Vector Store to be deleted.
+        - completion: A closure that will be called with the result of the operation. The closure will receive a `Result` object, which will be either a `.success` case containing `Void` (indicating the Vector Store was deleted successfully) or a `.failure` case containing an `Error`.
+
+     - Important: This function requires an active internet connection and may incur network data charges.
+     */
     func deleteVectorStore(vectorStoreId: String, completion: @escaping (Result<Void, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -662,6 +844,16 @@ class OpenAIService {
 
     // MARK: - Add Message to Thread
 
+    /**
+     Adds a new message to the specified thread.
+
+     - Parameters:
+        - threadId: The unique identifier of the thread.
+        - message: The message to be added.
+        - completion: A closure that will be called with the result of the operation. The closure will receive a `Result` object, which will be either a `.success` case containing `Void` (indicating the message was added successfully) or a `.failure` case containing an `OpenAIServiceError`.
+
+     - Important: This function does not handle the execution of the assistant's response to the added message. It only adds the message to the thread.
+     */
     func addMessageToThread(threadId: String, message: Message, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/messages"
         let body: [String: Any] = [
@@ -699,6 +891,15 @@ class OpenAIService {
             }
         }.resume()
     }
+    /**
+     Fetches the details of a specific thread from the OpenAI API.
+
+     - Parameters:
+        - threadId: The unique identifier of the thread.
+        - completion: A closure that will be called with the result of the operation. The closure will receive a `Result` object, which will be either a `.success` case containing a `Thread` object (indicating the thread details were fetched successfully) or a `.failure` case containing an `OpenAIServiceError`.
+
+     - Important: This function does not handle the execution of the assistant's response to the fetched thread details. It only fetches the thread details.
+     */
     func fetchThreadDetails(threadId: String, completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)"
         let request = makeRequest(endpoint: endpoint)
