@@ -5,25 +5,29 @@ import SwiftUI
 class VectorStoreManagerViewModel: ObservableObject {
     @Published var vectorStores: [VectorStore] = []
     @Published var errorMessage: IdentifiableError?
-
-    var openAIService: OpenAIService?
+    
+    private var openAIService: OpenAIService?
     var cancellables = Set<AnyCancellable>()
-
+    
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
-
+    
     init() {
         initializeOpenAIService()
         fetchVectorStores()
     }
-
+    
+    // MARK: - Initialization
+    
     private func initializeOpenAIService() {
         guard !apiKey.isEmpty else {
-            handleError(.missingAPIKey)
+            handleError(.serviceNotInitialized)
             return
         }
         openAIService = OpenAIService(apiKey: apiKey)
     }
 
+    // MARK: - Data Fetching
+    
     func fetchVectorStores() -> AnyPublisher<[VectorStore], Never> {
         guard let openAIService = openAIService else {
             handleError(.serviceNotInitialized)
@@ -50,85 +54,18 @@ class VectorStoreManagerViewModel: ObservableObject {
 
         openAIService.fetchFiles(for: vectorStore.id)
             .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { completion in
+            .sink(receiveCompletion: { [weak self] completion in
                 if case let .failure(error) = completion {
-                    print("Failed to fetch files: \(error)")
-                    self.handleError(.fetchFailed(error.localizedDescription))
+                    self?.handleError(.fetchFailed(error.localizedDescription))
                 }
             }, receiveValue: { [weak self] files in
-                guard let self = self else { return }
-                guard let index = self.vectorStores.firstIndex(where: { $0.id == vectorStore.id }) else {
-                    print("VectorStore not found")
-                    return
-                }
-                // Map [File] to [VectorStoreFile] with available properties
-                let vectorStoreFiles = files.map { file in
-                    VectorStoreFile(
-                        id: file.id,
-                        object: "default_object", // Provide a default or handle appropriately
-                        usageBytes: 0, // Provide a default or handle appropriately
-                        createdAt: file.createdAt,
-                        vectorStoreId: vectorStore.id,
-                        status: "default_status", // Provide a default or handle appropriately
-                        lastError: nil, // Provide a default or handle appropriately
-                        chunkingStrategy: nil // Provide a default or handle appropriately
-                    )
-                }
-                self.vectorStores[index].files = vectorStoreFiles
+                self?.updateVectorStoreFiles(vectorStore: vectorStore, files: files)
             })
             .store(in: &cancellables)
     }
 
-    private func handleError(_ error: VectorStoreError) {
-        DispatchQueue.main.async {
-            self.errorMessage = IdentifiableError(message: error.localizedDescription)
-        }
-    }
-
-    // Function to create a new vector store
-    func createVectorStore(name: String, files: [[String: Any]], completion: @escaping (Result<VectorStore, Error>) -> Void) {
-        guard let url = URL(string: "https://api.openai.com/v1/vector_stores") else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
-            return
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        // Ensure the body includes the vector store name and files in the correct format
-        let body: [String: Any] = [
-            "name": name,
-            "files": files
-        ]
-
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
-        } catch {
-            completion(.failure(error))
-            return
-        }
-
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            guard let data = data else {
-                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                return
-            }
-            do {
-                let response = try JSONDecoder().decode(VectorStore.self, from: data)
-                completion(.success(response))
-            } catch {
-                completion(.failure(error))
-            }
-        }.resume()
-    }
+    // MARK: - Vector Store Management
     
-    // Method to create a file batch in a vector store
     func createFileBatch(vectorStoreId: String, fileIds: [String], completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/file_batches") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -171,7 +108,6 @@ class VectorStoreManagerViewModel: ObservableObject {
         }.resume()
     }
     
-    // Method to add a file to a vector store
     func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String, completion: @escaping (Result<Void, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/files") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -203,7 +139,7 @@ class VectorStoreManagerViewModel: ObservableObject {
             completion(.success(()))
         }.resume()
     }
-    
+
     func createFileBatch(vectorStoreId: String, fileIds: [String]) {
         guard let openAIService = openAIService else {
             handleError(.serviceNotInitialized)
@@ -247,7 +183,40 @@ class VectorStoreManagerViewModel: ObservableObject {
             }.resume()
         }
     }
+
+    // MARK: - Private Methods
+    
+    private func updateVectorStoreFiles(vectorStore: VectorStore, files: [File]) {
+        guard let index = vectorStoreIndex(for: vectorStore) else {
+            print("VectorStore not found")
+            return
+        }
+        let vectorStoreFiles = files.map { file in
+            VectorStoreFile(
+                id: file.id,
+                object: "default_object",
+                usageBytes: 0,
+                createdAt: file.createdAt,
+                vectorStoreId: vectorStore.id,
+                status: "default_status",
+                lastError: nil,
+                chunkingStrategy: nil
+            )
+        }
+        vectorStores[index].files = vectorStoreFiles
+    }
+
+    private func vectorStoreIndex(for vectorStore: VectorStore) -> Int? {
+        return vectorStores.firstIndex(where: { $0.id == vectorStore.id })
+    }
+
+    private func handleError(_ error: VectorStoreError) {
+        DispatchQueue.main.async {
+            self.errorMessage = IdentifiableError(message: error.localizedDescription)
+        }
+    }
 }
+
 // MARK: - Helper Method for Requests
 extension OpenAIService {
     func makeRequest(endpoint: String, httpMethod: String) -> URLRequest? {

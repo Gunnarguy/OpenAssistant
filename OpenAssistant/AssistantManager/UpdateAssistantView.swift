@@ -22,7 +22,9 @@ struct UpdateAssistantView: View {
             .navigationTitle("Update Assistant")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { presentationMode.wrappedValue.dismiss() }
+                    Button("Cancel") {
+                        dismissView()
+                    }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") { handleSave() }
@@ -94,7 +96,7 @@ struct UpdateAssistantView: View {
     private func handleSave() {
         if validateAssistant() {
             viewModel.updateAssistant(assistant: assistantDetailViewModel.assistant)
-            presentationMode.wrappedValue.dismiss()
+            dismissView()
         } else {
             showAlert = true
         }
@@ -102,5 +104,11 @@ struct UpdateAssistantView: View {
     
     private func validateAssistant() -> Bool {
         !assistantDetailViewModel.assistant.name.isEmpty && !assistantDetailViewModel.assistant.model.isEmpty
+    }
+    
+    private func dismissView() {
+        DispatchQueue.main.async {
+            presentationMode.wrappedValue.dismiss()
+        }
     }
 }

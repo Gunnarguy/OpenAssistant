@@ -290,14 +290,6 @@ func decodeFile(from jsonData: Data) -> File? {
     }
 }
 
-
-
-
-
-
-    
-
-    
     // MARK: - AssistantSettings
     struct AssistantSettings: Decodable {
         let id: String

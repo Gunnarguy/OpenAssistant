@@ -39,7 +39,6 @@ struct MainTabView: View {
                     Label("Manage", systemImage: "person.2.badge.gearshape")
                 }
                 .onAppear {
-                    // Add refresh logic if needed
                     print("AssistantManagerView tab appeared")
                 }
             
@@ -66,7 +65,6 @@ struct MainTabView: View {
         }
     }
 }
-
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {

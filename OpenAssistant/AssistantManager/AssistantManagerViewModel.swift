@@ -28,7 +28,7 @@ class AssistantManagerViewModel: ObservableObject {
         openAIService = OpenAIService(apiKey: apiKey)
     }
     
-    // MARK: - Actions
+    // MARK: - Data Fetching
     
     private func fetchData() {
         fetchAssistants()
@@ -59,20 +59,19 @@ class AssistantManagerViewModel: ObservableObject {
     func fetchVectorStores() {
         performServiceAction { openAIService in
             openAIService.fetchVectorStores()
+                .receive(on: DispatchQueue.main)
                 .sink(receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
-                        DispatchQueue.main.async {
-                            self?.handleError("Fetch vector stores failed: \(error.localizedDescription)")
-                        }
+                        self?.handleError("Fetch vector stores failed: \(error.localizedDescription)")
                     }
                 }, receiveValue: { [weak self] vectorStores in
-                    DispatchQueue.main.async {
-                        self?.vectorStores = vectorStores
-                    }
+                    self?.vectorStores = vectorStores
                 })
                 .store(in: &cancellables)
         }
     }
+    
+    // MARK: - Assistant Management
     
     func createAssistant(model: String, name: String, description: String?, instructions: String?, tools: [Tool], toolResources: ToolResources?, metadata: [String: String]?, temperature: Double, topP: Double, responseFormat: ResponseFormat?) {
         performServiceAction { openAIService in
@@ -190,4 +189,21 @@ class AssistantManagerViewModel: ObservableObject {
         errorMessage = message
         print("Error: \(message)")
     }
+}
+
+// MARK: - Extensions
+
+extension Binding {
+    init(_ source: Binding<Value?>, default defaultValue: Value) {
+        self.init(
+            get: { source.wrappedValue ?? defaultValue },
+            set: { newValue in source.wrappedValue = newValue }
+        )
+    }
+}
+
+extension Notification.Name {
+    static let assistantUpdated = Notification.Name("assistantUpdated")
+    static let assistantDeleted = Notification.Name("assistantDeleted")
+    static let assistantCreated = Notification.Name("assistantCreated")
 }

@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 import SwiftUI
 
 struct CreateAssistantView: View {
@@ -7,6 +6,7 @@ struct CreateAssistantView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var showAlert = false
     
+    // State variables for the assistant fields
     @State private var name: String = ""
     @State private var instructions: String = ""
     @State private var model: String = ""
@@ -25,10 +25,10 @@ struct CreateAssistantView: View {
             .navigationTitle("Create Assistant")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { presentationMode.wrappedValue.dismiss() }
+                    cancelButton
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") { handleSave() }
+                    saveButton
                 }
             }
             .alert(isPresented: $showAlert) {
@@ -64,7 +64,7 @@ struct CreateAssistantView: View {
             Toggle("Enable Code Interpreter", isOn: $enableCodeInterpreter)
         }
     }
-    
+
     private var temperatureSlider: some View {
         VStack {
             Text("Temperature: \(temperature, specifier: "%.2f")")
@@ -78,7 +78,19 @@ struct CreateAssistantView: View {
             Slider(value: $topP, in: 0.0...1.0, step: 0.01)
         }
     }
-    
+
+    private var cancelButton: some View {
+        Button("Cancel") {
+            dismissView()
+        }
+    }
+
+    private var saveButton: some View {
+        Button("Save") {
+            handleSave()
+        }
+    }
+
     private func handleSave() {
         if validateAssistant() {
             viewModel.createAssistant(
@@ -93,23 +105,23 @@ struct CreateAssistantView: View {
                 topP: topP,
                 responseFormat: nil
             )
-            presentationMode.wrappedValue.dismiss()
+            dismissView()
         } else {
             showAlert = true
         }
     }
-    
+
     private func validateAssistant() -> Bool {
         !name.isEmpty && !model.isEmpty
     }
-    
+
     private func createTools() -> [Tool] {
         var tools: [Tool] = []
         if enableFileSearch { tools.append(Tool(type: "file_search")) }
         if enableCodeInterpreter { tools.append(Tool(type: "code_interpreter")) }
         return tools
     }
-    
+
     private func createToolResources() -> ToolResources? {
         var toolResources = ToolResources()
         if enableFileSearch {
@@ -119,5 +131,11 @@ struct CreateAssistantView: View {
             toolResources.codeInterpreter = CodeInterpreterResources(fileIds: ["your_file_id"])
         }
         return toolResources
+    }
+
+    private func dismissView() {
+        DispatchQueue.main.async {
+            presentationMode.wrappedValue.dismiss()
+        }
     }
 }

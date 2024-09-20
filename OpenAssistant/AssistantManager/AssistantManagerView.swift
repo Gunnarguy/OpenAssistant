@@ -8,26 +8,34 @@ struct AssistantManagerView: View {
     
     var body: some View {
         NavigationView {
-            List(viewModel.assistants) { assistant in
-                NavigationLink(destination: AssistantDetailView(assistant: assistant)) {
-                    Text(assistant.name)
-                        .font(.body)
-                        .padding(.vertical, 6)
+            assistantList
+                .navigationTitle("Manage Assistants")
+                .toolbar {
+                    addButton
                 }
-            }
-            .navigationTitle("Manage Assistants")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingCreateAssistantSheet.toggle() }) {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
         }
         .onAppear(perform: viewModel.fetchAssistants)
-        .onReceive(NotificationCenter.default.publisher(for: .assistantCreated), perform: handleAssistantCreated)
+        .onReceive(NotificationCenter.default.publisher(for: .assistantCreated)) { notification in
+            handleAssistantCreated(notification: notification)
+        }
         .sheet(isPresented: $showingCreateAssistantSheet) {
             CreateAssistantView(viewModel: viewModel)
+        }
+    }
+    
+    private var assistantList: some View {
+        List(viewModel.assistants) { assistant in
+            NavigationLink(destination: AssistantDetailView(assistant: assistant, managerViewModel: viewModel)) {
+                Text(assistant.name)
+                    .font(.body)
+                    .padding(.vertical, 6)
+            }
+        }
+    }
+    
+    private var addButton: some View {
+        Button(action: { showingCreateAssistantSheet.toggle() }) {
+            Image(systemName: "plus")
         }
     }
     

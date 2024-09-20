@@ -8,15 +8,18 @@ class AssistantDetailViewModel: ObservableObject {
     private var openAIService: OpenAIService?
     private var cancellables = Set<AnyCancellable>()
     
+    // Fetch API Key from UserDefaults
     private var apiKey: String {
         UserDefaults.standard.string(forKey: "OpenAI_API_Key") ?? ""
     }
     
+    // Initialize the ViewModel with an Assistant
     init(assistant: Assistant) {
         self.assistant = assistant
         initializeOpenAIService()
     }
     
+    // Initialize OpenAI service using the API key
     private func initializeOpenAIService() {
         guard !apiKey.isEmpty else {
             handleError("API key is missing")
@@ -25,6 +28,7 @@ class AssistantDetailViewModel: ObservableObject {
         openAIService = OpenAIService(apiKey: apiKey)
     }
     
+    // Function to update an assistant
     func updateAssistant() {
         performServiceAction { openAIService in
             openAIService.updateAssistant(
@@ -39,23 +43,27 @@ class AssistantDetailViewModel: ObservableObject {
                 temperature: assistant.temperature,
                 topP: assistant.top_p
             ) { [weak self] result in
-                DispatchQueue.main.async {
-                    self?.handleUpdateResult(result)
-                }
-            }
-        }
-    }
-
-    func deleteAssistant() {
-        performServiceAction { openAIService in
-            openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
-                DispatchQueue.main.async {
-                    self?.handleDeleteResult(result)
-                }
+                self?.handleResult(result, successHandler: { updatedAssistant in
+                    self?.assistant = updatedAssistant
+                    NotificationCenter.default.post(name: .assistantUpdated, object: updatedAssistant)
+                })
             }
         }
     }
     
+    // Function to delete an assistant
+    func deleteAssistant() {
+        performServiceAction { openAIService in
+            openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
+                self?.handleResult(result, successHandler: {
+                    NotificationCenter.default.post(name: .assistantDeleted, object: self?.assistant)
+                    self?.handleError("Assistant deleted successfully")
+                })
+            }
+        }
+    }
+    
+    // Perform a service action with OpenAI
     private func performServiceAction(action: (OpenAIService) -> Void) {
         guard let openAIService = openAIService else {
             handleError("OpenAIService is not initialized")
@@ -64,45 +72,22 @@ class AssistantDetailViewModel: ObservableObject {
         action(openAIService)
     }
     
-    private func handleUpdateResult(_ result: Result<Assistant, OpenAIServiceError>) {
-        switch result {
-        case .success(let updatedAssistant):
-            assistant = updatedAssistant
-            NotificationCenter.default.post(name: .assistantUpdated, object: updatedAssistant)
-        case .failure(let error):
-            handleError("Update failed: \(error.localizedDescription)")
+    // Generic result handler for success and error management
+    private func handleResult<T>(_ result: Result<T, OpenAIServiceError>, successHandler: @escaping (T) -> Void) {
+        DispatchQueue.main.async {
+            switch result {
+            case .success(let value):
+                successHandler(value)
+            case .failure(let error):
+                self.handleError("Operation failed: \(error.localizedDescription)")
+            }
         }
     }
+
     
-    private func handleDeleteResult(_ result: Result<Void, OpenAIServiceError>) {
-        switch result {
-        case .success:
-            NotificationCenter.default.post(name: .assistantDeleted, object: assistant)
-            handleError("Assistant deleted successfully")
-        case .failure(let error):
-            handleError("Delete failed: \(error.localizedDescription)")
-        }
-    }
-    
-    func handleError(_ message: String) {
+    // Function to handle error messages
+    private func handleError(_ message: String) {
         errorMessage = message
         print("Error: \(message)")
     }
-}
-
-
-
-extension Binding {
-    init(_ source: Binding<Value?>, default defaultValue: Value) {
-        self.init(
-            get: { source.wrappedValue ?? defaultValue },
-            set: { newValue in source.wrappedValue = newValue }
-        )
-    }
-}
-
-extension Notification.Name {
-    static let assistantUpdated = Notification.Name("assistantUpdated")
-    static let assistantDeleted = Notification.Name("assistantDeleted")
-    static let assistantCreated = Notification.Name("assistantCreated")
 }

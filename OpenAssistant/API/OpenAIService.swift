@@ -154,29 +154,8 @@ class OpenAIService {
 
     // MARK: - API Methods
 
-    func fetchAssistants(limit: Int? = nil, order: String? = nil, after: String? = nil, before: String? = nil, completion: @escaping (Result<[Assistant], OpenAIServiceError>) -> Void) {
-        var endpoint = "assistants"
-        var queryItems = [URLQueryItem]()
-
-        if let limit = limit {
-            queryItems.append(URLQueryItem(name: "limit", value: "\(limit)"))
-        }
-        if let order = order {
-            queryItems.append(URLQueryItem(name: "order", value: order))
-        }
-        if let after = after {
-            queryItems.append(URLQueryItem(name: "after", value: after))
-        }
-        if let before = before {
-            queryItems.append(URLQueryItem(name: "before", value: before))
-        }
-
-        if !queryItems.isEmpty {
-            var urlComponents = URLComponents(string: baseURL.appendingPathComponent(endpoint).absoluteString)!
-            urlComponents.queryItems = queryItems
-            endpoint = urlComponents.url!.absoluteString
-        }
-
+    func fetchAssistants(completion: @escaping (Result<[Assistant], OpenAIServiceError>) -> Void) {
+        let endpoint = "assistants"
         let request = makeRequest(endpoint: endpoint)
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error) { (result: Result<AssistantsResponse, OpenAIServiceError>) in
@@ -190,105 +169,40 @@ class OpenAIService {
         }.resume()
     }
 
-    func createAssistant(model: String, name: String? = nil, description: String? = nil, instructions: String? = nil, tools: [[String: Any]]? = nil, toolResources: [String: Any]? = nil, metadata: [String: String]? = nil, temperature: Double? = nil, topP: Double? = nil, responseFormat: Any? = nil, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void) {
-        guard !apiKey.isEmpty else {
-            completion(.failure(.apiKeyMissing))
-            return
-        }
-
+    func createAssistant(model: String, name: String? = nil, description: String? = nil, instructions: String? = nil, tools: [[String: Any]]? = nil, toolResources: [String: Any]? = nil, metadata: [String: String]? = nil, temperature: Double? = nil, topP: Double? = nil, responseFormat: ResponseFormat? = nil, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void) {
         var body: [String: Any] = ["model": model]
-
-        if let name = name {
-            body["name"] = name
-        }
-        if let description = description {
-            body["description"] = description
-        }
-        if let instructions = instructions {
-            body["instructions"] = instructions
-        }
-        if let tools = tools {
-            body["tools"] = tools
-        }
-        if let toolResources = toolResources {
-            body["tool_resources"] = toolResources
-        }
-        if let metadata = metadata {
-            body["metadata"] = metadata
-        }
-        if let temperature = temperature {
-            body["temperature"] = temperature
-        }
-        if let topP = topP {
-            body["top_p"] = topP
-        }
-        if let responseFormat = responseFormat {
-            body["response_format"] = responseFormat
-        }
-
+        
+        body["name"] = name
+        body["description"] = description
+        body["instructions"] = instructions
+        body["tools"] = tools
+        body["tool_resources"] = toolResources
+        body["metadata"] = metadata
+        body["temperature"] = temperature
+        body["top_p"] = topP
+        body["response_format"] = responseFormat?.toAny()
+        
         let request = makeRequest(endpoint: "assistants", httpMethod: "POST", body: body)
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
 
-    func updateAssistant(
-        assistantId: String,
-        model: String? = nil,
-        name: String? = nil,
-        description: String? = nil,
-        instructions: String? = nil,
-        tools: [[String: Any]]? = nil,
-        toolResources: [String: Any]? = nil,
-        metadata: [String: String]? = nil,
-        temperature: Double? = nil,
-        topP: Double? = nil,
-        responseFormat: ResponseFormat? = nil,
-        completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
-    ) {
-        guard !apiKey.isEmpty else {
-            completion(.failure(.apiKeyMissing))
-            return
-        }
-
+    func updateAssistant(assistantId: String, model: String? = nil, name: String? = nil, description: String? = nil, instructions: String? = nil, tools: [[String: Any]]? = nil, toolResources: [String: Any]? = nil, metadata: [String: String]? = nil, temperature: Double? = nil, topP: Double? = nil, responseFormat: ResponseFormat? = nil, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void) {
         var body: [String: Any] = [:]
-
-        if let model = model {
-            body["model"] = model
-        }
-        if let name = name {
-            body["name"] = name
-        }
-        if let description = description {
-            body["description"] = description
-        }
-        if let instructions = instructions {
-            body["instructions"] = instructions
-        }
-        if let tools = tools {
-            body["tools"] = tools
-        }
-        if let toolResources = toolResources {
-            body["tool_resources"] = toolResources
-        }
-        if let metadata = metadata {
-            body["metadata"] = metadata
-        }
-        if let temperature = temperature {
-            body["temperature"] = temperature
-        }
-        if let topP = topP {
-            body["top_p"] = topP
-        }
-        if let responseFormat = responseFormat {
-            body["response_format"] = responseFormat.toAny()
-        }
-
-        // Log the body dictionary to debug the issue
-        print("Request Body: \(body)")
-
+        
+        body["model"] = model
+        body["name"] = name
+        body["description"] = description
+        body["instructions"] = instructions
+        body["tools"] = tools
+        body["tool_resources"] = toolResources
+        body["metadata"] = metadata
+        body["temperature"] = temperature
+        body["top_p"] = topP
+        body["response_format"] = responseFormat?.toAny()
+        
         let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "POST", body: body)
-        logRequestDetails(request, body: body)
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()

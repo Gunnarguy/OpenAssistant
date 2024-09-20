@@ -13,11 +13,13 @@ class AssistantPickerViewModel: ObservableObject {
     // MARK: - Private Properties
     private var openAIService: OpenAIService?
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initializer
     init() {
         initializeService()
         fetchAssistants()
+        setupNotificationObservers()
     }
 
     // MARK: - Public Methods
@@ -81,5 +83,19 @@ class AssistantPickerViewModel: ObservableObject {
     private func updateErrorState(with message: String) {
         errorMessage = message
         isLoading = false
+    }
+
+    private func setupNotificationObservers() {
+        NotificationCenter.default.publisher(for: .assistantCreated)
+            .sink { [weak self] _ in self?.fetchAssistants() }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .assistantUpdated)
+            .sink { [weak self] _ in self?.fetchAssistants() }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .assistantDeleted)
+            .sink { [weak self] _ in self?.fetchAssistants() }
+            .store(in: &cancellables)
     }
 }

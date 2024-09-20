@@ -15,10 +15,6 @@ struct VectorStoreListView: View {
                                 .font(.headline)
                             Text("Created at: \(formattedDate(from: vectorStore.createdAt))")
                                 .font(.subheadline)
-                            Text("Status: \(vectorStore.status ?? "N/A")")
-                                .font(.subheadline)
-                            Text("Usage: \(formatBytes(vectorStore.usageBytes ?? 0))")
-                                .font(.subheadline)
                         }
                     }
                 }
