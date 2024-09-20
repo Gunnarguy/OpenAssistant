@@ -100,6 +100,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B0DD9C652C9E09A000A0D623 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */,
+				B0DD9C612C9DFC3A00A0D623 /* OpenAIInitializer.swift */,
+				B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */,
+				B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */,
+				B0EEE71C2C99326A0012F2BA /* ContentView.swift */,
+				B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */,
+				B0EEE73C2C99326A0012F2BA /* SettingsView.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
 		B0EEE7012C9932580012F2BA = {
 			isa = PBXGroup;
 			children = (
@@ -119,18 +133,12 @@
 		B0EEE70C2C9932580012F2BA /* OpenAssistant */ = {
 			isa = PBXGroup;
 			children = (
-				B0DD9C612C9DFC3A00A0D623 /* OpenAIInitializer.swift */,
-				B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */,
-				B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */,
-				B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */,
-				B0EEE71C2C99326A0012F2BA /* ContentView.swift */,
-				B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */,
+				B0DD9C652C9E09A000A0D623 /* Main */,
 				B0EEE7232C99326A0012F2BA /* AssistantManager */,
 				B0EEE7262C99326A0012F2BA /* AssistantPicker */,
 				B0EEE72B2C99326A0012F2BA /* ChatView */,
 				B0EEE7322C99326A0012F2BA /* VectorStoreManager */,
 				B0EEE73B2C99326A0012F2BA /* API */,
-				B0EEE73C2C99326A0012F2BA /* SettingsView.swift */,
 				B0EEE73D2C99326A0012F2BA /* Assets.xcassets */,
 				B0EEE73E2C99326A0012F2BA /* PrivacyInfo.xcprivacy */,
 				B0DD9C572C9DE4B800A0D623 /* Info.plist */,
