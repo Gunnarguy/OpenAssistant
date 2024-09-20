@@ -687,7 +687,7 @@ class OpenAIService {
             }
             self.logResponseData(data)
             do {
-                let response = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+                _ = try JSONDecoder().decode(OpenAIResponse.self, from: data)
                 DispatchQueue.main.async {
                     completion(.success(()))
                 }

@@ -64,11 +64,13 @@ struct AddFileView: View {
                 group.addTask { await self.uploadFile(fileURL) }
             }
 
-            return await group.reduce(into: [String]()) { result, id in
+            var result = [String]()
+            for await id in group {
                 if let id = id {
                     result.append(id)
                 }
             }
+            return result
         }
 
         guard !fileIds.isEmpty else { return }

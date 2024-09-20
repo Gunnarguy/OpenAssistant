@@ -14,6 +14,14 @@ class VectorStoreManagerViewModel: ObservableObject {
     init() {
         initializeOpenAIService()
         fetchVectorStores()
+            .sink(receiveCompletion: { completion in
+                if case .failure(let error) = completion {
+                    self.handleError(.fetchFailed(error.localizedDescription))
+                }
+            }, receiveValue: { vectorStores in
+                self.vectorStores = vectorStores
+            })
+            .store(in: &cancellables)
     }
     
     // MARK: - Initialization
@@ -230,3 +238,4 @@ extension OpenAIService {
         return request
     }
 }
+

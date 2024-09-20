@@ -134,3 +134,4 @@ struct VectorStoreDetailView: View {
         showErrorAlert = true
     }
 }
+

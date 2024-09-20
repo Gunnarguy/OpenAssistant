@@ -188,6 +188,9 @@ class AssistantManagerViewModel: ObservableObject {
     private func handleError(_ message: String) {
         errorMessage = message
         print("Error: \(message)")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            self.errorMessage = nil
+        }
     }
 }
 

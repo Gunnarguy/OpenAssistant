@@ -24,15 +24,10 @@ struct AssistantDetailView: View {
         .padding()
         .id(refreshTrigger)
         .onReceive(NotificationCenter.default.publisher(for: .assistantUpdated)) { notification in
-            if let updatedAssistant = notification.object as? Assistant, updatedAssistant.id == viewModel.assistant.id {
-                viewModel.assistant = updatedAssistant
-                triggerRefresh()
-            }
+            handleAssistantUpdated(notification: notification)
         }
         .onReceive(NotificationCenter.default.publisher(for: .assistantDeleted)) { notification in
-            if let deletedAssistant = notification.object as? Assistant, deletedAssistant.id == viewModel.assistant.id {
-                presentationMode.wrappedValue.dismiss()
-            }
+            handleAssistantDeleted(notification: notification)
         }
     }
 
@@ -43,6 +38,11 @@ struct AssistantDetailView: View {
                 .foregroundColor(.red)
                 .padding()
                 .multilineTextAlignment(.center)
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        viewModel.errorMessage = nil
+                    }
+                }
         }
     }
 
@@ -68,5 +68,18 @@ struct AssistantDetailView: View {
 
     private func triggerRefresh() {
         refreshTrigger.toggle()
+    }
+
+    private func handleAssistantUpdated(notification: Notification) {
+        if let updatedAssistant = notification.object as? Assistant, updatedAssistant.id == viewModel.assistant.id {
+            viewModel.assistant = updatedAssistant
+            triggerRefresh()
+        }
+    }
+
+    private func handleAssistantDeleted(notification: Notification) {
+        if let deletedAssistant = notification.object as? Assistant, deletedAssistant.id == viewModel.assistant.id {
+            presentationMode.wrappedValue.dismiss()
+        }
     }
 }

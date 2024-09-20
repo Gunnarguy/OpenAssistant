@@ -84,10 +84,12 @@ class AssistantDetailViewModel: ObservableObject {
         }
     }
 
-    
     // Function to handle error messages
     private func handleError(_ message: String) {
         errorMessage = message
         print("Error: \(message)")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            self.errorMessage = nil
+        }
     }
 }

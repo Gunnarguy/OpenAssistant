@@ -4,7 +4,6 @@
 //
 //  Created by Gunnar Hostetler on 9/20/24.
 //
-
 // Configuration settings file format documentation can be found at:
 // https://help.apple.com/xcode/#/dev745c5c974
 
@@ -41,11 +40,11 @@ SWIFT_BACK_DEPLOYMENT = YES
 
 // MARK: - Additional Settings
 
-// Enable address sanitizer
-ENABLE_ADDRESS_SANITIZER = YES
+// Enable address sanitizer (comment out if using thread sanitizer)
+// ENABLE_ADDRESS_SANITIZER = YES
 
-// Enable thread sanitizer
-ENABLE_THREAD_SANITIZER = YES
+// Enable thread sanitizer (comment out if using address sanitizer)
+// ENABLE_THREAD_SANITIZER = YES
 
 // Enable undefined behavior sanitizer
 ENABLE_UNDEFINED_BEHAVIOR_SANITIZER = YES
