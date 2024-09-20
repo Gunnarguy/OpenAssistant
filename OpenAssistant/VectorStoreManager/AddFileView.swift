@@ -19,7 +19,9 @@ struct AddFileView: View {
             }
             
             Button("Upload Files") {
-                uploadFiles()
+                Task {
+                    await uploadFiles()
+                }
             }
             .disabled(selectedFiles.isEmpty || isUploading)
             
@@ -53,61 +55,82 @@ struct AddFileView: View {
         }
     }
 
-    private func uploadFiles() {
+    private func uploadFiles() async {
         isUploading = true
-        let fileIds = selectedFiles.compactMap { fileURL -> String? in
-            do {
-                // Copy the file to a temporary location within the app's sandbox
-                let fileManager = FileManager.default
-                let tempDirectory = fileManager.temporaryDirectory
-                let tempFileURL = tempDirectory.appendingPathComponent(fileURL.lastPathComponent)
-                
-                if !fileManager.fileExists(atPath: tempFileURL.path) {
-                    try fileManager.copyItem(at: fileURL, to: tempFileURL)
+        defer { isUploading = false }
+
+        let fileIds = await withTaskGroup(of: String?.self) { group -> [String] in
+            for fileURL in selectedFiles {
+                group.addTask { await self.uploadFile(fileURL) }
+            }
+
+            return await group.reduce(into: [String]()) { result, id in
+                if let id = id {
+                    result.append(id)
                 }
-                
-                let fileData = try Data(contentsOf: tempFileURL)
-                let fileName = fileURL.lastPathComponent
-                print("Reading file: \(fileName) at \(tempFileURL)")
-                
-                var fileId: String?
-                let semaphore = DispatchSemaphore(value: 0)
+            }
+        }
+
+        guard !fileIds.isEmpty else { return }
+
+        await createFileBatch(fileIds)
+    }
+
+    private func uploadFile(_ fileURL: URL) async -> String? {
+        do {
+            guard fileURL.startAccessingSecurityScopedResource() else {
+                showError("Failed to access file at \(fileURL).")
+                return nil
+            }
+            defer { fileURL.stopAccessingSecurityScopedResource() }
+
+            let fileManager = FileManager.default
+            let tempDirectory = fileManager.temporaryDirectory
+            let tempFileURL = tempDirectory.appendingPathComponent(fileURL.lastPathComponent)
+
+            if !fileManager.fileExists(atPath: tempFileURL.path) {
+                try fileManager.copyItem(at: fileURL, to: tempFileURL)
+            }
+
+            let fileData = try Data(contentsOf: tempFileURL)
+            let fileName = fileURL.lastPathComponent
+
+            print("Reading file: \(fileName) at \(tempFileURL)")
+
+            return try await withCheckedThrowingContinuation { continuation in
                 viewModel.addFileToVectorStore(vectorStoreId: vectorStore.id, fileData: fileData, fileName: fileName) { result in
                     switch result {
                     case .success:
-                        fileId = fileName // Assuming file name is used as ID
+                        continuation.resume(returning: fileName) // Assuming file name is used as ID
                     case .failure(let error):
                         self.showError("Failed to upload file: \(error.localizedDescription)")
+                        continuation.resume(returning: nil)
                     }
-                    semaphore.signal()
                 }
-                semaphore.wait()
-                return fileId
-            } catch {
-                showError("Failed to read file data: \(error.localizedDescription)")
-                print("Error reading file at \(fileURL): \(error)")
-                return nil
             }
+        } catch {
+            showError("Failed to read or upload file data: \(error.localizedDescription)")
+            print("Error reading or uploading file at \(fileURL): \(error)")
+            return nil
         }
-        
-        guard !fileIds.isEmpty else {
-            isUploading = false
-            return
-        }
-        
-        viewModel.createFileBatch(vectorStoreId: vectorStore.id, fileIds: fileIds) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success:
-                    print("Files successfully uploaded.")
-                case .failure(let error):
-                    self.showError("Failed to create file batch: \(error.localizedDescription)")
+    }
+
+    private func createFileBatch(_ fileIds: [String]) async {
+        await withCheckedContinuation { continuation in
+            viewModel.createFileBatch(vectorStoreId: vectorStore.id, fileIds: fileIds) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        print("Files successfully uploaded.")
+                    case .failure(let error):
+                        self.showError("Failed to create file batch: \(error.localizedDescription)")
+                    }
+                    continuation.resume()
                 }
-                self.isUploading = false
             }
         }
     }
-    
+
     private func showError(_ message: String) {
         errorMessage = message
         showErrorAlert = true

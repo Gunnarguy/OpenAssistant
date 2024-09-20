@@ -43,6 +43,9 @@
 /* Begin PBXFileReference section */
 		B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailView.swift; sourceTree = "<group>"; };
 		B0BFE4432C9BDC8800EB6D81 /* FormFieldsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormFieldsView.swift; sourceTree = "<group>"; };
+		B0DD9C572C9DE4B800A0D623 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B0DD9C592C9DE90000A0D623 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		B0DD9C5A2C9DE91B00A0D623 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		B0EEE70A2C9932580012F2BA /* OpenAssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenAssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0EEE7142C9932590012F2BA /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAssistantApp.swift; sourceTree = "<group>"; };
@@ -116,6 +119,9 @@
 				B0EEE73C2C99326A0012F2BA /* SettingsView.swift */,
 				B0EEE73D2C99326A0012F2BA /* Assets.xcassets */,
 				B0EEE73E2C99326A0012F2BA /* PrivacyInfo.xcprivacy */,
+				B0DD9C572C9DE4B800A0D623 /* Info.plist */,
+				B0DD9C592C9DE90000A0D623 /* Debug.xcconfig */,
+				B0DD9C5A2C9DE91B00A0D623 /* Release.xcconfig */,
 				B0EEE7132C9932590012F2BA /* Preview Content */,
 			);
 			path = OpenAssistant;
@@ -168,8 +174,8 @@
 			children = (
 				B0EEE72C2C99326A0012F2BA /* AddFileView.swift */,
 				B0EEE72D2C99326A0012F2BA /* FileDetailView.swift */,
-				B0EEE72E2C99326A0012F2BA /* VectorStoreListView.swift */,
 				B0EEE72F2C99326A0012F2BA /* VectorStoreDetailView.swift */,
+				B0EEE72E2C99326A0012F2BA /* VectorStoreListView.swift */,
 				B0EEE7302C99326A0012F2BA /* VectorStoreManagerViewModel.swift */,
 			);
 			path = VectorStoreManager;
@@ -425,12 +431,12 @@
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OpenAssistant/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OpenAssistant;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -461,12 +467,12 @@
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OpenAssistant/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OpenAssistant;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -474,6 +480,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = AI.FascinAIting.OpenAssistant;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

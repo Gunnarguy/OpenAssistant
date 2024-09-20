@@ -19,21 +19,17 @@ struct FileDetailView: View {
 
     private var fileDetailsSection: some View {
         Section(header: Text("File Details")) {
-            Text("ID: \(file.id)")
-            Text("Object: \(file.object)")
-            Text("Usage Bytes: \(formatBytes(file.usageBytes))")
-            Text("Created At: \(formattedDate(from: file.createdAt))")
-            Text("Vector Store ID: \(file.vectorStoreId)")
-            Text("Status: \(file.status)")
-            if let lastError = file.lastError {
-                Text("Last Error: \(lastError)")
-            } else {
-                Text("Last Error: None")
-            }
+            detailRow(title: "ID", value: file.id)
+            detailRow(title: "Object", value: file.object)
+            detailRow(title: "Usage Bytes", value: formatBytes(file.usageBytes))
+            detailRow(title: "Created At", value: formattedDate(from: file.createdAt))
+            detailRow(title: "Vector Store ID", value: file.vectorStoreId)
+            detailRow(title: "Status", value: file.status)
+            detailRow(title: "Last Error", value: file.lastError ?? "None")
             if let chunkingStrategy = file.chunkingStrategy {
                 chunkingStrategyDetails(chunkingStrategy)
             } else {
-                Text("Chunking Strategy: None")
+                detailRow(title: "Chunking Strategy", value: "None")
             }
         }
     }
@@ -42,10 +38,10 @@ struct FileDetailView: View {
 
     private func chunkingStrategyDetails(_ chunkingStrategy: ChunkingStrategy) -> some View {
         Group {
-            Text("Chunking Strategy: \(chunkingStrategy.type)")
+            detailRow(title: "Chunking Strategy", value: chunkingStrategy.type)
             if let staticStrategy = chunkingStrategy.staticStrategy {
-                Text("Max Chunk Size Tokens: \(staticStrategy.maxChunkSizeTokens)")
-                Text("Chunk Overlap Tokens: \(staticStrategy.chunkOverlapTokens)")
+                detailRow(title: "Max Chunk Size Tokens", value: "\(staticStrategy.maxChunkSizeTokens)")
+                detailRow(title: "Chunk Overlap Tokens", value: "\(staticStrategy.chunkOverlapTokens)")
             }
         }
     }
@@ -72,6 +68,15 @@ struct FileDetailView: View {
             return String(format: "%.2f KB", kb)
         } else {
             return "\(bytes) bytes"
+        }
+    }
+
+    private func detailRow(title: String, value: String) -> some View {
+        HStack {
+            Text("\(title):")
+                .fontWeight(.bold)
+            Spacer()
+            Text(value)
         }
     }
 }

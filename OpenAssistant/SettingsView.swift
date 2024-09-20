@@ -5,36 +5,70 @@ struct SettingsView: View {
     @AppStorage("isDarkMode") private var isDarkMode: Bool = false
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var isApiKeyValid = true
 
     var body: some View {
         VStack {
-            SecureField("Enter API Key", text: $apiKey)
+            apiKeySection
+            darkModeToggle
+            saveButton
+        }
+        .padding()
+        .navigationBarTitle("Settings")
+        .preferredColorScheme(isDarkMode ? .dark : .light)
+        .alert(isPresented: $showAlert) {
+            Alert(title: Text("Settings"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+        }
+    }
+
+    // MARK: - Sections
+
+    private var apiKeySection: some View {
+        VStack(alignment: .leading) {
+            Text("API Key")
+                .font(.headline)
+            SecureField("Enter API Key", text: $apiKey, onCommit: validateApiKey)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
                 .autocapitalization(.none)
                 .disableAutocorrection(true)
-
-            Toggle("Dark Mode", isOn: $isDarkMode)
-                .padding()
-
-            Button("Save") {
-                saveSettings()
-            }
-            .padding()
-            .alert(isPresented: $showAlert) {
-                Alert(title: Text("Settings"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+                .border(isApiKeyValid ? Color.clear : Color.red)
+            if !isApiKeyValid {
+                Text("API Key cannot be empty.")
+                    .foregroundColor(.red)
+                    .font(.caption)
             }
         }
-        .navigationBarTitle("Settings")
-        .preferredColorScheme(isDarkMode ? .dark : .light)
+    }
+
+    private var darkModeToggle: some View {
+        Toggle("Dark Mode", isOn: $isDarkMode)
+            .padding()
+    }
+
+    private var saveButton: some View {
+        Button("Save") {
+            saveSettings()
+        }
+        .padding()
+        .disabled(!isApiKeyValid)
+    }
+
+    // MARK: - Helper Methods
+
+    private func validateApiKey() {
+        isApiKeyValid = !apiKey.isEmpty
     }
 
     private func saveSettings() {
-        alertMessage = apiKey.isEmpty ? "API Key cannot be empty." : "Settings saved successfully."
-        showAlert = true
-        if !apiKey.isEmpty {
+        validateApiKey()
+        if isApiKeyValid {
+            alertMessage = "Settings saved successfully."
             print("API Key saved: \(apiKey)")
+        } else {
+            alertMessage = "API Key cannot be empty."
         }
+        showAlert = true
         print("Dark Mode: \(isDarkMode)")
     }
 }
