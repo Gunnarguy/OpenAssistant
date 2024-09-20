@@ -9,7 +9,7 @@ class AssistantManagerViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     private var openAIService: OpenAIService?
-    private var cancellables = Set<AnyCancellable>()
+    var cancellables = Set<AnyCancellable>()
     
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
     
@@ -21,11 +21,16 @@ class AssistantManagerViewModel: ObservableObject {
     // MARK: - Initialization
     
     private func initializeOpenAIService() {
-        guard !apiKey.isEmpty else {
+        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
+        if openAIService == nil {
             handleError("API key is missing")
-            return
         }
-        openAIService = OpenAIService(apiKey: apiKey)
+    }
+    
+    // MARK: - Error Handling
+    
+    private func handleError(_ message: String) {
+        errorMessage = message
     }
     
     // MARK: - Data Fetching
@@ -70,6 +75,7 @@ class AssistantManagerViewModel: ObservableObject {
                 .store(in: &cancellables)
         }
     }
+    
     
     // MARK: - Assistant Management
     
@@ -185,13 +191,7 @@ class AssistantManagerViewModel: ObservableObject {
         }
     }
     
-    private func handleError(_ message: String) {
-        errorMessage = message
-        print("Error: \(message)")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            self.errorMessage = nil
-        }
-    }
+
 }
 
 // MARK: - Extensions

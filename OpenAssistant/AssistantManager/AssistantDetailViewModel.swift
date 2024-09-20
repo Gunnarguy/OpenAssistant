@@ -1,3 +1,4 @@
+// OpenAssistant/AssistantManager/AssistantDetailViewModel.swift
 import Foundation
 import Combine
 import SwiftUI
@@ -7,6 +8,7 @@ class AssistantDetailViewModel: ObservableObject {
     @Published var errorMessage: String?
     private var openAIService: OpenAIService?
     private var cancellables = Set<AnyCancellable>()
+    private let errorHandler = ErrorHandler()
     
     // Fetch API Key from UserDefaults
     private var apiKey: String {
@@ -21,11 +23,10 @@ class AssistantDetailViewModel: ObservableObject {
     
     // Initialize OpenAI service using the API key
     private func initializeOpenAIService() {
-        guard !apiKey.isEmpty else {
-            handleError("API key is missing")
-            return
+        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
+        if openAIService == nil {
+            errorHandler.handleError("API key is missing")
         }
-        openAIService = OpenAIService(apiKey: apiKey)
     }
     
     // Function to update an assistant
@@ -57,7 +58,7 @@ class AssistantDetailViewModel: ObservableObject {
             openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
                 self?.handleResult(result, successHandler: {
                     NotificationCenter.default.post(name: .assistantDeleted, object: self?.assistant)
-                    self?.handleError("Assistant deleted successfully")
+                    self?.errorHandler.handleError("Assistant deleted successfully")
                 })
             }
         }
@@ -66,7 +67,7 @@ class AssistantDetailViewModel: ObservableObject {
     // Perform a service action with OpenAI
     private func performServiceAction(action: (OpenAIService) -> Void) {
         guard let openAIService = openAIService else {
-            handleError("OpenAIService is not initialized")
+            errorHandler.handleError("OpenAIService is not initialized")
             return
         }
         action(openAIService)
@@ -79,17 +80,8 @@ class AssistantDetailViewModel: ObservableObject {
             case .success(let value):
                 successHandler(value)
             case .failure(let error):
-                self.handleError("Operation failed: \(error.localizedDescription)")
+                self.errorHandler.handleError("Operation failed: \(error.localizedDescription)")
             }
-        }
-    }
-
-    // Function to handle error messages
-    private func handleError(_ message: String) {
-        errorMessage = message
-        print("Error: \(message)")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            self.errorMessage = nil
         }
     }
 }

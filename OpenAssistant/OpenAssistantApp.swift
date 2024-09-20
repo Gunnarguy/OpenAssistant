@@ -13,10 +13,7 @@ struct OpenAssistantApp: App {
         }
     }
 
-    // MARK: - Setup
-
     private func setup() {
-        // Perform any necessary setup here
         assistantManagerViewModel.fetchAssistants()
     }
 }

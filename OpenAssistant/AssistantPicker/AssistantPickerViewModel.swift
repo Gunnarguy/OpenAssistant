@@ -46,11 +46,10 @@ class AssistantPickerViewModel: ObservableObject {
 
     // MARK: - Private Methods
     private func initializeService() {
-        guard !apiKey.isEmpty else {
+        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
+        if openAIService == nil {
             updateErrorState(with: "API key is missing.")
-            return
         }
-        openAIService = OpenAIService(apiKey: apiKey)
     }
 
     private func handleFetchResult(_ result: Result<[Assistant], OpenAIServiceError>) {

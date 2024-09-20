@@ -2,10 +2,8 @@ import Foundation
 import Combine
 import SwiftUI
 
-// MARK: - MessageStore
 class MessageStore: ObservableObject {
     @Published var messages: [Message] = []
-
     private let userDefaultsKey = "savedMessages"
 
     init() {

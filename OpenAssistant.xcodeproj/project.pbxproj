@@ -9,6 +9,11 @@
 /* Begin PBXBuildFile section */
 		B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */; };
 		B0BFE4442C9BDC8800EB6D81 /* FormFieldsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* FormFieldsView.swift */; };
+		B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */; };
+		B0DD9C5E2C9DFA7000A0D623 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */; };
+		B0DD9C602C9DFAB100A0D623 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */; };
+		B0DD9C622C9DFC3A00A0D623 /* OpenAIInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C612C9DFC3A00A0D623 /* OpenAIInitializer.swift */; };
+		B0DD9C642C9E040000A0D623 /* RunStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C632C9E040000A0D623 /* RunStatusView.swift */; };
 		B0EEE73F2C99326A0012F2BA /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */; };
 		B0EEE7402C99326A0012F2BA /* VectorStoreManagerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7302C99326A0012F2BA /* VectorStoreManagerViewModel.swift */; };
 		B0EEE7412C99326A0012F2BA /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE72A2C99326A0012F2BA /* ChatView.swift */; };
@@ -46,6 +51,11 @@
 		B0DD9C572C9DE4B800A0D623 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B0DD9C592C9DE90000A0D623 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		B0DD9C5A2C9DE91B00A0D623 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
+		B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
+		B0DD9C612C9DFC3A00A0D623 /* OpenAIInitializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIInitializer.swift; sourceTree = "<group>"; };
+		B0DD9C632C9E040000A0D623 /* RunStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunStatusView.swift; sourceTree = "<group>"; };
 		B0EEE70A2C9932580012F2BA /* OpenAssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenAssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0EEE7142C9932590012F2BA /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAssistantApp.swift; sourceTree = "<group>"; };
@@ -109,8 +119,12 @@
 		B0EEE70C2C9932580012F2BA /* OpenAssistant */ = {
 			isa = PBXGroup;
 			children = (
+				B0DD9C612C9DFC3A00A0D623 /* OpenAIInitializer.swift */,
 				B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */,
+				B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */,
+				B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */,
 				B0EEE71C2C99326A0012F2BA /* ContentView.swift */,
+				B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */,
 				B0EEE7232C99326A0012F2BA /* AssistantManager */,
 				B0EEE7262C99326A0012F2BA /* AssistantPicker */,
 				B0EEE72B2C99326A0012F2BA /* ChatView */,
@@ -162,9 +176,10 @@
 			isa = PBXGroup;
 			children = (
 				B0EEE7272C99326A0012F2BA /* WaveAnimation.swift */,
+				B0DD9C632C9E040000A0D623 /* RunStatusView.swift */,
 				B0EEE7282C99326A0012F2BA /* MessageStore.swift */,
-				B0EEE7292C99326A0012F2BA /* ChatViewModel.swift */,
 				B0EEE72A2C99326A0012F2BA /* ChatView.swift */,
+				B0EEE7292C99326A0012F2BA /* ChatViewModel.swift */,
 			);
 			path = ChatView;
 			sourceTree = "<group>";
@@ -269,17 +284,21 @@
 				B0EEE73F2C99326A0012F2BA /* OpenAIService.swift in Sources */,
 				B0EEE7402C99326A0012F2BA /* VectorStoreManagerViewModel.swift in Sources */,
 				B0EEE7412C99326A0012F2BA /* ChatView.swift in Sources */,
+				B0DD9C5E2C9DFA7000A0D623 /* MainTabView.swift in Sources */,
 				B0EEE7422C99326A0012F2BA /* WaveAnimation.swift in Sources */,
+				B0DD9C602C9DFAB100A0D623 /* LoadingView.swift in Sources */,
 				B0EEE7432C99326A0012F2BA /* Usage.swift in Sources */,
 				B0EEE7442C99326A0012F2BA /* MessageStore.swift in Sources */,
 				B0EEE7452C99326A0012F2BA /* OpenAssistantApp.swift in Sources */,
 				B0EEE7462C99326A0012F2BA /* CreateAssistantView.swift in Sources */,
+				B0DD9C642C9E040000A0D623 /* RunStatusView.swift in Sources */,
 				B0EEE7472C99326A0012F2BA /* ChatViewModel.swift in Sources */,
 				B0EEE7482C99326A0012F2BA /* AssistantPickerView.swift in Sources */,
 				B0EEE7492C99326A0012F2BA /* ResponseFormat.swift in Sources */,
 				B0BFE4442C9BDC8800EB6D81 /* FormFieldsView.swift in Sources */,
 				B0EEE74A2C99326A0012F2BA /* UpdateAssistantView.swift in Sources */,
 				B0EEE74B2C99326A0012F2BA /* ContentView.swift in Sources */,
+				B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */,
 				B0EEE74C2C99326A0012F2BA /* SettingsView.swift in Sources */,
 				B0EEE74D2C99326A0012F2BA /* AssistantManagerView.swift in Sources */,
 				B0EEE74E2C99326A0012F2BA /* VectorStoreListView.swift in Sources */,
@@ -294,6 +313,7 @@
 				B0EEE7562C99326A0012F2BA /* VectorStoreDetailView.swift in Sources */,
 				B0EEE7572C99326A0012F2BA /* Model.swift in Sources */,
 				B0EEE7592C99326A0012F2BA /* VectorStore.swift in Sources */,
+				B0DD9C622C9DFC3A00A0D623 /* OpenAIInitializer.swift in Sources */,
 				B0EEE75A2C99326A0012F2BA /* MessageRunThread.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -447,6 +467,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = AI.FascinAIting.OpenAssistant;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -485,6 +506,7 @@
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = AI.FascinAIting.OpenAssistant;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;

@@ -165,50 +165,56 @@ class ChatViewModel: ObservableObject {
 
     // MARK: - Sending Messages
 
-    func sendMessage() {
-        guard let thread = thread, !inputText.isEmpty else { return }
+func sendMessage() {
+    guard let thread = thread, !inputText.isEmpty else { return }
 
-        let userMessage = Message(
-            id: UUID().uuidString,
-            object: "thread.message",
-            created_at: Int(Date().timeIntervalSince1970),
-            assistant_id: nil,
-            thread_id: thread.id,
-            run_id: nil,
-            role: .user,
-            content: [Message.Content(type: "text", text: Message.Text(value: inputText, annotations: []))],
-            attachments: [],
-            metadata: [:]
-        )
+    // Generate a unique ID
+    var uniqueID = UUID().uuidString
+    while messages.contains(where: { $0.id == uniqueID }) {
+        uniqueID = UUID().uuidString
+    }
 
-        print("Message IDs before adding new message:")
-        messages.forEach { print($0.id) }
+    let userMessage = Message(
+        id: uniqueID,
+        object: "thread.message",
+        created_at: Int(Date().timeIntervalSince1970),
+        assistant_id: nil,
+        thread_id: thread.id,
+        run_id: nil,
+        role: .user,
+        content: [Message.Content(type: "text", text: Message.Text(value: inputText, annotations: []))],
+        attachments: [],
+        metadata: [:]
+    )
 
-        messages.append(userMessage)
-        messageStore.addMessage(userMessage)
-        checkForDuplicateIDs()
-        inputText = ""
-        isLoading = true
-        stepCounter = 6 // Step 6: Sending message
+    print("Message IDs before adding new message:")
+    messages.forEach { print($0.id) }
 
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    messages.append(userMessage)
+    messageStore.addMessage(userMessage)
+    checkForDuplicateIDs()
+    inputText = ""
+    isLoading = true
+    stepCounter = 6 // Step 6: Sending message
 
-        print("Sending message: \(userMessage.content)")
+    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
-        openAIService?.addMessageToThread(threadId: thread.id, message: userMessage) { [weak self] result in
-            Task { @MainActor in
-                switch result {
-                case .success:
-                    print("Message sent successfully.")
-                    self?.runAssistantOnThread()
-                case .failure(let error):
-                    self?.isLoading = false
-                    print("Failed to send message: \(error.localizedDescription)")
-                    self?.handleError("Failed to send message: \(error.localizedDescription)")
-                }
+    print("Sending message: \(userMessage.content)")
+
+    openAIService?.addMessageToThread(threadId: thread.id, message: userMessage) { [weak self] result in
+        Task { @MainActor in
+            switch result {
+            case .success:
+                print("Message sent successfully.")
+                self?.runAssistantOnThread()
+            case .failure(let error):
+                self?.isLoading = false
+                print("Failed to send message: \(error.localizedDescription)")
+                self?.handleError("Failed to send message: \(error.localizedDescription)")
             }
         }
     }
+}
 
     // MARK: - UI Updates
 

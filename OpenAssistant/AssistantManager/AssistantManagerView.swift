@@ -5,7 +5,7 @@ import SwiftUI
 struct AssistantManagerView: View {
     @StateObject private var viewModel = AssistantManagerViewModel()
     @State private var showingCreateAssistantSheet = false
-    
+
     var body: some View {
         NavigationView {
             assistantList
@@ -22,7 +22,7 @@ struct AssistantManagerView: View {
             CreateAssistantView(viewModel: viewModel)
         }
     }
-    
+
     private var assistantList: some View {
         List(viewModel.assistants) { assistant in
             NavigationLink(destination: AssistantDetailView(assistant: assistant, managerViewModel: viewModel)) {
@@ -32,13 +32,13 @@ struct AssistantManagerView: View {
             }
         }
     }
-    
+
     private var addButton: some View {
         Button(action: { showingCreateAssistantSheet.toggle() }) {
             Image(systemName: "plus")
         }
     }
-    
+
     private func handleAssistantCreated(notification: Notification) {
         if let createdAssistant = notification.object as? Assistant {
             viewModel.assistants.append(createdAssistant)
