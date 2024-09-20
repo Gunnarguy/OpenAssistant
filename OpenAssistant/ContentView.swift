@@ -10,16 +10,22 @@ struct ContentView: View {
             MainTabView(selectedAssistant: $selectedAssistant, messageStore: messageStore)
             if isLoading {
                 LoadingView()
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            isLoading = false
-                        }
-                    }
+                    .onAppear(perform: startLoading)
             }
         }
-        .onAppear {
-            print("ContentView appeared")
+        .onAppear(perform: onAppear)
+    }
+
+    // MARK: - Helper Methods
+
+    private func startLoading() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            isLoading = false
         }
+    }
+
+    private func onAppear() {
+        print("ContentView appeared")
     }
 }
 
