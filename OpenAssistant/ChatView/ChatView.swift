@@ -14,33 +14,43 @@ struct ChatView: View {
     }
 
     var body: some View {
-        NavigationView { // Ensure NavigationView is present
-            VStack(spacing: 0) {
-                messageListView
-                Spacer()
-                inputView
-                    .padding(.horizontal)
-                stepCounterView // Display the step counter
-                    .padding(.horizontal)
-                    .padding(.bottom, 10)
-            }
-            .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
-            .navigationTitle(viewModel.assistant.name)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, assistantId: viewModel.assistant.id)) {
-                        Image(systemName: "clock")
-                            .foregroundColor(.blue)
+        NavigationView {
+            ChatContentView(viewModel: viewModel, messageStore: messageStore, colorScheme: colorScheme)
+                .navigationTitle(viewModel.assistant.name)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, assistantId: viewModel.assistant.id)) {
+                            Image(systemName: "clock")
+                                .foregroundColor(.blue)
+                        }
                     }
                 }
-            }
-            .alert(item: $viewModel.errorMessage) { errorMessage in
-                Alert(title: Text("Error"), message: Text(errorMessage.message), dismissButton: .default(Text("OK")))
-            }
+                .alert(item: $viewModel.errorMessage) { errorMessage in
+                    Alert(title: Text("Error"), message: Text(errorMessage.message), dismissButton: .default(Text("OK")))
+                }
         }
     }
+}
 
-    // MARK: - Message List View
+// MARK: - Chat Content View
+struct ChatContentView: View {
+    @ObservedObject var viewModel: ChatViewModel
+    @ObservedObject var messageStore: MessageStore
+    var colorScheme: ColorScheme
+
+    var body: some View {
+        VStack(spacing: 0) {
+            messageListView
+            Spacer()
+            inputView
+                .padding(.horizontal)
+            stepCounterView
+                .padding(.horizontal)
+                .padding(.bottom, 10)
+        }
+        .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
+    }
+
     private var messageListView: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -74,7 +84,6 @@ struct ChatView: View {
         }
     }
 
-    // MARK: - Input View
     private var inputView: some View {
         HStack {
             NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, assistantId: viewModel.assistant.id)) {
@@ -110,7 +119,6 @@ struct ChatView: View {
         .padding(.bottom, 10)
     }
 
-    // MARK: - Step Counter View
     private var stepCounterView: some View {
         Text("Step: \(viewModel.stepCounter)")
             .font(.footnote)
@@ -150,6 +158,7 @@ struct MessageView: View {
     }
 }
 
+// MARK: - Chat History View
 struct ChatHistoryView: View {
     let messages: [Message]
     let assistantId: String
@@ -170,4 +179,10 @@ struct ChatHistoryView: View {
     private var filteredMessages: [Message] {
         messages.filter { $0.assistant_id == assistantId }
     }
+}
+
+// MARK: - ErrorMessage
+struct ErrorMessage: Identifiable {
+    let id = UUID()
+    let message: String
 }

@@ -12,19 +12,9 @@ struct AddFileView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text(selectedFiles.isEmpty ? "No files selected" : "Selected files: \(selectedFiles.map { $0.lastPathComponent }.joined(separator: ", "))")
-            
-            Button("Select Files") {
-                isFilePickerPresented = true
-            }
-            
-            Button("Upload Files") {
-                Task {
-                    await uploadFiles()
-                }
-            }
-            .disabled(selectedFiles.isEmpty || isUploading)
-            
+            fileSelectionText
+            selectFilesButton
+            uploadFilesButton
             if isUploading {
                 ProgressView("Uploading files...")
             }
@@ -32,13 +22,32 @@ struct AddFileView: View {
         .padding()
         .fileImporter(
             isPresented: $isFilePickerPresented,
-            allowedContentTypes: [UTType.data], // Specify the types of files you want to allow
+            allowedContentTypes: [UTType.data],
             allowsMultipleSelection: true,
             onCompletion: handleFileSelection
         )
         .alert(isPresented: $showErrorAlert) {
             Alert(title: Text("Error"), message: Text(errorMessage), dismissButton: .default(Text("OK"), action: resetErrorState))
         }
+    }
+    
+    private var fileSelectionText: some View {
+        Text(selectedFiles.isEmpty ? "No files selected" : "Selected files: \(selectedFiles.map { $0.lastPathComponent }.joined(separator: ", "))")
+    }
+    
+    private var selectFilesButton: some View {
+        Button("Select Files") {
+            isFilePickerPresented = true
+        }
+    }
+    
+    private var uploadFilesButton: some View {
+        Button("Upload Files") {
+            Task {
+                await uploadFiles()
+            }
+        }
+        .disabled(selectedFiles.isEmpty || isUploading)
     }
     
     private func handleFileSelection(result: Result<[URL], Error>) {

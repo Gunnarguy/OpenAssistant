@@ -191,6 +191,26 @@ class VectorStoreManagerViewModel: ObservableObject {
             }.resume()
         }
     }
+    
+    func deleteVectorStore(vectorStoreId: String) {
+        guard let openAIService = openAIService else {
+            handleError(.serviceNotInitialized)
+            return
+        }
+
+        openAIService.deleteVectorStore(vectorStoreId: vectorStoreId)
+            .sink(receiveCompletion: { completion in
+                switch completion {
+                case .finished:
+                    self.vectorStores.removeAll { $0.id == vectorStoreId }
+                case .failure(let error):
+                    self.handleError(.fetchFailed(error.localizedDescription))
+                }
+            }, receiveValue: { _ in
+                print("Vector store deleted successfully.")
+            })
+            .store(in: &cancellables)
+    }
 
     // MARK: - Private Methods
     
@@ -238,4 +258,3 @@ extension OpenAIService {
         return request
     }
 }
-

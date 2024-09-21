@@ -24,7 +24,7 @@ struct VectorStore: Identifiable, Codable {
 // MARK: - VectorStoreFile
 struct VectorStoreFile: Codable, Identifiable {
     let id: String
-    let files: [File] = []
+    var files: [File] = [] // Mutable to allow dynamic updates
     let object: String
     let usageBytes: Int
     let createdAt: Int
@@ -112,4 +112,10 @@ struct VectorStoreFilesResponse: Codable {
     private enum CodingKeys: String, CodingKey {
         case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
     }
+}
+
+struct DeleteResponse: Decodable {
+    let id: String
+    let object: String
+    let deleted: Bool
 }

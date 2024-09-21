@@ -8,7 +8,7 @@ class ChatViewModel: ObservableObject {
     @Published var inputText: String = ""
     @Published var isLoading = false
     @Published var errorMessage: IdentifiableError?
-    @Published var stepCounter: Int = 0 // Step counter
+    @Published var stepCounter: Int = 0
 
     var scrollViewProxy: ScrollViewProxy?
     let assistant: Assistant
@@ -18,7 +18,6 @@ class ChatViewModel: ObservableObject {
     private var messageStore: MessageStore
 
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
-
     private var cancellables = Set<AnyCancellable>()
 
     init(assistant: Assistant, messageStore: MessageStore) {
@@ -44,7 +43,7 @@ class ChatViewModel: ObservableObject {
         guard !hasCreatedThread else { return }
         hasCreatedThread = true
         isLoading = true
-        stepCounter = 1 // Step 1: Creating thread
+        stepCounter = 1
         print("Creating thread...")
 
         openAIService?.createThread { [weak self] result in
@@ -55,7 +54,7 @@ class ChatViewModel: ObservableObject {
                     self?.thread = thread
                     self?.messages = thread.messages ?? []
                     self?.messageStore.addMessages(thread.messages ?? [])
-                    self?.stepCounter = 2 // Step 2: Thread created
+                    self?.stepCounter = 2
                     print("Thread created successfully: \(thread.id)")
                 case .failure(let error):
                     print("Failed to create thread: \(error.localizedDescription)")
@@ -68,7 +67,7 @@ class ChatViewModel: ObservableObject {
     func runAssistantOnThread() {
         guard let thread = thread else { return }
         isLoading = true
-        stepCounter = 3 // Step 3: Running assistant on thread
+        stepCounter = 3
         print("Running assistant on thread: \(thread.id)")
 
         openAIService?.runAssistantOnThread(threadId: thread.id, assistantId: assistant.id) { [weak self] result in
@@ -77,7 +76,7 @@ class ChatViewModel: ObservableObject {
                 switch result {
                 case .success(let run):
                     print("Assistant run on thread successfully: \(run.id)")
-                    self?.stepCounter = 4 // Step 4: Assistant run started
+                    self?.stepCounter = 4
                     self?.pollRunStatus(threadId: thread.id, runId: run.id)
                 case .failure(let error):
                     print("Failed to run assistant on thread: \(error.localizedDescription)")
@@ -107,7 +106,7 @@ class ChatViewModel: ObservableObject {
                             self.handleRunCompletion(run)
                             timer.cancel()
                             self.isLoading = false
-                            self.stepCounter = 5 // Step 5: Run completed
+                            self.stepCounter = 5
                         } else if run.status == "failed" {
                             self.handleError("Run failed.")
                             timer.cancel()
@@ -165,56 +164,55 @@ class ChatViewModel: ObservableObject {
 
     // MARK: - Sending Messages
 
-func sendMessage() {
-    guard let thread = thread, !inputText.isEmpty else { return }
+    func sendMessage() {
+        guard let thread = thread, !inputText.isEmpty else { return }
 
-    // Generate a unique ID
-    var uniqueID = UUID().uuidString
-    while messages.contains(where: { $0.id == uniqueID }) {
-        uniqueID = UUID().uuidString
-    }
+        var uniqueID = UUID().uuidString
+        while messages.contains(where: { $0.id == uniqueID }) {
+            uniqueID = UUID().uuidString
+        }
 
-    let userMessage = Message(
-        id: uniqueID,
-        object: "thread.message",
-        created_at: Int(Date().timeIntervalSince1970),
-        assistant_id: nil,
-        thread_id: thread.id,
-        run_id: nil,
-        role: .user,
-        content: [Message.Content(type: "text", text: Message.Text(value: inputText, annotations: []))],
-        attachments: [],
-        metadata: [:]
-    )
+        let userMessage = Message(
+            id: uniqueID,
+            object: "thread.message",
+            created_at: Int(Date().timeIntervalSince1970),
+            assistant_id: nil,
+            thread_id: thread.id,
+            run_id: nil,
+            role: .user,
+            content: [Message.Content(type: "text", text: Message.Text(value: inputText, annotations: []))],
+            attachments: [],
+            metadata: [:]
+        )
 
-    print("Message IDs before adding new message:")
-    messages.forEach { print($0.id) }
+        print("Message IDs before adding new message:")
+        messages.forEach { print($0.id) }
 
-    messages.append(userMessage)
-    messageStore.addMessage(userMessage)
-    checkForDuplicateIDs()
-    inputText = ""
-    isLoading = true
-    stepCounter = 6 // Step 6: Sending message
+        messages.append(userMessage)
+        messageStore.addMessage(userMessage)
+        checkForDuplicateIDs()
+        inputText = ""
+        isLoading = true
+        stepCounter = 6
 
-    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
-    print("Sending message: \(userMessage.content)")
+        print("Sending message: \(userMessage.content)")
 
-    openAIService?.addMessageToThread(threadId: thread.id, message: userMessage) { [weak self] result in
-        Task { @MainActor in
-            switch result {
-            case .success:
-                print("Message sent successfully.")
-                self?.runAssistantOnThread()
-            case .failure(let error):
-                self?.isLoading = false
-                print("Failed to send message: \(error.localizedDescription)")
-                self?.handleError("Failed to send message: \(error.localizedDescription)")
+        openAIService?.addMessageToThread(threadId: thread.id, message: userMessage) { [weak self] result in
+            Task { @MainActor in
+                switch result {
+                case .success:
+                    print("Message sent successfully.")
+                    self?.runAssistantOnThread()
+                case .failure(let error):
+                    self?.isLoading = false
+                    print("Failed to send message: \(error.localizedDescription)")
+                    self?.handleError("Failed to send message: \(error.localizedDescription)")
+                }
             }
         }
     }
-}
 
     // MARK: - UI Updates
 
@@ -246,4 +244,3 @@ func sendMessage() {
         }
     }
 }
-

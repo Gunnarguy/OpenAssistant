@@ -586,25 +586,27 @@ class OpenAIService {
 
      - Important: This function requires an active internet connection and may incur network data charges.
      */
-    func deleteVectorStore(vectorStoreId: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)") else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
-            return
-        }
-
+    func deleteVectorStore(vectorStoreId: String) -> AnyPublisher<Void, Error> {
+        let url = baseURL.appendingPathComponent("vector_stores/\(vectorStoreId)")
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta") // Add this line
 
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                completion(.failure(error))
-                return
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap { data, response in
+                guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                    throw URLError(.badServerResponse)
+                }
+                // Decode the response to check the deletion status
+                let deleteResponse = try JSONDecoder().decode(DeleteResponse.self, from: data)
+                guard deleteResponse.deleted else {
+                    throw URLError(.cannotParseResponse)
+                }
             }
-
-            completion(.success(()))
-        }.resume()
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
     }
     
     func fetchVectorStoreDetails(vectorStoreId: String) -> Future<VectorStore, Error> {

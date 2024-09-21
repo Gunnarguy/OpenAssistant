@@ -18,13 +18,14 @@ struct Assistant: Identifiable, Codable, Equatable {
     var tool_resources: ToolResources?
     var metadata: [String: String]?
     var response_format: ResponseFormat?
+    var file_ids: [String]? // Added property
 
     static func ==(lhs: Assistant, rhs: Assistant) -> Bool {
         return lhs.id == rhs.id
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, object, created_at, name, description, model, instructions, tools, top_p, temperature, tool_resources, metadata, response_format
+        case id, object, created_at, name, description, model, instructions, tools, top_p, temperature, tool_resources, metadata, response_format, file_ids
     }
 
     func toAssistantDictionary() -> [String: Any] {
@@ -42,6 +43,9 @@ struct Assistant: Identifiable, Codable, Equatable {
         }
         if let responseFormat = response_format {
             dict["response_format"] = responseFormat.toAny()
+        }
+        if let fileIds = file_ids {
+            dict["file_ids"] = fileIds
         }
         return dict
     }
@@ -65,11 +69,13 @@ struct Tool: Codable {
     var type: String
     var maxNumResults: Int?
     var function: FunctionTool?
+    var retrieval: RetrievalTool? // Added property
 
     private enum CodingKeys: String, CodingKey {
         case type
         case maxNumResults = "max_num_results"
         case function
+        case retrieval
     }
 
     func toDictionary() -> [String: Any] {
@@ -79,6 +85,9 @@ struct Tool: Codable {
         }
         if let function = function {
             dict["function"] = function.toDictionary()
+        }
+        if let retrieval = retrieval {
+            dict["retrieval"] = retrieval.toDictionary()
         }
         return dict
     }
@@ -128,6 +137,55 @@ struct FunctionTool: Codable {
         }
         if let parameters = parameters {
             dict["parameters"] = parameters
+        }
+        return dict
+    }
+}
+
+// MARK: - RetrievalTool
+struct RetrievalTool: Codable {
+    var description: String?
+    var name: String
+    var options: [String: Any]?
+
+    private enum CodingKeys: String, CodingKey {
+        case description
+        case name
+        case options
+    }
+
+    // Custom encoding
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(description, forKey: .description)
+        try container.encode(name, forKey: .name)
+        if let options = options {
+            let data = try JSONSerialization.data(withJSONObject: options, options: [])
+            let jsonString = String(data: data, encoding: .utf8)
+            try container.encode(jsonString, forKey: .options)
+        }
+    }
+
+    // Custom decoding
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        name = try container.decode(String.self, forKey: .name)
+        if let jsonString = try container.decodeIfPresent(String.self, forKey: .options) {
+            let data = jsonString.data(using: .utf8)!
+            options = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+        } else {
+            options = nil
+        }
+    }
+
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = ["name": name]
+        if let description = description {
+            dict["description"] = description
+        }
+        if let options = options {
+            dict["options"] = options
         }
         return dict
     }
@@ -198,9 +256,10 @@ struct FileSearch: Codable {
 struct MessageContent: Decodable, Equatable {
     let type: String
     let text: TextContent?
+    let image: ImageContent? // Added property
 
     private enum CodingKeys: String, CodingKey {
-        case type, text
+        case type, text, image
     }
 }
 
@@ -210,6 +269,15 @@ struct TextContent: Decodable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case value
+    }
+}
+
+// MARK: - ImageContent
+struct ImageContent: Decodable, Equatable {
+    let url: String
+
+    private enum CodingKeys: String, CodingKey {
+        case url
     }
 }
 
@@ -290,24 +358,25 @@ func decodeFile(from jsonData: Data) -> File? {
     }
 }
 
-    // MARK: - AssistantSettings
-    struct AssistantSettings: Decodable {
-        let id: String
-        let object: String
-        let created_at: Int
-        let name: String
-        let description: String?
-        let model: String
-        let instructions: String?
-        let tools: [Tool]
-        let top_p: Double
-        let temperature: Double
-        let tool_resources: ToolResources?
-        let metadata: [String: String]?
-        let response_format: ResponseFormat?
-    }
-    
-    struct FileBatch: Codable {
-        let id: String
-    }
+// MARK: - AssistantSettings
+struct AssistantSettings: Decodable {
+    let id: String
+    let object: String
+    let created_at: Int
+    let name: String
+    let description: String?
+    let model: String
+    let instructions: String?
+    let tools: [Tool]
+    let top_p: Double
+    let temperature: Double
+    let tool_resources: ToolResources?
+    let metadata: [String: String]?
+    let response_format: ResponseFormat?
+    let file_ids: [String]? // Added property
+}
 
+// MARK: - FileBatch
+struct FileBatch: Codable {
+    let id: String
+}

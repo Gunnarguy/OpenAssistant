@@ -18,6 +18,7 @@ struct VectorStoreListView: View {
                         }
                     }
                 }
+                .onDelete(perform: deleteVectorStore) // Add this line
             }
             .navigationTitle("Vector Stores")
             .onAppear {
@@ -45,26 +46,18 @@ struct VectorStoreListView: View {
             .store(in: &viewModel.cancellables)
     }
 
+    private func deleteVectorStore(at offsets: IndexSet) {
+        offsets.forEach { index in
+            let vectorStore = viewModel.vectorStores[index]
+            viewModel.deleteVectorStore(vectorStoreId: vectorStore.id)
+        }
+    }
+
     private func formattedDate(from timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)
-    }
-
-    private func formatBytes(_ bytes: Int) -> String {
-        let kb = Double(bytes) / 1024
-        let mb = kb / 1024
-        let gb = mb / 1024
-        if gb >= 1 {
-            return String(format: "%.2f GB", gb)
-        } else if mb >= 1 {
-            return String(format: "%.2f MB", mb)
-        } else if kb >= 1 {
-            return String(format: "%.2f KB", kb)
-        } else {
-            return "\(bytes) bytes"
-        }
     }
 }
