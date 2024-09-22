@@ -101,16 +101,21 @@ struct VectorStoreDetailView: View {
     }
 
     private func deleteFile(at offsets: IndexSet) {
-        offsets.forEach { index in
+        offsets.sorted(by: >).forEach { index in
             let file = files[index]
             viewModel.deleteFileFromVectorStore(vectorStoreId: vectorStore.id, fileId: file.id)
                 .sink(receiveCompletion: { completion in
-                    if case let .failure(error) = completion {
+                    switch completion {
+                    case .finished:
+                        // Successfully deleted file, remove it from the list
+                        DispatchQueue.main.async {
+                            self.files.remove(at: index)
+                        }
+                    case .failure(let error):
+                        // Handle error
                         self.showError("Failed to delete file: \(error.localizedDescription)")
                     }
-                }, receiveValue: {
-                    files.remove(at: index)
-                })
+                }, receiveValue: { _ in })
                 .store(in: &cancellables)
         }
     }

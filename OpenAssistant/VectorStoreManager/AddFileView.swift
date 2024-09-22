@@ -29,6 +29,7 @@ struct AddFileView: View {
         .alert(isPresented: $showErrorAlert) {
             Alert(title: Text("Error"), message: Text(errorMessage), dismissButton: .default(Text("OK"), action: resetErrorState))
         }
+        .edgesIgnoringSafeArea(.all)
     }
 
     private var fileSelectionText: some View {
@@ -50,7 +51,6 @@ struct AddFileView: View {
         .disabled(selectedFiles.isEmpty || isUploading)
     }
 
-    // Improved file selection handling
     private func handleFileSelection(result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
@@ -63,17 +63,17 @@ struct AddFileView: View {
         }
     }
 
-    // Refactored to upload files concurrently
     private func uploadFilesConcurrently() async {
         isUploading = true
         defer { isUploading = false }
 
+        let maxSize = 10 * 1024 * 1024 // 10MB limit per file
         var fileIds: [String] = []
-        
+
         await withTaskGroup(of: String?.self) { group in
             for fileURL in selectedFiles {
-                if let fileId = await uploadFile(fileURL) {
-                    fileIds.append(fileId)
+                group.addTask {
+                    await self.uploadFile(fileURL, maxSize)
                 }
             }
 
@@ -91,22 +91,15 @@ struct AddFileView: View {
         }
     }
 
-    // File upload with security scoped resource handling and size limit check
-    private func uploadFile(_ fileURL: URL) async -> String? {
+    private func uploadFile(_ fileURL: URL, _ maxSize: Int) async -> String? {
         do {
             guard fileURL.startAccessingSecurityScopedResource() else {
-    print("Failed to access security scoped resource for file at \(fileURL)")
-    showError("Failed to access file at \(fileURL).")
-    return nil
-}
-defer {
-    print("Stopping security scoped resource for file at \(fileURL)")
-    fileURL.stopAccessingSecurityScopedResource()
-}
+                showError("Failed to access file at \(fileURL).")
+                return nil
+            }
+            defer { fileURL.stopAccessingSecurityScopedResource() }
 
-            // File size check (10MB limit, for example)
             let fileSize = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-            let maxSize = 10 * 1024 * 1024 // 10MB limit
             if fileSize > maxSize {
                 showError("File \(fileURL.lastPathComponent) is too large. Maximum allowed size is 10MB.")
                 return nil
@@ -121,13 +114,13 @@ defer {
                     case .success:
                         continuation.resume(returning: fileName)
                     case .failure(let error):
-                        self.showError("Failed to upload file: \(error.localizedDescription)")
+                        self.showError("Failed to upload file \(fileName): \(error.localizedDescription)")
                         continuation.resume(returning: nil)
                     }
                 }
             }
         } catch {
-            showError("Failed to read or upload file data: \(error.localizedDescription)")
+            showError("Failed to read or upload file data for \(fileURL.lastPathComponent): \(error.localizedDescription)")
             return nil
         }
     }
@@ -149,7 +142,8 @@ defer {
     }
 
     private func showError(_ message: String) {
-        errorMessage = message
+        errorMessage = "Error occurred: " + message
+        print("Debug Log: \(message)")
         showErrorAlert = true
     }
 
@@ -158,7 +152,6 @@ defer {
         errorMessage = ""
     }
 
-    // Safe handling of optional UTTypes to avoid crashes
     private var allowedContentTypes: [UTType] {
         return [UTType.pdf, UTType.plainText, UTType.image, UTType.json]
     }

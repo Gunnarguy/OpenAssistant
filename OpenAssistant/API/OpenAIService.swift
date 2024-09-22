@@ -1037,7 +1037,6 @@ extension OpenAIService {
         }
     }
 }
-    
 
 
 // MARK: - Attach File to Vector Store Extension

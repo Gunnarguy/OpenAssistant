@@ -463,6 +463,10 @@
 				INFOPLIST_FILE = OpenAssistant/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OpenAssistant;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "Access needed for File uploads.";
+				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "Access needed to integrate Files with iCloud and other cloud services.";
+				INFOPLIST_KEY_NSFileProviderPresenceUsageDescription = "Access needed to integrate Files from system storage and cloud providers.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Access needed for photo uploads and media selection for File uploads.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -497,10 +501,15 @@
 				DEVELOPMENT_ASSET_PATHS = "\"OpenAssistant/Preview Content\"";
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenAssistant/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OpenAssistant;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "Access needed for File uploads.";
+				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "Access needed to integrate Files with iCloud and other cloud services.";
+				INFOPLIST_KEY_NSFileProviderPresenceUsageDescription = "Access needed to integrate Files from system storage and cloud providers.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Access needed for photo uploads and media selection for File uploads.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
