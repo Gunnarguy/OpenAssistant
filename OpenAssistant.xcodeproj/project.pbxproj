@@ -456,7 +456,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"OpenAssistant/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "OpenAssistant/Preview\\ Content OpenAssistant/Info.plist OpenAssistant/Assets.xcassets";
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -469,6 +469,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Access needed for photo uploads and media selection for File uploads.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = ContentView.swift;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -498,7 +499,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"OpenAssistant/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "OpenAssistant/Preview\\ Content OpenAssistant/Info.plist OpenAssistant/Assets.xcassets";
 				DEVELOPMENT_TEAM = Z3E334EXZD;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_TESTABILITY = YES;
@@ -512,6 +513,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Access needed for photo uploads and media selection for File uploads.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = ContentView.swift;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
