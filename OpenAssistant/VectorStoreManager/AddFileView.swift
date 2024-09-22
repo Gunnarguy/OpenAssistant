@@ -9,7 +9,7 @@ struct AddFileView: View {
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @State private var isUploading = false
-    
+
     var body: some View {
         VStack(spacing: 20) {
             fileSelectionText
@@ -22,7 +22,7 @@ struct AddFileView: View {
         .padding()
         .fileImporter(
             isPresented: $isFilePickerPresented,
-            allowedContentTypes: [UTType.data],
+            allowedContentTypes: allowedContentTypes,
             allowsMultipleSelection: true,
             onCompletion: handleFileSelection
         )
@@ -30,89 +30,96 @@ struct AddFileView: View {
             Alert(title: Text("Error"), message: Text(errorMessage), dismissButton: .default(Text("OK"), action: resetErrorState))
         }
     }
-    
+
     private var fileSelectionText: some View {
         Text(selectedFiles.isEmpty ? "No files selected" : "Selected files: \(selectedFiles.map { $0.lastPathComponent }.joined(separator: ", "))")
     }
-    
+
     private var selectFilesButton: some View {
         Button("Select Files") {
             isFilePickerPresented = true
         }
     }
-    
+
     private var uploadFilesButton: some View {
         Button("Upload Files") {
             Task {
-                await uploadFiles()
+                await uploadFilesConcurrently()
             }
         }
         .disabled(selectedFiles.isEmpty || isUploading)
     }
-    
+
+    // Improved file selection handling
     private func handleFileSelection(result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
             selectedFiles = urls
             if urls.isEmpty {
                 showError("No files were selected.")
-            } else {
-                print("Selected file URLs: \(urls)")
             }
         case .failure(let error):
             showError("File selection failed: \(error.localizedDescription)")
         }
     }
 
-    private func uploadFiles() async {
+    // Refactored to upload files concurrently
+    private func uploadFilesConcurrently() async {
         isUploading = true
         defer { isUploading = false }
 
-        let fileIds = await withTaskGroup(of: String?.self) { group -> [String] in
+        var fileIds: [String] = []
+        
+        await withTaskGroup(of: String?.self) { group in
             for fileURL in selectedFiles {
-                group.addTask { await self.uploadFile(fileURL) }
-            }
-
-            var result = [String]()
-            for await id in group {
-                if let id = id {
-                    result.append(id)
+                if let fileId = await uploadFile(fileURL) {
+                    fileIds.append(fileId)
                 }
             }
-            return result
+
+            for await result in group {
+                if let fileId = result {
+                    fileIds.append(fileId)
+                }
+            }
         }
 
-        guard !fileIds.isEmpty else { return }
-
-        await createFileBatch(fileIds)
+        if !fileIds.isEmpty {
+            await createFileBatch(fileIds)
+        } else {
+            showError("No files were uploaded successfully.")
+        }
     }
 
+    // File upload with security scoped resource handling and size limit check
     private func uploadFile(_ fileURL: URL) async -> String? {
         do {
             guard fileURL.startAccessingSecurityScopedResource() else {
-                showError("Failed to access file at \(fileURL).")
+    print("Failed to access security scoped resource for file at \(fileURL)")
+    showError("Failed to access file at \(fileURL).")
+    return nil
+}
+defer {
+    print("Stopping security scoped resource for file at \(fileURL)")
+    fileURL.stopAccessingSecurityScopedResource()
+}
+
+            // File size check (10MB limit, for example)
+            let fileSize = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+            let maxSize = 10 * 1024 * 1024 // 10MB limit
+            if fileSize > maxSize {
+                showError("File \(fileURL.lastPathComponent) is too large. Maximum allowed size is 10MB.")
                 return nil
             }
-            defer { fileURL.stopAccessingSecurityScopedResource() }
 
-            let fileManager = FileManager.default
-            let tempDirectory = fileManager.temporaryDirectory
-            let tempFileURL = tempDirectory.appendingPathComponent(fileURL.lastPathComponent)
-
-            if !fileManager.fileExists(atPath: tempFileURL.path) {
-                try fileManager.copyItem(at: fileURL, to: tempFileURL)
-            }
-
-            let fileData = try Data(contentsOf: tempFileURL)
+            let fileData = try Data(contentsOf: fileURL)
             let fileName = fileURL.lastPathComponent
-
-            print("Reading file: \(fileName) at \(tempFileURL)")
 
             return try await withCheckedThrowingContinuation { continuation in
                 viewModel.addFileToVectorStore(vectorStoreId: vectorStore.id, fileData: fileData, fileName: fileName) { result in
                     switch result {
                     case .success:
-                        continuation.resume(returning: fileName) // Assuming file name is used as ID
+                        continuation.resume(returning: fileName)
                     case .failure(let error):
                         self.showError("Failed to upload file: \(error.localizedDescription)")
                         continuation.resume(returning: nil)
@@ -121,7 +128,6 @@ struct AddFileView: View {
             }
         } catch {
             showError("Failed to read or upload file data: \(error.localizedDescription)")
-            print("Error reading or uploading file at \(fileURL): \(error)")
             return nil
         }
     }
@@ -146,9 +152,14 @@ struct AddFileView: View {
         errorMessage = message
         showErrorAlert = true
     }
-    
+
     private func resetErrorState() {
         showErrorAlert = false
         errorMessage = ""
+    }
+
+    // Safe handling of optional UTTypes to avoid crashes
+    private var allowedContentTypes: [UTType] {
+        return [UTType.pdf, UTType.plainText, UTType.image, UTType.json]
     }
 }

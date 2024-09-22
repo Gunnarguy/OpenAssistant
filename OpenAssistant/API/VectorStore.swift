@@ -114,8 +114,3 @@ struct VectorStoreFilesResponse: Codable {
     }
 }
 
-struct DeleteResponse: Decodable {
-    let id: String
-    let object: String
-    let deleted: Bool
-}

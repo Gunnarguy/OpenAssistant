@@ -2,6 +2,8 @@ import Foundation
 import Combine
 import SwiftUI
 
+// MARK: - Vector Store Manager ViewModel
+
 class VectorStoreManagerViewModel: ObservableObject {
     @Published var vectorStores: [VectorStore] = []
     @Published var errorMessage: IdentifiableError?
@@ -33,7 +35,7 @@ class VectorStoreManagerViewModel: ObservableObject {
         }
         openAIService = OpenAIService(apiKey: apiKey)
     }
-
+    
     // MARK: - Data Fetching
     
     func fetchVectorStores() -> AnyPublisher<[VectorStore], Never> {
@@ -41,7 +43,6 @@ class VectorStoreManagerViewModel: ObservableObject {
             handleError(.serviceNotInitialized)
             return Just([]).eraseToAnyPublisher()
         }
-
         return openAIService.fetchVectorStores()
             .receive(on: DispatchQueue.main)
             .catch { [weak self] error -> Just<[VectorStore]> in
@@ -53,13 +54,12 @@ class VectorStoreManagerViewModel: ObservableObject {
             })
             .eraseToAnyPublisher()
     }
-
+    
     func fetchFiles(for vectorStore: VectorStore) {
         guard let openAIService = openAIService else {
             handleError(.serviceNotInitialized)
             return
         }
-
         openAIService.fetchFiles(for: vectorStore.id)
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { [weak self] completion in
@@ -71,7 +71,7 @@ class VectorStoreManagerViewModel: ObservableObject {
             })
             .store(in: &cancellables)
     }
-
+    
     // MARK: - Vector Store Management
     
     func createFileBatch(vectorStoreId: String, fileIds: [String], completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
@@ -79,25 +79,24 @@ class VectorStoreManagerViewModel: ObservableObject {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
             return
         }
-
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-
+        
         let body: [String: Any] = [
             "file_ids": fileIds
             // Optionally add "chunking_strategy" if needed
         ]
-
+        
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
         } catch {
             completion(.failure(error))
             return
         }
-
+        
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 completion(.failure(error))
@@ -121,7 +120,6 @@ class VectorStoreManagerViewModel: ObservableObject {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
             return
         }
-        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -147,38 +145,16 @@ class VectorStoreManagerViewModel: ObservableObject {
             completion(.success(()))
         }.resume()
     }
-
-    func createFileBatch(vectorStoreId: String, fileIds: [String]) {
-        guard let openAIService = openAIService else {
-            handleError(.serviceNotInitialized)
-            return
-        }
-
-        openAIService.createVectorStoreFileBatch(vectorStoreId: vectorStoreId, fileIds: fileIds)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    print("File batch successfully created.")
-                case .failure(let error):
-                    print("Error: \(error.localizedDescription)")
-                }
-            }, receiveValue: { batch in
-                print("Batch created with ID: \(batch.id)")
-            })
-            .store(in: &cancellables)
-    }
-
+    
     func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
         return Future { [weak self] promise in
             guard let self = self else { return }
             let endpoint = "vector_stores/\(vectorStoreId)/files/\(fileId)"
             let request = self.openAIService?.makeRequest(endpoint: endpoint, httpMethod: "DELETE")
-
             guard let request = request else {
                 promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Request"])))
                 return
             }
-
             self.openAIService?.session.dataTask(with: request) { _, response, error in
                 self.openAIService?.handleDeleteResponse(nil, response, error) { result in
                     switch result {
@@ -197,7 +173,6 @@ class VectorStoreManagerViewModel: ObservableObject {
             handleError(.serviceNotInitialized)
             return
         }
-
         openAIService.deleteVectorStore(vectorStoreId: vectorStoreId)
             .sink(receiveCompletion: { completion in
                 switch completion {
@@ -211,7 +186,7 @@ class VectorStoreManagerViewModel: ObservableObject {
             })
             .store(in: &cancellables)
     }
-
+    
     // MARK: - Private Methods
     
     private func updateVectorStoreFiles(vectorStore: VectorStore, files: [File]) {
@@ -233,11 +208,11 @@ class VectorStoreManagerViewModel: ObservableObject {
         }
         vectorStores[index].files = vectorStoreFiles
     }
-
+    
     private func vectorStoreIndex(for vectorStore: VectorStore) -> Int? {
         return vectorStores.firstIndex(where: { $0.id == vectorStore.id })
     }
-
+    
     private func handleError(_ error: VectorStoreError) {
         DispatchQueue.main.async {
             self.errorMessage = IdentifiableError(message: error.localizedDescription)
@@ -246,6 +221,7 @@ class VectorStoreManagerViewModel: ObservableObject {
 }
 
 // MARK: - Helper Method for Requests
+
 extension OpenAIService {
     func makeRequest(endpoint: String, httpMethod: String) -> URLRequest? {
         guard let url = URL(string: endpoint, relativeTo: baseURL) else {
@@ -254,7 +230,7 @@ extension OpenAIService {
         var request = URLRequest(url: url)
         request.httpMethod = httpMethod
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta") // Add this line
+        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
         return request
     }
 }

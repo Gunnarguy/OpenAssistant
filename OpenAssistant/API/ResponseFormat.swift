@@ -184,3 +184,8 @@ var requestBody: [String: Any] = [
     "tool_resources": [:]
 ]
 
+struct DeleteResponse: Decodable {
+    let id: String
+    let object: String
+    let deleted: Bool
+}
