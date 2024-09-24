@@ -1,6 +1,5 @@
-import Foundation
-import Combine
 import SwiftUI
+import Combine
 
 // MARK: - ChatView
 struct ChatView: View {
@@ -59,7 +58,7 @@ struct ChatContentView: View {
                         MessageView(message: message, colorScheme: colorScheme)
                     }
                     if viewModel.isLoading {
-                        WaveLoadingIndicator()
+                        NewCustomLoadingIndicator()  // Custom loading indicator
                             .padding(.vertical, 10)
                             .id("loadingIndicator")
                     }
@@ -119,17 +118,17 @@ struct ChatContentView: View {
         .padding(.bottom, 10)
     }
 
-private var stepCounterView: some View {
-    if FeatureFlags.enableNewFeature {
-        return AnyView(
-            Text("Step: \(viewModel.stepCounter)")
-                .font(.footnote)
-                .foregroundColor(.gray)
-        )
-    } else {
-        return AnyView(EmptyView())
+    private var stepCounterView: some View {
+        if FeatureFlags.enableNewFeature {
+            return AnyView(
+                Text("Step: \(viewModel.stepCounter)")
+                    .font(.footnote)
+                    .foregroundColor(.gray)
+            )
+        } else {
+            return AnyView(EmptyView())
+        }
     }
-}
 
     private func sendMessageAction() {
         viewModel.sendMessage()
@@ -184,6 +183,26 @@ struct ChatHistoryView: View {
 
     private var filteredMessages: [Message] {
         messages.filter { $0.assistant_id == assistantId }
+    }
+}
+
+// MARK: - Custom Loading Indicator
+struct NewCustomLoadingIndicator: View {
+    @State private var isAnimating = false
+
+    var body: some View {
+        VStack {
+            Circle()
+                .trim(from: 0, to: 0.75)
+                .stroke(AngularGradient(gradient: Gradient(colors: [.blue, .green, .blue]), center: .center), style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .frame(width: 40, height: 40)
+                .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
+                // Updated animation modifier to iOS 15+
+                .animation(Animation.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)
+                .onAppear {
+                    isAnimating = true
+                }
+        }
     }
 }
 
