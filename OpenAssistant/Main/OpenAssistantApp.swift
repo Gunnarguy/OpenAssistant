@@ -17,3 +17,4 @@ struct OpenAssistantApp: App {
         assistantManagerViewModel.fetchAssistants()
     }
 }
+ 
