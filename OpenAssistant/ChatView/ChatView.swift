@@ -119,11 +119,17 @@ struct ChatContentView: View {
         .padding(.bottom, 10)
     }
 
-    private var stepCounterView: some View {
-        Text("Step: \(viewModel.stepCounter)")
-            .font(.footnote)
-            .foregroundColor(.gray)
+private var stepCounterView: some View {
+    if FeatureFlags.enableNewFeature {
+        return AnyView(
+            Text("Step: \(viewModel.stepCounter)")
+                .font(.footnote)
+                .foregroundColor(.gray)
+        )
+    } else {
+        return AnyView(EmptyView())
     }
+}
 
     private func sendMessageAction() {
         viewModel.sendMessage()

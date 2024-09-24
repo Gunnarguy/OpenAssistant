@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */; };
 		B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */; };
 		B0BFE4442C9BDC8800EB6D81 /* FormFieldsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* FormFieldsView.swift */; };
 		B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */; };
@@ -46,6 +47,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailView.swift; sourceTree = "<group>"; };
 		B0BFE4432C9BDC8800EB6D81 /* FormFieldsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormFieldsView.swift; sourceTree = "<group>"; };
 		B0DD9C572C9DE4B800A0D623 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -133,6 +135,7 @@
 		B0EEE70C2C9932580012F2BA /* OpenAssistant */ = {
 			isa = PBXGroup;
 			children = (
+				B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */,
 				B0DD9C652C9E09A000A0D623 /* Main */,
 				B0EEE7232C99326A0012F2BA /* AssistantManager */,
 				B0EEE7262C99326A0012F2BA /* AssistantPicker */,
@@ -323,6 +326,7 @@
 				B0EEE7592C99326A0012F2BA /* VectorStore.swift in Sources */,
 				B0DD9C622C9DFC3A00A0D623 /* OpenAIInitializer.swift in Sources */,
 				B0EEE75A2C99326A0012F2BA /* MessageRunThread.swift in Sources */,
+				B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
