@@ -18,7 +18,7 @@ struct VectorStoreListView: View {
                         }
                     }
                 }
-                .onDelete(perform: deleteVectorStore) // Add this line
+                .onDelete(perform: deleteVectorStore)
             }
             .navigationTitle("Vector Stores")
             .onAppear {

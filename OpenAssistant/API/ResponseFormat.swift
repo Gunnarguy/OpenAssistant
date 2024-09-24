@@ -39,11 +39,9 @@ enum ResponseFormat: Codable {
             return ["type": "text", "value": value]
         case .dictionary(let value):
             let properties = value.mapValues { _ in JSONSchemaProperty(type: "string", description: nil).toDictionary() }
-            return ["type": "json_schema", "json_schema": ["type": "object", "properties": properties, "name": "YourSchemaName", "schema": ["type": "object", "properties": properties]]]
+            return ["type": "json_schema", "json_schema": ["type": "object", "properties": properties]]
         case .jsonSchema(let value):
-            var schemaDict = value.toDictionary()
-            schemaDict["name"] = "YourSchemaName" // Add the name field
-            return ["type": "json_schema", "json_schema": ["schema": schemaDict]]
+            return ["type": "json_schema", "json_schema": value.toDictionary()]
         }
     }
 }
@@ -52,17 +50,11 @@ enum ResponseFormat: Codable {
 struct JSONSchema: Codable {
     var type: String
     var properties: [String: JSONSchemaProperty]
-    var name: String // Add the name field
 
     func toDictionary() -> [String: Any] {
         return [
             "type": type,
-            "properties": properties.mapValues { $0.toDictionary() },
-            "name": name, // Include the name field in the dictionary
-            "schema": [
-                "type": type,
-                "properties": properties.mapValues { $0.toDictionary() }
-            ]
+            "properties": properties.mapValues { $0.toDictionary() }
         ]
     }
 }
@@ -166,8 +158,7 @@ var jsonSchema = JSONSchema(
     properties: [
         "key1": JSONSchemaProperty(type: "string", description: "A string key"),
         "key2": JSONSchemaProperty(type: "number", description: "A number key")
-    ],
-    name: "YourSchemaName"
+    ]
 )
 
 var responseFormat = ResponseFormat.jsonSchema(jsonSchema)
