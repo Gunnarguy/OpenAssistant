@@ -194,11 +194,10 @@ struct NewCustomLoadingIndicator: View {
         VStack {
             Circle()
                 .trim(from: 0, to: 0.75)
-                .stroke(AngularGradient(gradient: Gradient(colors: [.blue, .green, .blue]), center: .center), style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                .frame(width: 40, height: 40)
+                .stroke(AngularGradient(gradient: Gradient(colors: [.blue.opacity(0.6), .green.opacity(0.6), .blue.opacity(0.6)]), center: .center), style: StrokeStyle(lineWidth: 3, lineCap: .round))  // Thinner stroke
+                .frame(width: 30, height: 30)  // Smaller size for subtle effect
                 .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
-                // Updated animation modifier to iOS 15+
-                .animation(Animation.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)
+                .animation(Animation.linear(duration: 2).repeatForever(autoreverses: false), value: isAnimating)  // Slower, smooth rotation
                 .onAppear {
                     isAnimating = true
                 }
