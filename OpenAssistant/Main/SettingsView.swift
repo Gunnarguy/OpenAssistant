@@ -29,15 +29,6 @@ struct SettingsView: View {
                 .font(.headline)
             SecureField("Enter API Key", text: $apiKey, onCommit: validateApiKey)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-                .autocapitalization(.none)
-                .disableAutocorrection(true)
-                .border(isApiKeyValid ? Color.clear : Color.red)
-            if !isApiKeyValid {
-                Text("API Key cannot be empty.")
-                    .foregroundColor(.red)
-                    .font(.caption)
-            }
         }
     }
 
@@ -47,11 +38,9 @@ struct SettingsView: View {
     }
 
     private var saveButton: some View {
-        Button("Save") {
-            saveSettings()
+        Button(action: saveSettings) {
+            Text("Save")
         }
-        .padding()
-        .disabled(!isApiKeyValid)
     }
 
     // MARK: - Helper Methods

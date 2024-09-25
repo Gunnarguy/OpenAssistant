@@ -20,7 +20,6 @@ struct CreateAssistantView: View {
         NavigationView {
             Form {
                 assistantDetailsSection
-                toolsSection
             }
             .navigationTitle("Create Assistant")
             .toolbar {
