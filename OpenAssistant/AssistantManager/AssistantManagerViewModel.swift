@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import SwiftUI
 
+@MainActor
 class AssistantManagerViewModel: ObservableObject {
     @Published var assistants: [Assistant] = []
     @Published var availableModels: [String] = []

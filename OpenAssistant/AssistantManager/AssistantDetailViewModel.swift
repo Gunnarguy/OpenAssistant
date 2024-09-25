@@ -1,8 +1,8 @@
-// OpenAssistant/AssistantManager/AssistantDetailViewModel.swift
 import Foundation
 import Combine
 import SwiftUI
 
+@MainActor
 class AssistantDetailViewModel: ObservableObject {
     @Published var assistant: Assistant
     @Published var errorMessage: String?

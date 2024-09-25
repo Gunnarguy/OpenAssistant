@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class ContentViewModel: ObservableObject {
     @Published var selectedAssistant: Assistant?
     @Published var isLoading = false

@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import SwiftUI
 
+@MainActor
 class AssistantPickerViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var assistants: [Assistant] = []

@@ -48,6 +48,44 @@ struct AssistantManagerView: View {
 
 struct AssistantManagerView_Previews: PreviewProvider {
     static var previews: some View {
-        AssistantManagerView()
+        let viewModel = AssistantManagerViewModel()
+        viewModel.assistants = [
+            Assistant(
+                id: "1",
+                object: "assistant",
+                created_at: Int(Date().timeIntervalSince1970),
+                name: "Test Assistant 1",
+                description: "This is a test assistant 1.",
+                model: "test-model",
+                instructions: nil,
+                threads: nil,
+                tools: [],
+                top_p: 1.0,
+                temperature: 0.7,
+                tool_resources: nil,
+                metadata: nil,
+                response_format: nil,
+                file_ids: []
+            ),
+            Assistant(
+                id: "2",
+                object: "assistant",
+                created_at: Int(Date().timeIntervalSince1970),
+                name: "Test Assistant 2",
+                description: "This is a test assistant 2.",
+                model: "test-model",
+                instructions: nil,
+                threads: nil,
+                tools: [],
+                top_p: 1.0,
+                temperature: 0.7,
+                tool_resources: nil,
+                metadata: nil,
+                response_format: nil,
+                file_ids: []
+            )
+        ]
+        return AssistantManagerView()
+            .environmentObject(viewModel)
     }
 }

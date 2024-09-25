@@ -83,3 +83,27 @@ struct AssistantDetailView: View {
         }
     }
 }
+
+struct AssistantDetailView_Previews: PreviewProvider {
+    static var previews: some View {
+        let assistant = Assistant(
+            id: "1",
+            object: "assistant",
+            created_at: Int(Date().timeIntervalSince1970),
+            name: "Test Assistant",
+            description: "This is a test assistant.",
+            model: "test-model",
+            instructions: nil,
+            threads: nil,
+            tools: [],
+            top_p: 1.0,
+            temperature: 0.7,
+            tool_resources: nil,
+            metadata: nil,
+            response_format: nil,
+            file_ids: [] // Provide an empty array or appropriate file IDs
+        )
+        let managerViewModel = AssistantManagerViewModel()
+        AssistantDetailView(assistant: assistant, managerViewModel: managerViewModel)
+    }
+}

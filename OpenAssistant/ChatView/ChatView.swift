@@ -19,7 +19,7 @@ struct ChatView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, assistantId: viewModel.assistant.id)) {
-                            Image(systemName: "clock")
+                            Image(systemName: "")
                                 .foregroundColor(.blue)
                         }
                     }
@@ -31,7 +31,7 @@ struct ChatView: View {
     }
 }
 
-// MARK: - Chat Content View
+// MARK: - ChatContentView
 struct ChatContentView: View {
     @ObservedObject var viewModel: ChatViewModel
     @ObservedObject var messageStore: MessageStore
@@ -39,18 +39,24 @@ struct ChatContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            messageListView
+            MessageListView(viewModel: viewModel, colorScheme: colorScheme)
             Spacer()
-            inputView
+            InputView(viewModel: viewModel, messageStore: messageStore, colorScheme: colorScheme)
                 .padding(.horizontal)
-            stepCounterView
+            StepCounterView(stepCounter: viewModel.stepCounter)
                 .padding(.horizontal)
                 .padding(.bottom, 10)
         }
         .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
     }
+}
 
-    private var messageListView: some View {
+// MARK: - MessageListView
+struct MessageListView: View {
+    @ObservedObject var viewModel: ChatViewModel
+    var colorScheme: ColorScheme
+
+    var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
@@ -58,7 +64,7 @@ struct ChatContentView: View {
                         MessageView(message: message, colorScheme: colorScheme)
                     }
                     if viewModel.isLoading {
-                        NewCustomLoadingIndicator()  // Custom loading indicator
+                        NewCustomLoadingIndicator()
                             .padding(.vertical, 10)
                             .id("loadingIndicator")
                     }
@@ -82,8 +88,15 @@ struct ChatContentView: View {
             .background(Color.clear)
         }
     }
+}
 
-    private var inputView: some View {
+// MARK: - InputView
+struct InputView: View {
+    @ObservedObject var viewModel: ChatViewModel
+    @ObservedObject var messageStore: MessageStore
+    var colorScheme: ColorScheme
+
+    var body: some View {
         HStack {
             NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, assistantId: viewModel.assistant.id)) {
                 Image(systemName: "clock")
@@ -104,30 +117,28 @@ struct ChatContentView: View {
                     RoundedRectangle(cornerRadius: 25)
                         .stroke(Color.blue, lineWidth: 1)
                 )
-            Button(action: sendMessageAction) {
-                Image(systemName: "paperplane.fill")
-                    .foregroundColor(viewModel.inputText.isEmpty || viewModel.isLoading ? .gray : .white)
-                    .padding(16)
-                    .background(viewModel.inputText.isEmpty || viewModel.isLoading ? Color.gray.opacity(0.6) : Color.blue)
-                    .cornerRadius(25)
-                    .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
-            }
-            .disabled(viewModel.inputText.isEmpty || viewModel.isLoading)
+            SendButton(viewModel: viewModel, messageStore: messageStore)
         }
         .padding(.horizontal)
         .padding(.bottom, 10)
     }
+}
 
-    private var stepCounterView: some View {
-        if FeatureFlags.enableNewFeature {
-            return AnyView(
-                Text("Step: \(viewModel.stepCounter)")
-                    .font(.footnote)
-                    .foregroundColor(.gray)
-            )
-        } else {
-            return AnyView(EmptyView())
+// MARK: - SendButton
+struct SendButton: View {
+    @ObservedObject var viewModel: ChatViewModel
+    @ObservedObject var messageStore: MessageStore
+
+    var body: some View {
+        Button(action: sendMessageAction) {
+            Image(systemName: "paperplane.fill")
+                .foregroundColor(viewModel.inputText.isEmpty || viewModel.isLoading ? .gray : .white)
+                .padding(16)
+                .background(viewModel.inputText.isEmpty || viewModel.isLoading ? Color.gray.opacity(0.6) : Color.blue)
+                .cornerRadius(25)
+                .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
         }
+        .disabled(viewModel.inputText.isEmpty || viewModel.isLoading)
     }
 
     private func sendMessageAction() {
@@ -138,7 +149,22 @@ struct ChatContentView: View {
     }
 }
 
-// MARK: - Message View
+// MARK: - StepCounterView
+struct StepCounterView: View {
+    let stepCounter: Int
+
+    var body: some View {
+        if FeatureFlags.enableNewFeature {
+            Text("Step: \(stepCounter)")
+                .font(.footnote)
+                .foregroundColor(.gray)
+        } else {
+            EmptyView()
+        }
+    }
+}
+
+// MARK: - MessageView
 struct MessageView: View {
     let message: Message
     let colorScheme: ColorScheme
@@ -163,7 +189,7 @@ struct MessageView: View {
     }
 }
 
-// MARK: - Chat History View
+// MARK: - ChatHistoryView
 struct ChatHistoryView: View {
     let messages: [Message]
     let assistantId: String
@@ -186,7 +212,7 @@ struct ChatHistoryView: View {
     }
 }
 
-// MARK: - Custom Loading Indicator
+// MARK: - NewCustomLoadingIndicator
 struct NewCustomLoadingIndicator: View {
     @State private var isAnimating = false
 
@@ -194,10 +220,10 @@ struct NewCustomLoadingIndicator: View {
         VStack {
             Circle()
                 .trim(from: 0, to: 0.75)
-                .stroke(AngularGradient(gradient: Gradient(colors: [.blue.opacity(0.6), .green.opacity(0.6), .blue.opacity(0.6)]), center: .center), style: StrokeStyle(lineWidth: 3, lineCap: .round))  // Thinner stroke
-                .frame(width: 30, height: 30)  // Smaller size for subtle effect
+                .stroke(AngularGradient(gradient: Gradient(colors: [.blue.opacity(0.6), .green.opacity(0.6), .blue.opacity(0.6)]), center: .center), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .frame(width: 30, height: 30)
                 .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
-                .animation(Animation.linear(duration: 2).repeatForever(autoreverses: false), value: isAnimating)  // Slower, smooth rotation
+                .animation(Animation.linear(duration: 2).repeatForever(autoreverses: false), value: isAnimating)
                 .onAppear {
                     isAnimating = true
                 }
@@ -209,4 +235,29 @@ struct NewCustomLoadingIndicator: View {
 struct ErrorMessage: Identifiable {
     let id = UUID()
     let message: String
+}
+
+// MARK: - ChatView Previews
+struct ChatView_Previews: PreviewProvider {
+    static var previews: some View {
+        let assistant = Assistant(
+            id: "1",
+            object: "assistant",
+            created_at: Int(Date().timeIntervalSince1970),
+            name: "Test Assistant",
+            description: "This is a test assistant.",
+            model: "test-model",
+            instructions: nil,
+            threads: nil,
+            tools: [],
+            top_p: 1.0,
+            temperature: 0.7,
+            tool_resources: nil,
+            metadata: nil,
+            response_format: nil,
+            file_ids: [] // Provide an empty array or appropriate file IDs
+        )
+        let messageStore = MessageStore()
+        ChatView(assistant: assistant, messageStore: messageStore)
+    }
 }

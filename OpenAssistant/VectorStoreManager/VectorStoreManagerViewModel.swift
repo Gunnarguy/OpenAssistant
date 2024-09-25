@@ -2,8 +2,7 @@ import Foundation
 import Combine
 import SwiftUI
 
-// MARK: - Vector Store Manager ViewModel
-
+@MainActor
 class VectorStoreManagerViewModel: ObservableObject {
     @Published var vectorStores: [VectorStore] = []
     @Published var errorMessage: IdentifiableError?
@@ -146,16 +145,16 @@ class VectorStoreManagerViewModel: ObservableObject {
         }.resume()
     }
     
-    func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
-        return Future { [weak self] promise in
-            guard let self = self else { return }
-            let endpoint = "vector_stores/\(vectorStoreId)/files/\(fileId)"
-            let request = self.openAIService?.makeRequest(endpoint: endpoint, httpMethod: "DELETE")
-            guard let request = request else {
-                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Request"])))
-                return
-            }
-            self.openAIService?.session.dataTask(with: request) { _, response, error in
+func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
+    return Future { [weak self] promise in
+        guard let self = self else { return }
+        let endpoint = "vector_stores/\(vectorStoreId)/files/\(fileId)"
+        guard let request = self.openAIService?.makeRequest(endpoint: endpoint, httpMethod: "DELETE") else {
+            promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Request"])))
+            return
+        }
+        self.openAIService?.session.dataTask(with: request) { _, response, error in
+            Task { @MainActor in
                 self.openAIService?.handleDeleteResponse(nil, response, error) { result in
                     switch result {
                     case .success:
@@ -164,9 +163,11 @@ class VectorStoreManagerViewModel: ObservableObject {
                         promise(.failure(error))
                     }
                 }
-            }.resume()
-        }
+            }
+        }.resume()
     }
+}
+
     
     func deleteVectorStore(vectorStoreId: String) {
         guard let openAIService = openAIService else {
