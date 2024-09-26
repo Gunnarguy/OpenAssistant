@@ -88,11 +88,13 @@ struct ActionButtonsView: View {
     @Binding var refreshTrigger: Bool
     let updateAction: () -> Void
     let deleteAction: () -> Void
+    let createVectorStoreAction: () -> Void // Add this line
 
     var body: some View {
         HStack {
             updateButton
             deleteButton
+            createVectorStoreButton // Add this line
         }
         .padding()
     }
@@ -118,6 +120,19 @@ struct ActionButtonsView: View {
             Text("Delete")
                 .padding()
                 .background(Color.red)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+        }
+    }
+
+    private var createVectorStoreButton: some View { // Add this function
+        Button(action: {
+            createVectorStoreAction()
+            triggerRefresh()
+        }) {
+            Text("Create Vector Store")
+                .padding()
+                .background(Color.green)
                 .foregroundColor(.white)
                 .cornerRadius(8)
         }

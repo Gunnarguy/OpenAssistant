@@ -6,10 +6,9 @@ import SwiftUI
 class VectorStoreManagerViewModel: ObservableObject {
     @Published var vectorStores: [VectorStore] = []
     @Published var errorMessage: IdentifiableError?
-    
     private var openAIService: OpenAIService?
     var cancellables = Set<AnyCancellable>()
-    
+
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
     
     init() {
@@ -54,22 +53,24 @@ class VectorStoreManagerViewModel: ObservableObject {
             .eraseToAnyPublisher()
     }
     
-    func fetchFiles(for vectorStore: VectorStore) {
-        guard let openAIService = openAIService else {
-            handleError(.serviceNotInitialized)
-            return
+    func fetchFiles(for vectorStore: VectorStore) -> AnyPublisher<[VectorStoreFile], Error> {
+        guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStore.id)/files") else {
+            return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"]))
+                .eraseToAnyPublisher()
         }
-        openAIService.fetchFiles(for: vectorStore.id)
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .map(\.data)
+            .decode(type: [VectorStoreFile].self, decoder: JSONDecoder())
             .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { [weak self] completion in
-                if case let .failure(error) = completion {
-                    self?.handleError(.fetchFailed(error.localizedDescription))
-                }
-            }, receiveValue: { [weak self] files in
-                self?.updateVectorStoreFiles(vectorStore: vectorStore, files: files)
-            })
-            .store(in: &cancellables)
+            .eraseToAnyPublisher()
     }
+    
+    
     
     // MARK: - Vector Store Management
     
@@ -145,29 +146,28 @@ class VectorStoreManagerViewModel: ObservableObject {
         }.resume()
     }
     
-func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
-    return Future { [weak self] promise in
-        guard let self = self else { return }
-        let endpoint = "vector_stores/\(vectorStoreId)/files/\(fileId)"
-        guard let request = self.openAIService?.makeRequest(endpoint: endpoint, httpMethod: "DELETE") else {
-            promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Request"])))
-            return
-        }
-        self.openAIService?.session.dataTask(with: request) { _, response, error in
-            Task { @MainActor in
-                self.openAIService?.handleDeleteResponse(nil, response, error) { result in
-                    switch result {
-                    case .success:
-                        promise(.success(()))
-                    case .failure(let error):
-                        promise(.failure(error))
+    func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
+        return Future { [weak self] promise in
+            guard let self = self else { return }
+            let endpoint = "vector_stores/\(vectorStoreId)/files/\(fileId)"
+            guard let request = self.openAIService?.makeRequest(endpoint: endpoint, httpMethod: "DELETE") else {
+                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Request"])))
+                return
+            }
+            self.openAIService?.session.dataTask(with: request) { _, response, error in
+                Task { @MainActor in
+                    self.openAIService?.handleDeleteResponse(nil, response, error) { result in
+                        switch result {
+                        case .success:
+                            promise(.success(()))
+                        case .failure(let error):
+                            promise(.failure(error))
+                        }
                     }
                 }
-            }
-        }.resume()
+            }.resume()
+        }
     }
-}
-
     
     func deleteVectorStore(vectorStoreId: String) {
         guard let openAIService = openAIService else {
@@ -186,6 +186,52 @@ func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<
                 print("Vector store deleted successfully.")
             })
             .store(in: &cancellables)
+    }
+    
+    // MARK: - Create Vector Store with File IDs
+    func createVectorStoreWithFileIds(name: String, fileIds: [String], completion: @escaping (Result<VectorStore, Error>) -> Void) {
+        guard let url = URL(string: "https://api.openai.com/v1/vector_stores") else {
+            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+            return
+        }
+    
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+    
+        let body: [String: Any] = [
+            "name": name,
+            "file_ids": fileIds
+        ]
+    
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+        } catch {
+            completion(.failure(error))
+            return
+        }
+    
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            if let httpResponse = response as? HTTPURLResponse {
+                print("HTTP Status Code: \(httpResponse.statusCode)")
+            }
+            guard let data = data else {
+                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                return
+            }
+            do {
+                let response = try JSONDecoder().decode(VectorStore.self, from: data)
+                completion(.success(response))
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
     }
     
     // MARK: - Private Methods

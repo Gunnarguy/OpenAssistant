@@ -62,6 +62,9 @@ struct AssistantDetailView: View {
             deleteAction: {
                 viewModel.deleteAssistant()
                 triggerRefresh()
+            },
+            createVectorStoreAction: { // Ensure this matches the updated initializer
+                createVectorStore()
             }
         )
     }
@@ -80,6 +83,22 @@ struct AssistantDetailView: View {
     private func handleAssistantDeleted(notification: Notification) {
         if let deletedAssistant = notification.object as? Assistant, deletedAssistant.id == viewModel.assistant.id {
             presentationMode.wrappedValue.dismiss()
+        }
+    }
+
+    private func createVectorStore() {
+        let name = "New Vector Store"
+        let fileIds = viewModel.assistant.file_ids ?? []
+
+        viewModel.createVectorStoreWithFileIds(name: name, fileIds: fileIds) { result in
+            switch result {
+            case .success(let vectorStore):
+                print("Vector store created: \(vectorStore)")
+            case .failure(let error):
+                DispatchQueue.main.async {
+                    viewModel.errorMessage = error.localizedDescription
+                }
+            }
         }
     }
 }

@@ -2,8 +2,12 @@ import Foundation
 import Combine
 import SwiftUI
 
+// MARK: - VectorStoreListView
 struct VectorStoreListView: View {
-    @StateObject var viewModel = VectorStoreManagerViewModel()
+    @ObservedObject var viewModel = VectorStoreManagerViewModel()
+    @State private var isShowingCreateAlert = false
+    @State private var newVectorStoreName = ""
+    @State private var newVectorStoreFiles: [File] = []
 
     var body: some View {
         NavigationView {
@@ -21,6 +25,20 @@ struct VectorStoreListView: View {
                 .onDelete(perform: deleteVectorStore)
             }
             .navigationTitle("Vector Stores")
+            .navigationBarItems(trailing: Button(action: {
+                isShowingCreateAlert = true
+            }) {
+                Image(systemName: "plus")
+            })
+            .alert("Create New Vector Store", isPresented: $isShowingCreateAlert, actions: {
+                TextField("Vector Store Name", text: $newVectorStoreName)
+                Button("Create", action: {
+                    createVectorStore()
+                })
+                Button("Cancel", role: .cancel, action: {})
+            }, message: {
+                Text("Enter a name for the new vector store and select files.")
+            })
             .onAppear {
                 loadVectorStores()
             }
@@ -41,7 +59,7 @@ struct VectorStoreListView: View {
                     viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
                 }
             }, receiveValue: { vectorStores in
-                // Automatically updates the view since `vectorStores` is published
+                viewModel.vectorStores = vectorStores
             })
             .store(in: &viewModel.cancellables)
     }
@@ -50,6 +68,22 @@ struct VectorStoreListView: View {
         offsets.forEach { index in
             let vectorStore = viewModel.vectorStores[index]
             viewModel.deleteVectorStore(vectorStoreId: vectorStore.id)
+        }
+    }
+
+    private func createVectorStore() {
+        let fileIds = newVectorStoreFiles.map { $0.id } // Assuming `File` has an `id` property
+        viewModel.createVectorStoreWithFileIds(name: newVectorStoreName, fileIds: fileIds) { result in
+            switch result {
+            case .success(let vectorStore):
+                DispatchQueue.main.async {
+                    viewModel.vectorStores.append(vectorStore)
+                }
+            case .failure(let error):
+                DispatchQueue.main.async {
+                    viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
+                }
+            }
         }
     }
 

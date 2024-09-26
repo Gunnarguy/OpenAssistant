@@ -88,16 +88,16 @@ struct VectorStoreDetailView: View {
         if files.isEmpty {
             isLoading = true
             viewModel.fetchFiles(for: vectorStore)
-        }
-
-        viewModel.$vectorStores
-            .sink { updatedStores in
-                if let updatedStore = updatedStores.first(where: { $0.id == vectorStore.id }) {
-                    self.files = updatedStore.files ?? []
+                .sink(receiveCompletion: { completion in
+                    if case let .failure(error) = completion {
+                        showError("Failed to load files: \(error.localizedDescription)")
+                    }
+                }, receiveValue: { fetchedFiles in
+                    self.files = fetchedFiles
                     self.isLoading = false
-                }
-            }
-            .store(in: &cancellables)
+                })
+                .store(in: &cancellables)
+        }
     }
 
     private func deleteFile(at offsets: IndexSet) {
@@ -107,13 +107,11 @@ struct VectorStoreDetailView: View {
                 .sink(receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        // Successfully deleted file, remove it from the list
                         DispatchQueue.main.async {
                             self.files.remove(at: index)
                         }
                     case .failure(let error):
-                        // Handle error
-                        self.showError("Failed to delete file: \(error.localizedDescription)")
+                        showError("Failed to delete file: \(error.localizedDescription)")
                     }
                 }, receiveValue: { _ in })
                 .store(in: &cancellables)

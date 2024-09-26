@@ -27,14 +27,14 @@ struct AssistantManagerView: View {
         List(viewModel.assistants) { assistant in
             NavigationLink(destination: AssistantDetailView(assistant: assistant, managerViewModel: viewModel)) {
                 Text(assistant.name)
-                    .font(.body)
-                    .padding(.vertical, 6)
             }
         }
     }
 
     private var addButton: some View {
-        Button(action: { showingCreateAssistantSheet.toggle() }) {
+        Button(action: {
+            showingCreateAssistantSheet = true
+        }) {
             Image(systemName: "plus")
         }
     }
