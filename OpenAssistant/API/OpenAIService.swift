@@ -474,7 +474,7 @@ class OpenAIService {
      - Important:
         This function requires the `apiKey` property to be set with a valid OpenAI API key.
      */
-    private func createVectorStoreWithFileIds(name: String, fileIds: [String], completion: @escaping (Result<VectorStore, Error>) -> Void) {
+    func createVectorStore(name: String, files: [[String: Any]], completion: @escaping (Result<VectorStore, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
             return
@@ -484,10 +484,11 @@ class OpenAIService {
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
 
         let body: [String: Any] = [
             "name": name,
-            "file_ids": fileIds
+            "files": files
         ]
 
         do {
@@ -501,6 +502,9 @@ class OpenAIService {
             if let error = error {
                 completion(.failure(error))
                 return
+            }
+            if let httpResponse = response as? HTTPURLResponse {
+                print("HTTP Status Code: \(httpResponse.statusCode)")
             }
             guard let data = data else {
                 completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
