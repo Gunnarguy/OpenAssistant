@@ -16,7 +16,7 @@ struct VectorStoreDetailView: View {
         List {
             vectorStoreDetailsSection
             fileCountsSection
-            
+            addFileSection
             filesSection
         }
         .navigationTitle(vectorStore.name ?? "Vector Store Details")
@@ -107,13 +107,11 @@ struct VectorStoreDetailView: View {
                 .sink(receiveCompletion: { completion in
                     switch completion {
                     case .finished:
-                        // Successfully deleted file, remove it from the list
                         DispatchQueue.main.async {
                             self.files.remove(at: index)
                         }
                     case .failure(let error):
-                        // Handle error
-                        self.showError("Failed to delete file: \(error.localizedDescription)")
+                        showError("Failed to delete file: \(error.localizedDescription)")
                     }
                 }, receiveValue: { _ in })
                 .store(in: &cancellables)

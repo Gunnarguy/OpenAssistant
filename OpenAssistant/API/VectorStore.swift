@@ -113,3 +113,4 @@ struct VectorStoreFilesResponse: Codable {
         case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
     }
 }
+

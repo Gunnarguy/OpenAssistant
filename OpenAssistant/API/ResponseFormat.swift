@@ -147,7 +147,7 @@ struct OpenAIResponse: Codable {
     var thread_id: String
     var run_id: String?
     var role: String
-    var content: [Message.Content]
+    var content: [MessageContent]
     var attachments: [String]
     var metadata: [String: String]
 }

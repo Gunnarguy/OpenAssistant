@@ -253,18 +253,19 @@ struct FileSearch: Codable {
 }
 
 // MARK: - MessageContent
-struct MessageContent: Decodable, Equatable {
+struct MessageContent: Codable, Equatable {
     let type: String
     let text: TextContent?
-    let image: ImageContent? // Added property
+    let image: ImageContent?
 
     private enum CodingKeys: String, CodingKey {
         case type, text, image
     }
 }
 
+
 // MARK: - TextContent
-struct TextContent: Decodable, Equatable {
+struct TextContent: Codable, Equatable {
     let value: String
 
     private enum CodingKeys: String, CodingKey {
@@ -273,7 +274,7 @@ struct TextContent: Decodable, Equatable {
 }
 
 // MARK: - ImageContent
-struct ImageContent: Decodable, Equatable {
+struct ImageContent: Codable, Equatable {
     let url: String
 
     private enum CodingKeys: String, CodingKey {

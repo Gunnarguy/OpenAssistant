@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = ContentViewModel()
-    @StateObject private var messageStore = MessageStore()
+    @StateObject private var viewModel = ContentViewModel() // ViewModel handling app state
+    @StateObject private var messageStore = MessageStore()  // Object handling messages
 
     var body: some View {
         ZStack {
@@ -12,7 +12,7 @@ struct ContentView: View {
                     .onAppear(perform: viewModel.startLoading)
             }
         }
-        .onAppear(perform: viewModel.onAppear)
+        .onAppear(perform: viewModel.onAppear) // Called when view appears
     }
 }
 
