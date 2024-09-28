@@ -3,22 +3,14 @@ import Combine
 import SwiftUI
 
 @MainActor
-class AssistantPickerViewModel: ObservableObject {
-    // MARK: - Published Properties
+class AssistantPickerViewModel: BaseViewModel {
     @Published var assistants: [Assistant] = []
     @Published var selectedAssistant: Assistant?
     @Published var isLoading = true
-    @Published var errorMessage: String?
     @Published var navigateToChat = false
 
-    // MARK: - Private Properties
-    private var openAIService: OpenAIService?
-    @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
-    private var cancellables = Set<AnyCancellable>()
-
-    // MARK: - Initializer
-    init() {
-        initializeService()
+    override init() {
+        super.init()
         fetchAssistants()
         setupNotificationObservers()
     }
@@ -26,7 +18,7 @@ class AssistantPickerViewModel: ObservableObject {
     // MARK: - Public Methods
     func fetchAssistants() {
         guard let openAIService = openAIService else {
-            updateErrorState(with: "OpenAIService is not initialized.")
+            handleError(IdentifiableError(message: "OpenAIService is not initialized."))
             return
         }
         
@@ -34,8 +26,9 @@ class AssistantPickerViewModel: ObservableObject {
         errorMessage = nil
 
         openAIService.fetchAssistants { [weak self] result in
+            guard let self = self else { return }
             DispatchQueue.main.async {
-                self?.handleFetchResult(result)
+                self.handleFetchResult(result)
             }
         }
     }
@@ -46,43 +39,14 @@ class AssistantPickerViewModel: ObservableObject {
     }
 
     // MARK: - Private Methods
-    private func initializeService() {
-        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
-        if openAIService == nil {
-            updateErrorState(with: "API key is missing.")
-        }
-    }
-
     private func handleFetchResult(_ result: Result<[Assistant], OpenAIServiceError>) {
         switch result {
         case .success(let assistants):
             self.assistants = assistants
         case .failure(let error):
-            self.errorMessage = getErrorMessage(for: error)
+            self.handleError(IdentifiableError(message: error.localizedDescription))
         }
         self.isLoading = false
-    }
-
-    private func getErrorMessage(for error: OpenAIServiceError) -> String {
-        switch error {
-        case .apiKeyMissing:
-            return "API key is missing."
-        case .noData:
-            return "No data received from the server."
-        case .decodingError(_, let decodingError):
-            return "Failed to decode response: \(decodingError.localizedDescription)"
-        case .networkError(let networkError):
-            return "Network Error: \(networkError.localizedDescription)"
-        case .invalidResponse(let response):
-            return "Invalid response received: \(response)"
-        default:
-            return "An unknown error occurred."
-        }
-    }
-
-    private func updateErrorState(with message: String) {
-        errorMessage = message
-        isLoading = false
     }
 
     private func setupNotificationObservers() {
@@ -97,5 +61,14 @@ class AssistantPickerViewModel: ObservableObject {
         NotificationCenter.default.publisher(for: .assistantDeleted)
             .sink { [weak self] _ in self?.fetchAssistants() }
             .store(in: &cancellables)
+        
+        // Observer for the settings updated notification
+        NotificationCenter.default.publisher(for: .settingsUpdated)
+            .sink { [weak self] _ in self?.fetchAssistants() }
+            .store(in: &cancellables)
     }
+}
+
+extension Notification.Name {
+    static let settingsUpdated = Notification.Name("settingsUpdated")
 }

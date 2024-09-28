@@ -10,6 +10,7 @@
 		B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */; };
 		B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */; };
 		B0BFE4442C9BDC8800EB6D81 /* FormFieldsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* FormFieldsView.swift */; };
+		B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */; };
 		B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */; };
 		B0DD9C5E2C9DFA7000A0D623 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */; };
 		B0DD9C602C9DFAB100A0D623 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */; };
@@ -48,6 +49,7 @@
 		B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailView.swift; sourceTree = "<group>"; };
 		B0BFE4432C9BDC8800EB6D81 /* FormFieldsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormFieldsView.swift; sourceTree = "<group>"; };
+		B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
 		B0DD9C572C9DE4B800A0D623 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B0DD9C592C9DE90000A0D623 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		B0DD9C5A2C9DE91B00A0D623 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
@@ -132,6 +134,7 @@
 			isa = PBXGroup;
 			children = (
 				B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */,
+				B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */,
 				B0DD9C652C9E09A000A0D623 /* Main */,
 				B0EEE7232C99326A0012F2BA /* AssistantManager */,
 				B0EEE7262C99326A0012F2BA /* AssistantPicker */,
@@ -305,6 +308,7 @@
 				B0EEE74C2C99326A0012F2BA /* SettingsView.swift in Sources */,
 				B0EEE74D2C99326A0012F2BA /* AssistantManagerView.swift in Sources */,
 				B0EEE74E2C99326A0012F2BA /* VectorStoreListView.swift in Sources */,
+				B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */,
 				B0EEE74F2C99326A0012F2BA /* Errors.swift in Sources */,
 				B0EEE7502C99326A0012F2BA /* AssistantDetailViewModel.swift in Sources */,
 				B0EEE7512C99326A0012F2BA /* FileDetailView.swift in Sources */,

@@ -3,38 +3,23 @@ import Combine
 import SwiftUI
 
 @MainActor
-class ChatViewModel: ObservableObject {
+class ChatViewModel: BaseViewModel {
     @Published var messages: [Message] = []
     @Published var inputText: String = ""
     @Published var isLoading = false
-    @Published var errorMessage: IdentifiableError?
     @Published var stepCounter: Int = 0
 
     var scrollViewProxy: ScrollViewProxy?
     let assistant: Assistant
-    private var openAIService: OpenAIService?
     private var thread: Thread?
     private var hasCreatedThread = false
     private var messageStore: MessageStore
 
-    @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
-    private var cancellables = Set<AnyCancellable>()
-
     init(assistant: Assistant, messageStore: MessageStore) {
         self.assistant = assistant
         self.messageStore = messageStore
-        initializeOpenAIService()
+        super.init()
         createThread()
-    }
-
-    // MARK: - Initialization
-
-    private func initializeOpenAIService() {
-        guard !apiKey.isEmpty else {
-            handleError("API key is missing")
-            return
-        }
-        openAIService = OpenAIService(apiKey: apiKey)
     }
 
     // MARK: - Thread Management

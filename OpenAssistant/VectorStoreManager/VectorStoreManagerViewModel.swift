@@ -3,36 +3,14 @@ import Combine
 import SwiftUI
 
 @MainActor
-class VectorStoreManagerViewModel: ObservableObject {
+class VectorStoreManagerViewModel: BaseViewModel {
     @Published var vectorStores: [VectorStore] = []
-    @Published var errorMessage: IdentifiableError?
-    
-    private var openAIService: OpenAIService?
-    var cancellables = Set<AnyCancellable>()
-    
-    @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
-    
-    init() {
-        initializeOpenAIService()
+
+    override init() {
+        super.init()
         fetchVectorStores()
-            .sink(receiveCompletion: { completion in
-                if case .failure(let error) = completion {
-                    self.handleError(.fetchFailed(error.localizedDescription))
-                }
-            }, receiveValue: { vectorStores in
-                self.vectorStores = vectorStores
-            })
+            .sink(receiveValue: { _ in })
             .store(in: &cancellables)
-    }
-    
-    // MARK: - Initialization
-    
-    private func initializeOpenAIService() {
-        guard !apiKey.isEmpty else {
-            handleError(.serviceNotInitialized)
-            return
-        }
-        openAIService = OpenAIService(apiKey: apiKey)
     }
     
     // MARK: - Data Fetching

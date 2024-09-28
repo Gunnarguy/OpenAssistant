@@ -20,7 +20,7 @@ struct AssistantPickerView: View {
     private var content: some View {
         if viewModel.isLoading {
             ProgressView("Loading...")
-        } else if let errorMessage = viewModel.errorMessage {
+        } else if let errorMessage = viewModel.errorMessage?.message { // Extract the message property
             ErrorView(message: errorMessage, retryAction: viewModel.fetchAssistants)
         } else {
             assistantList

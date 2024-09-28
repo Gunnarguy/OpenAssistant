@@ -77,7 +77,6 @@ class AssistantManagerViewModel: ObservableObject {
         }
     }
     
-    
     // MARK: - Assistant Management
     
     func createAssistant(model: String, name: String, description: String?, instructions: String?, tools: [Tool], toolResources: ToolResources?, metadata: [String: String]?, temperature: Double, topP: Double, responseFormat: ResponseFormat?) {
@@ -191,8 +190,6 @@ class AssistantManagerViewModel: ObservableObject {
             handleError("Delete failed: \(error.localizedDescription)")
         }
     }
-    
-
 }
 
 // MARK: - Extensions

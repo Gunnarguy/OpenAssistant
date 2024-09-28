@@ -6,7 +6,8 @@ struct SettingsView: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var isApiKeyValid = true
-
+    @EnvironmentObject var assistantManagerViewModel: AssistantManagerViewModel
+    
     var body: some View {
         VStack {
             apiKeySection
@@ -20,9 +21,9 @@ struct SettingsView: View {
             Alert(title: Text("Settings"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
         }
     }
-
+    
     // MARK: - Sections
-
+    
     private var apiKeySection: some View {
         VStack(alignment: .leading) {
             Text("API Key")
@@ -31,39 +32,47 @@ struct SettingsView: View {
                 .textFieldStyle(RoundedBorderTextFieldStyle())
         }
     }
-
+    
     private var darkModeToggle: some View {
         Toggle("Dark Mode", isOn: $isDarkMode)
             .padding()
     }
-
+    
     private var saveButton: some View {
         Button(action: saveSettings) {
             Text("Save")
         }
     }
-
+    
     // MARK: - Helper Methods
-
+    
     private func validateApiKey() {
         isApiKeyValid = !apiKey.isEmpty
     }
-
+    
     private func saveSettings() {
         validateApiKey()
         if isApiKeyValid {
             alertMessage = "Settings saved successfully."
             print("API Key saved: \(apiKey)")
+            
+            // Notify other views to refresh data after API key is saved
+            NotificationCenter.default.post(name: .settingsUpdated, object: nil)
+            
+            // Optionally refresh the assistants in the assistant manager view model
+            assistantManagerViewModel.fetchAssistants()
         } else {
             alertMessage = "API Key cannot be empty."
         }
         showAlert = true
         print("Dark Mode: \(isDarkMode)")
     }
-}
-
-struct SettingsView_Previews: PreviewProvider {
-    static var previews: some View {
-        SettingsView()
+    
+    
+    struct SettingsView_Previews: PreviewProvider {
+        static var previews: some View {
+            SettingsView()
+                .environmentObject(AssistantManagerViewModel())
+        }
     }
 }

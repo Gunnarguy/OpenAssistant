@@ -7,7 +7,7 @@ struct OpenAssistantApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(assistantManagerViewModel: assistantManagerViewModel)
                 .environmentObject(assistantManagerViewModel)
                 .onAppear(perform: setup)
         }
@@ -17,4 +17,3 @@ struct OpenAssistantApp: App {
         assistantManagerViewModel.fetchAssistants()
     }
 }
- 
