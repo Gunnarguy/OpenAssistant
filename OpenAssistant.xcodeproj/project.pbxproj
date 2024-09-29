@@ -8,9 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		B0067AF62CA8B43E0043E2DD /* BaseAssistantViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0067AF52CA8B43E0043E2DD /* BaseAssistantViewModel.swift */; };
+		B0067AFB2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */; };
+		B0067AFD2CA8F95D0043E2DD /* ActionButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0067AFC2CA8F95D0043E2DD /* ActionButtonsView.swift */; };
 		B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */; };
 		B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */; };
-		B0BFE4442C9BDC8800EB6D81 /* AssistantManagerFormFieldsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* AssistantManagerFormFieldsView.swift */; };
+		B0BFE4442C9BDC8800EB6D81 /* AssistantFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */; };
 		B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */; };
 		B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */; };
 		B0DD9C5E2C9DFA7000A0D623 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */; };
@@ -48,9 +50,11 @@
 
 /* Begin PBXFileReference section */
 		B0067AF52CA8B43E0043E2DD /* BaseAssistantViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseAssistantViewModel.swift; sourceTree = "<group>"; };
+		B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailSectionView.swift; sourceTree = "<group>"; };
+		B0067AFC2CA8F95D0043E2DD /* ActionButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionButtonsView.swift; sourceTree = "<group>"; };
 		B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailView.swift; sourceTree = "<group>"; };
-		B0BFE4432C9BDC8800EB6D81 /* AssistantManagerFormFieldsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantManagerFormFieldsView.swift; sourceTree = "<group>"; };
+		B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantFormView.swift; sourceTree = "<group>"; };
 		B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
 		B0DD9C572C9DE4B800A0D623 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B0DD9C592C9DE90000A0D623 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
@@ -116,11 +120,13 @@
 		B0067AF82CA8CD9A0043E2DD /* AssistantManagerViews */ = {
 			isa = PBXGroup;
 			children = (
+				B0067AFC2CA8F95D0043E2DD /* ActionButtonsView.swift */,
 				B0EEE7242C99326A0012F2BA /* AssistantPickerView.swift */,
 				B0EEE71D2C99326A0012F2BA /* CreateAssistantView.swift */,
+				B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */,
 				B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */,
 				B0EEE71E2C99326A0012F2BA /* UpdateAssistantView.swift */,
-				B0BFE4432C9BDC8800EB6D81 /* AssistantManagerFormFieldsView.swift */,
+				B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */,
 				B0EEE7212C99326A0012F2BA /* AssistantManagerView.swift */,
 			);
 			path = AssistantManagerViews;
@@ -311,9 +317,11 @@
 				B0EEE7452C99326A0012F2BA /* OpenAssistantApp.swift in Sources */,
 				B0EEE7462C99326A0012F2BA /* CreateAssistantView.swift in Sources */,
 				B0EEE7472C99326A0012F2BA /* ChatViewModel.swift in Sources */,
+				B0067AFD2CA8F95D0043E2DD /* ActionButtonsView.swift in Sources */,
 				B0EEE7482C99326A0012F2BA /* AssistantPickerView.swift in Sources */,
+				B0067AFB2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift in Sources */,
 				B0EEE7492C99326A0012F2BA /* ResponseFormat.swift in Sources */,
-				B0BFE4442C9BDC8800EB6D81 /* AssistantManagerFormFieldsView.swift in Sources */,
+				B0BFE4442C9BDC8800EB6D81 /* AssistantFormView.swift in Sources */,
 				B0EEE74A2C99326A0012F2BA /* UpdateAssistantView.swift in Sources */,
 				B0EEE74B2C99326A0012F2BA /* ContentView.swift in Sources */,
 				B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */,

@@ -1,11 +1,10 @@
-import Foundation
 import SwiftUI
 
 struct CreateAssistantView: View {
     @ObservedObject var viewModel: AssistantManagerViewModel
     @Environment(\.presentationMode) var presentationMode
     @State private var showAlert = false
-    
+
     // State variables for the assistant fields
     @State private var name: String = ""
     @State private var instructions: String = ""
@@ -15,79 +14,40 @@ struct CreateAssistantView: View {
     @State private var topP: Double = 1.0
     @State private var enableFileSearch: Bool = false
     @State private var enableCodeInterpreter: Bool = false
-    
+
     var body: some View {
         NavigationView {
-            Form {
-                assistantDetailsSection
-                toolsSection
-            }
+            AssistantFormView(
+                name: $name,
+                instructions: $instructions,
+                model: $model,
+                description: $description,
+                temperature: $temperature,
+                topP: $topP,
+                enableFileSearch: $enableFileSearch,
+                enableCodeInterpreter: $enableCodeInterpreter,
+                availableModels: viewModel.availableModels,
+                isEditing: false,
+                onSave: handleSave
+            )
             .navigationTitle("Create Assistant")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    cancelButton
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    saveButton
+                    Button("Cancel") {
+                        dismissView()
+                    }
                 }
             }
             .alert(isPresented: $showAlert) {
-                Alert(title: Text("Validation Error"), message: Text("Please fill in all required fields."), dismissButton: .default(Text("OK")))
+                Alert(
+                    title: Text("Validation Error"),
+                    message: Text("Please fill in all required fields."),
+                    dismissButton: .default(Text("OK"))
+                )
             }
-            .onAppear { viewModel.fetchAvailableModels() }
-        }
-    }
-    
-    private var assistantDetailsSection: some View {
-        Section(header: Text("Assistant Details")) {
-            TextField("Name", text: $name)
-            TextField("Instructions", text: $instructions)
-            modelPicker
-            TextField("Description", text: $description)
-            temperatureSlider
-            topPSlider
-        }
-    }
-    
-    private var modelPicker: some View {
-        Picker("Model", selection: $model) {
-            ForEach(viewModel.availableModels, id: \.self) { model in
-                Text(model).tag(model)
+            .onAppear {
+                viewModel.fetchAvailableModels()
             }
-        }
-        .pickerStyle(MenuPickerStyle())
-    }
-    
-    private var toolsSection: some View {
-        Section(header: Text("Tools")) {
-            Toggle("Enable File Search", isOn: $enableFileSearch)
-            Toggle("Enable Code Interpreter", isOn: $enableCodeInterpreter)
-        }
-    }
-
-    private var temperatureSlider: some View {
-        VStack {
-            Text("Temperature: \(temperature, specifier: "%.2f")")
-            Slider(value: $temperature, in: 0.0...2.0, step: 0.01)
-        }
-    }
-    
-    private var topPSlider: some View {
-        VStack {
-            Text("Top P: \(topP, specifier: "%.2f")")
-            Slider(value: $topP, in: 0.0...1.0, step: 0.01)
-        }
-    }
-
-    private var cancelButton: some View {
-        Button("Cancel") {
-            dismissView()
-        }
-    }
-
-    private var saveButton: some View {
-        Button("Save") {
-            handleSave()
         }
     }
 
@@ -125,19 +85,15 @@ struct CreateAssistantView: View {
     private func createToolResources() -> ToolResources? {
         var toolResources = ToolResources()
         if enableFileSearch {
-            // Replace "your_vector_store_id" with a valid vector store ID
             toolResources.fileSearch = FileSearchResources(vectorStoreIds: ["valid_vector_store_id"])
         }
         if enableCodeInterpreter {
-            // Replace "your_file_id" with a valid file ID
             toolResources.codeInterpreter = CodeInterpreterResources(fileIds: ["valid_file_id"])
         }
         return toolResources
     }
 
     private func dismissView() {
-        DispatchQueue.main.async {
-            presentationMode.wrappedValue.dismiss()
-        }
+        presentationMode.wrappedValue.dismiss()
     }
 }

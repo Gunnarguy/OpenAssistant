@@ -16,7 +16,7 @@ struct UpdateAssistantView: View {
     var body: some View {
         NavigationView {
             Form {
-                assistantDetailsSection
+                AssistantDetailsSection(assistant: $assistantDetailViewModel.assistant, availableModels: viewModel.availableModels)
                 toolsSection
             }
             .navigationTitle("Update Assistant")
@@ -34,26 +34,6 @@ struct UpdateAssistantView: View {
                 Alert(title: Text("Validation Error"), message: Text("Please fill in all required fields."), dismissButton: .default(Text("OK")))
             }
         }
-    }
-    
-    private var assistantDetailsSection: some View {
-        Section(header: Text("Assistant Details")) {
-            TextField("Name", text: $assistantDetailViewModel.assistant.name)
-            TextField("Instructions", text: Binding($assistantDetailViewModel.assistant.instructions, default: ""))
-            modelPicker
-            TextField("Description", text: Binding($assistantDetailViewModel.assistant.description, default: ""))
-            temperatureSlider
-            topPSlider
-        }
-    }
-    
-    private var modelPicker: some View {
-        Picker("Model", selection: $assistantDetailViewModel.assistant.model) {
-            ForEach(viewModel.availableModels, id: \.self) { model in
-                Text(model).tag(model)
-            }
-        }
-        .pickerStyle(MenuPickerStyle())
     }
     
     private var toolsSection: some View {
@@ -76,20 +56,6 @@ struct UpdateAssistantView: View {
             }
         } else {
             assistantDetailViewModel.assistant.tools.removeAll(where: { $0.type == type })
-        }
-    }
-    
-    private var temperatureSlider: some View {
-        VStack {
-            Text("Temperature: \(assistantDetailViewModel.assistant.temperature, specifier: "%.2f")")
-            Slider(value: $assistantDetailViewModel.assistant.temperature, in: 0.0...2.0, step: 0.01)
-        }
-    }
-    
-    private var topPSlider: some View {
-        VStack {
-            Text("Top P: \(assistantDetailViewModel.assistant.top_p, specifier: "%.2f")")
-            Slider(value: $assistantDetailViewModel.assistant.top_p, in: 0.0...1.0, step: 0.01)
         }
     }
     

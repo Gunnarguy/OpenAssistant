@@ -17,8 +17,7 @@ struct AssistantDetailView: View {
         VStack {
             errorMessageView
             assistantDetailsView
-            FormFieldsView(assistant: $viewModel.assistant, viewModel: managerViewModel)
-            SlidersView(assistant: $viewModel.assistant)
+            AssistantDetailsSection(assistant: $viewModel.assistant, availableModels: managerViewModel.availableModels)
             actionButtonsView
         }
         .padding()
@@ -52,19 +51,19 @@ struct AssistantDetailView: View {
             .padding()
     }
     
-private var actionButtonsView: some View {
-    ActionButtonsView(
-        refreshTrigger: $refreshTrigger,
-        updateAction: {
-            viewModel.updateAssistant()
-            triggerRefresh()
-        },
-        deleteAction: {
-            viewModel.deleteAssistant()
-            triggerRefresh()
-        }
-    )
-}
+    private var actionButtonsView: some View {
+        ActionButtonsView(
+            refreshTrigger: $refreshTrigger,
+            updateAction: {
+                viewModel.updateAssistant()
+                triggerRefresh()
+            },
+            deleteAction: {
+                viewModel.deleteAssistant()
+                triggerRefresh()
+            }
+        )
+    }
 
     private func triggerRefresh() {
         refreshTrigger.toggle()
