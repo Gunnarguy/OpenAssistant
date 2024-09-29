@@ -109,10 +109,10 @@
 		B0067AF72CA8CD400043E2DD /* AssistantViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				B0067AF52CA8B43E0043E2DD /* BaseAssistantViewModel.swift */,
 				B0EEE7252C99326A0012F2BA /* AssistantPickerViewModel.swift */,
 				B0EEE71F2C99326A0012F2BA /* AssistantDetailViewModel.swift */,
 				B0EEE7222C99326A0012F2BA /* AssistantManagerViewModel.swift */,
+				B0067AF52CA8B43E0043E2DD /* BaseAssistantViewModel.swift */,
 			);
 			path = AssistantViewModels;
 			sourceTree = "<group>";
@@ -135,7 +135,6 @@
 		B0DD9C652C9E09A000A0D623 /* Main */ = {
 			isa = PBXGroup;
 			children = (
-				B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */,
 				B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */,
 				B0DD9C612C9DFC3A00A0D623 /* OpenAIInitializer.swift */,
 				B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */,
@@ -143,6 +142,7 @@
 				B0EEE71C2C99326A0012F2BA /* ContentView.swift */,
 				B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */,
 				B0EEE73C2C99326A0012F2BA /* SettingsView.swift */,
+				B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
