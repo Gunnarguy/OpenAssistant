@@ -17,12 +17,16 @@ class OpenAIServiceInitializer {
             return nil
         }
         
-        if let service = sharedService {
-            return service
-        }
-        
         let service = OpenAIService(apiKey: apiKey)
         sharedService = service
         return service
+    }
+    
+    /// Re-initializes the OpenAIService with a new API key.
+    /// - Parameter apiKey: The new API key for authenticating with the OpenAI service.
+    /// - Returns: An instance of OpenAIService if the API key is valid, otherwise nil.
+    static func reinitialize(apiKey: String) -> OpenAIService? {
+        sharedService = nil
+        return initialize(apiKey: apiKey)
     }
 }

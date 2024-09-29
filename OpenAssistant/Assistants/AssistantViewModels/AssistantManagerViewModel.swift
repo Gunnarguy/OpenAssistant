@@ -17,7 +17,7 @@ class AssistantManagerViewModel: ObservableObject {
     init() {
         initializeOpenAIService()
         fetchData()
-        setupNotificationObservers() // Ensure observers are set up during initialization
+        setupNotificationObservers()
     }
     
     // MARK: - Initialization
@@ -34,6 +34,15 @@ class AssistantManagerViewModel: ObservableObject {
     private func handleError(_ message: String) {
         errorMessage = message
     }
+    
+    // MARK: - Update API Key
+    
+    func updateApiKey(newApiKey: String) {
+        apiKey = newApiKey
+        openAIService = OpenAIServiceInitializer.reinitialize(apiKey: newApiKey)
+        fetchData()
+    }
+
     
     // MARK: - Data Fetching
     
@@ -177,14 +186,11 @@ class AssistantManagerViewModel: ObservableObject {
     // MARK: - Notification Observers
     
     func setupNotificationObservers() {
-        let notificationCenter = NotificationCenter.default
-        let notifications: [Notification.Name] = [.assistantCreated, .assistantUpdated, .assistantDeleted, .settingsUpdated]
-
-        notifications.forEach { notification in
-            notificationCenter.publisher(for: notification)
-                .sink { [weak self] _ in self?.fetchAssistants() }
-                .store(in: &cancellables)
-        }
+        NotificationCenter.default.publisher(for: .settingsUpdated)
+            .sink { [weak self] _ in
+                self?.fetchData()
+            }
+            .store(in: &cancellables)
     }
 }
 
