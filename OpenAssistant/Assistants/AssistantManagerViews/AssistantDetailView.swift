@@ -33,7 +33,7 @@ struct AssistantDetailView: View {
     @ViewBuilder
     private var errorMessageView: some View {
         if let errorMessage = viewModel.errorMessage {
-            Text(errorMessage.message) // Access the message property of IdentifiableError
+            Text(errorMessage.message)
                 .foregroundColor(.red)
                 .padding()
                 .multilineTextAlignment(.center)
@@ -100,7 +100,7 @@ struct AssistantDetailView_Previews: PreviewProvider {
             tool_resources: nil,
             metadata: nil,
             response_format: nil,
-            file_ids: [] // Provide an empty array or appropriate file IDs
+            file_ids: []
         )
         let managerViewModel = AssistantManagerViewModel()
         AssistantDetailView(assistant: assistant, managerViewModel: managerViewModel)

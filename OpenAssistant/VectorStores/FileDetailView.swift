@@ -26,22 +26,22 @@ struct FileDetailView: View {
             detailRow(title: "Vector Store ID", value: file.vectorStoreId)
             detailRow(title: "Status", value: file.status)
             detailRow(title: "Last Error", value: file.lastError ?? "None")
-            if let chunkingStrategy = file.chunkingStrategy {
-                chunkingStrategyDetails(chunkingStrategy)
-            } else {
-                detailRow(title: "Chunking Strategy", value: "None")
-            }
+            chunkingStrategySection
         }
     }
 
-    // MARK: - Chunking Strategy Details
+    // MARK: - Chunking Strategy Section
 
-    private func chunkingStrategyDetails(_ chunkingStrategy: ChunkingStrategy) -> some View {
+    private var chunkingStrategySection: some View {
         Group {
-            detailRow(title: "Chunking Strategy", value: chunkingStrategy.type)
-            if let staticStrategy = chunkingStrategy.staticStrategy {
-                detailRow(title: "Max Chunk Size Tokens", value: "\(staticStrategy.maxChunkSizeTokens)")
-                detailRow(title: "Chunk Overlap Tokens", value: "\(staticStrategy.chunkOverlapTokens)")
+            if let chunkingStrategy = file.chunkingStrategy {
+                detailRow(title: "Chunking Strategy", value: chunkingStrategy.type)
+                if let staticStrategy = chunkingStrategy.staticStrategy {
+                    detailRow(title: "Max Chunk Size Tokens", value: "\(staticStrategy.maxChunkSizeTokens)")
+                    detailRow(title: "Chunk Overlap Tokens", value: "\(staticStrategy.chunkOverlapTokens)")
+                }
+            } else {
+                detailRow(title: "Chunking Strategy", value: "None")
             }
         }
     }

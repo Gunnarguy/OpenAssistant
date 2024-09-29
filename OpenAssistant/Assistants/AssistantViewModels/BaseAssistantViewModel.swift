@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import SwiftUI
 
 @MainActor
 class BaseAssistantViewModel: ObservableObject {
@@ -17,13 +16,17 @@ class BaseAssistantViewModel: ObservableObject {
         initializeOpenAIService()
     }
 
+    /// Initializes the OpenAIService with the API key.
     func initializeOpenAIService() {
-        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
-        if openAIService == nil {
+        guard !apiKey.isEmpty else {
             handleError("API key is missing")
+            return
         }
+        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
     }
 
+    /// Performs an action with the OpenAIService if it is initialized.
+    /// - Parameter action: The action to perform.
     func performServiceAction(action: (OpenAIService) -> Void) {
         guard let openAIService = openAIService else {
             handleError("OpenAIService is not initialized")
@@ -32,7 +35,10 @@ class BaseAssistantViewModel: ObservableObject {
         action(openAIService)
     }
 
-    // Generic result handler for success and error management
+    /// Handles the result of a service action.
+    /// - Parameters:
+    ///   - result: The result of the service action.
+    ///   - successHandler: The handler to call on success.
     func handleResult<T>(_ result: Result<T, OpenAIServiceError>, successHandler: @escaping (T) -> Void) {
         DispatchQueue.main.async {
             switch result {
@@ -44,7 +50,8 @@ class BaseAssistantViewModel: ObservableObject {
         }
     }
     
-    // Centralized error handling
+    /// Handles errors by setting the errorMessage property.
+    /// - Parameter message: The error message to display.
     func handleError(_ message: String) {
         errorMessage = message
     }

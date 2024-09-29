@@ -165,7 +165,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         }
     }
     
-    private func handleDeleteResult(_ result: Result<Void, OpenAIServiceError>) {
+    func handleDeleteResult(_ result: Result<Void, OpenAIServiceError>) {
         switch result {
         case .success:
             NotificationCenter.default.post(name: .assistantDeleted, object: nil)

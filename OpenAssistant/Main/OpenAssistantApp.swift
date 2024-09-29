@@ -11,11 +11,7 @@ struct OpenAssistantApp: App {
         WindowGroup {
             ContentView(assistantManagerViewModel: assistantManagerViewModel)
                 .environmentObject(assistantManagerViewModel)
-                .onAppear(perform: setup)
+                .onAppear(perform: assistantManagerViewModel.fetchAssistants)
         }
-    }
-
-    private func setup() {
-        assistantManagerViewModel.fetchAssistants()
     }
 }

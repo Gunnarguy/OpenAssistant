@@ -14,32 +14,20 @@ struct VectorStoreListView: View {
             List {
                 ForEach(viewModel.vectorStores) { vectorStore in
                     NavigationLink(destination: VectorStoreDetailView(viewModel: viewModel, vectorStore: vectorStore)) {
-                        VStack(alignment: .leading) {
-                            Text(vectorStore.name ?? "Unnamed Vector Store")
-                                .font(.headline)
-                            Text("Created at: \(formattedDate(from: vectorStore.createdAt))")
-                                .font(.subheadline)
-                        }
+                        VectorStoreRow(vectorStore: vectorStore)
                     }
                 }
                 .onDelete(perform: deleteVectorStore)
             }
             .navigationTitle("Vector Stores")
-            .navigationBarItems(trailing: Button(action: {
-                isShowingCreateAlert = true
-            }) {
-                Image(systemName: "plus")
-            })
+            .navigationBarItems(trailing: addButton)
             .alert("Create New Vector Store", isPresented: $isShowingCreateAlert, actions: {
-                TextField("Vector Store Name", text: $newVectorStoreName)
-                Button("Create", action: {
-                    
-                })
-                Button("Cancel", role: .cancel, action: {})
+                createAlertActions
             }, message: {
                 Text("Enter a name for the new vector store and select files.")
             })
-            .onAppear {
+            .onAppear(perform: loadVectorStores)
+            .onReceive(NotificationCenter.default.publisher(for: .settingsUpdated)) { _ in
                 loadVectorStores()
             }
             .alert(item: $viewModel.errorMessage) { error in
@@ -48,6 +36,22 @@ struct VectorStoreListView: View {
             .refreshable {
                 loadVectorStores()
             }
+        }
+    }
+
+    private var addButton: some View {
+        Button(action: {
+            isShowingCreateAlert = true
+        }) {
+            Image(systemName: "plus")
+        }
+    }
+
+    private var createAlertActions: some View {
+        Group {
+            TextField("Vector Store Name", text: $newVectorStoreName)
+            Button("Create", action: createVectorStore)
+            Button("Cancel", role: .cancel, action: {})
         }
     }
 
@@ -68,6 +72,24 @@ struct VectorStoreListView: View {
         offsets.forEach { index in
             let vectorStore = viewModel.vectorStores[index]
             viewModel.deleteVectorStore(vectorStoreId: vectorStore.id)
+        }
+    }
+
+    private func createVectorStore() {
+        // Implement the logic to create a new vector store
+    }
+}
+
+// MARK: - VectorStoreRow
+struct VectorStoreRow: View {
+    let vectorStore: VectorStore
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(vectorStore.name ?? "Unnamed Vector Store")
+                .font(.headline)
+            Text("Created at: \(formattedDate(from: vectorStore.createdAt))")
+                .font(.subheadline)
         }
     }
 

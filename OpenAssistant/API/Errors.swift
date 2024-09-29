@@ -2,7 +2,9 @@ import Foundation
 import Combine
 import SwiftUI
 
-enum OpenAIServiceError: Error {
+// MARK: - OpenAIServiceError
+
+enum OpenAIServiceError: Error, Equatable {
     case networkError(Error)
     case apiKeyMissing
     case invalidResponse(URLResponse)
@@ -26,6 +28,8 @@ struct IdentifiableError: Identifiable {
     let message: String
 }
 
+// MARK: - APIError
+
 struct APIError: Decodable, Equatable {
     let error: APIErrorDetail
 
@@ -45,11 +49,13 @@ struct APIErrorDetail: Decodable, Equatable {
     }
 }
 
+// MARK: - VectorStoreError
+
 enum VectorStoreError: Error {
     case missingAPIKey
     case serviceNotInitialized
     case fetchFailed(String)
-    case uploadFailed(String) // Added this case
+    case uploadFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -60,10 +66,12 @@ enum VectorStoreError: Error {
         case .fetchFailed(let message):
             return message
         case .uploadFailed(let message):
-            return message // Add this to satisfy exhaustiveness
+            return message
         }
     }
 }
+
+// MARK: - FileUploadError
 
 enum FileUploadError: LocalizedError {
     case fileSelectionFailed
@@ -88,20 +96,11 @@ enum FileUploadError: LocalizedError {
     }
     
     func logError() {
-        switch self {
-        case .fileSelectionFailed:
-            print("Error: File selection failed.")
-        case .fileReadFailed(let fileName):
-            print("Error: Failed to read file '\(fileName)'.")
-        case .uploadFailed(let reason):
-            print("Error: File upload failed. Reason: \(reason)")
-        case .batchCreationFailed(let reason):
-            print("Error: Batch creation failed. Reason: \(reason)")
-        case .noFilesSelected:
-            print("Error: No files were selected.")
-        }
+        print("Error: \(errorDescription ?? "Unknown error")")
     }
 }
+
+// MARK: - ErrorHandler
 
 class ErrorHandler: ObservableObject {
     @Published var errorMessage: String?
@@ -114,4 +113,3 @@ class ErrorHandler: ObservableObject {
         }
     }
 }
-

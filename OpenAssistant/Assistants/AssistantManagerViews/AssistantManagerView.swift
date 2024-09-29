@@ -15,8 +15,9 @@ struct AssistantManagerView: View {
                 }
         }
         .onAppear(perform: viewModel.fetchAssistants)
-        .onReceive(NotificationCenter.default.publisher(for: .assistantCreated)) { notification in
-            handleAssistantCreated(notification: notification)
+        .onReceive(NotificationCenter.default.publisher(for: .assistantCreated), perform: handleAssistantCreated)
+        .onReceive(NotificationCenter.default.publisher(for: .settingsUpdated)) { _ in
+            viewModel.fetchAssistants()
         }
         .sheet(isPresented: $showingCreateAssistantSheet) {
             CreateAssistantView(viewModel: viewModel)

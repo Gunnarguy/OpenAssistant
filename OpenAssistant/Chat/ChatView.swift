@@ -19,7 +19,7 @@ struct ChatView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, assistantId: viewModel.assistant.id)) {
-                            Image(systemName: "")
+                            Image(systemName: "clock")
                                 .foregroundColor(.blue)
                         }
                     }

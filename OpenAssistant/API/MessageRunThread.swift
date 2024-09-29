@@ -94,6 +94,7 @@ struct Message: Identifiable, Codable, Equatable {
     }
 }
 
+// MARK: - MessageResponse
 
 struct MessageResponse: Codable, Equatable {
     let id: String
@@ -113,6 +114,7 @@ struct MessageResponse: Codable, Equatable {
 }
 
 // MARK: - MessageResponseList
+
 struct MessageResponseList: Codable {
     let object: String
     let data: [Message]
@@ -120,7 +122,6 @@ struct MessageResponseList: Codable {
     let last_id: String?
     let has_more: Bool
 }
-
 
 // MARK: - Run
 
@@ -169,8 +170,8 @@ struct RunResult: Decodable, Equatable {
     }
 }
 
-
 // MARK: - Thread
+
 struct Thread: Identifiable, Decodable, Equatable {
     let id: String
     let object: String
@@ -189,4 +190,3 @@ struct Thread: Identifiable, Decodable, Equatable {
         return lhs.id == rhs.id
     }
 }
-

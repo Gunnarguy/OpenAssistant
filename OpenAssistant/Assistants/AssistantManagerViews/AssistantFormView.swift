@@ -16,41 +16,37 @@ struct AssistantFormView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Assistant Details")) {
-                TextField("Name", text: $name)
-                TextField("Instructions", text: $instructions)
-                Picker("Model", selection: $model) {
-                    ForEach(availableModels, id: \.self) { model in
-                        Text(model).tag(model)
-                    }
-                }
-                .pickerStyle(MenuPickerStyle())
-                TextField("Description", text: $description)
-                temperatureSlider
-                topPSlider
-            }
-
-            Section(header: Text("Tools")) {
-                Toggle("Enable File Search", isOn: $enableFileSearch)
-                Toggle("Enable Code Interpreter", isOn: $enableCodeInterpreter)
-            }
-
+            assistantDetailsSection
+            toolsSection
             actionButtons
         }
     }
 
-    private var temperatureSlider: some View {
-        VStack {
-            Text("Temperature: \(temperature, specifier: "%.2f")")
-            Slider(value: $temperature, in: 0.0...2.0, step: 0.01)
+    private var assistantDetailsSection: some View {
+        Section(header: Text("Assistant Details")) {
+            TextField("Name", text: $name)
+            TextField("Instructions", text: $instructions)
+            modelPicker
+            TextField("Description", text: $description)
+            TemperatureSlider(temperature: $temperature)
+            TopPSlider(topP: $topP)
         }
     }
 
-    private var topPSlider: some View {
-        VStack {
-            Text("Top P: \(topP, specifier: "%.2f")")
-            Slider(value: $topP, in: 0.0...1.0, step: 0.01)
+    private var toolsSection: some View {
+        Section(header: Text("Tools")) {
+            Toggle("Enable File Search", isOn: $enableFileSearch)
+            Toggle("Enable Code Interpreter", isOn: $enableCodeInterpreter)
         }
+    }
+
+    private var modelPicker: some View {
+        Picker("Model", selection: $model) {
+            ForEach(availableModels, id: \.self) { model in
+                Text(model).tag(model)
+            }
+        }
+        .pickerStyle(MenuPickerStyle())
     }
 
     private var actionButtons: some View {
@@ -65,3 +61,24 @@ struct AssistantFormView: View {
     }
 }
 
+private struct TemperatureSlider: View {
+    @Binding var temperature: Double
+
+    var body: some View {
+        VStack {
+            Text("Temperature: \(temperature, specifier: "%.2f")")
+            Slider(value: $temperature, in: 0.0...2.0, step: 0.01)
+        }
+    }
+}
+
+private struct TopPSlider: View {
+    @Binding var topP: Double
+
+    var body: some View {
+        VStack {
+            Text("Top P: \(topP, specifier: "%.2f")")
+            Slider(value: $topP, in: 0.0...1.0, step: 0.01)
+        }
+    }
+}

@@ -27,5 +27,3 @@ class BaseViewModel: ObservableObject {
         errorMessage = error
     }
 }
-
-

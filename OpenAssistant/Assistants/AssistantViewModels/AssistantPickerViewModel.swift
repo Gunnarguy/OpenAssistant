@@ -26,10 +26,7 @@ class AssistantPickerViewModel: BaseViewModel {
         errorMessage = nil
 
         openAIService.fetchAssistants { [weak self] result in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-                self.handleFetchResult(result)
-            }
+            self?.handleFetchResult(result)
         }
     }
 
@@ -39,33 +36,27 @@ class AssistantPickerViewModel: BaseViewModel {
     }
 
     // MARK: - Private Methods
-    private func handleFetchResult(_ result: Result<[Assistant], OpenAIServiceError>) {
-        switch result {
-        case .success(let assistants):
-            self.assistants = assistants
-        case .failure(let error):
-            self.handleError(IdentifiableError(message: error.localizedDescription))
+    func handleFetchResult(_ result: Result<[Assistant], OpenAIServiceError>) {
+        DispatchQueue.main.async {
+            switch result {
+            case .success(let assistants):
+                self.assistants = assistants
+            case .failure(let error):
+                self.handleError(IdentifiableError(message: error.localizedDescription))
+            }
+            self.isLoading = false
         }
-        self.isLoading = false
     }
 
-    private func setupNotificationObservers() {
-        NotificationCenter.default.publisher(for: .assistantCreated)
-            .sink { [weak self] _ in self?.fetchAssistants() }
-            .store(in: &cancellables)
+    func setupNotificationObservers() {
+        let notificationCenter = NotificationCenter.default
+        let notifications: [Notification.Name] = [.assistantCreated, .assistantUpdated, .assistantDeleted, .settingsUpdated]
 
-        NotificationCenter.default.publisher(for: .assistantUpdated)
-            .sink { [weak self] _ in self?.fetchAssistants() }
-            .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: .assistantDeleted)
-            .sink { [weak self] _ in self?.fetchAssistants() }
-            .store(in: &cancellables)
-        
-        // Observer for the settings updated notification
-        NotificationCenter.default.publisher(for: .settingsUpdated)
-            .sink { [weak self] _ in self?.fetchAssistants() }
-            .store(in: &cancellables)
+        notifications.forEach { notification in
+            notificationCenter.publisher(for: notification)
+                .sink { [weak self] _ in self?.fetchAssistants() }
+                .store(in: &cancellables)
+        }
     }
 }
 

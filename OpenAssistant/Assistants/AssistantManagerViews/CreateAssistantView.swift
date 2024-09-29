@@ -9,9 +9,9 @@ struct CreateAssistantView: View {
     @State private var name: String = ""
     @State private var instructions: String = ""
     @State private var model: String = ""
-    @State private var description: String = "You are a helpful assistant."
-    @State private var temperature: Double = 1.0
-    @State private var topP: Double = 1.0
+    @State private var description: String = Constants.defaultDescription
+    @State private var temperature: Double = Constants.defaultTemperature
+    @State private var topP: Double = Constants.defaultTopP
     @State private var enableFileSearch: Bool = false
     @State private var enableCodeInterpreter: Bool = false
 
@@ -85,10 +85,10 @@ struct CreateAssistantView: View {
     private func createToolResources() -> ToolResources? {
         var toolResources = ToolResources()
         if enableFileSearch {
-            toolResources.fileSearch = FileSearchResources(vectorStoreIds: ["valid_vector_store_id"])
+            toolResources.fileSearch = FileSearchResources(vectorStoreIds: [Constants.validVectorStoreId])
         }
         if enableCodeInterpreter {
-            toolResources.codeInterpreter = CodeInterpreterResources(fileIds: ["valid_file_id"])
+            toolResources.codeInterpreter = CodeInterpreterResources(fileIds: [Constants.validFileId])
         }
         return toolResources
     }
@@ -96,4 +96,12 @@ struct CreateAssistantView: View {
     private func dismissView() {
         presentationMode.wrappedValue.dismiss()
     }
+}
+
+private struct Constants {
+    static let defaultDescription = "You are a helpful assistant."
+    static let defaultTemperature: Double = 1.0
+    static let defaultTopP: Double = 1.0
+    static let validVectorStoreId = "valid_vector_store_id"
+    static let validFileId = "valid_file_id"
 }

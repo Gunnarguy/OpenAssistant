@@ -8,39 +8,26 @@ struct MainTabView: View {
     
     var body: some View {
         TabView {
-            AssistantPickerView(messageStore: messageStore)
-                .tabItem {
-                    Label("Assistants", systemImage: "person.3")
-                }
- 
-            AssistantManagerView()
-                .tabItem {
-                    Label("Manage", systemImage: "person.2.badge.gearshape")
-                }
-                .onAppear {
-                    print("AssistantManagerView tab appeared")
-                }
-            
-            VectorStoreListView(viewModel: VectorStoreManagerViewModel())
-                .tabItem {
-                    Label("Vector Stores", systemImage: "folder")
-                }
-                .onAppear {
-                    print("VectorStoreListView tab appeared")
-                }
-            
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
-                }
-                .onAppear {
-                    print("SettingsView tab appeared")
-                }
+            createTab(view: AssistantPickerView(messageStore: messageStore), label: "Assistants", systemImage: "person.3")
+            createTab(view: AssistantManagerView(), label: "Manage", systemImage: "person.2.badge.gearshape")
+            createTab(view: VectorStoreListView(viewModel: VectorStoreManagerViewModel()), label: "Vector Stores", systemImage: "folder")
+            createTab(view: SettingsView(), label: "Settings", systemImage: "gear")
         }
         .sheet(item: $selectedAssistant) { assistant in
             NavigationView {
                 ChatView(assistant: assistant, messageStore: messageStore)
             }
         }
+    }
+    
+    @ViewBuilder
+    private func createTab<Content: View>(view: Content, label: String, systemImage: String) -> some View {
+        view
+            .tabItem {
+                Label(label, systemImage: systemImage)
+            }
+            .onAppear {
+                print("\(label) tab appeared")
+            }
     }
 }

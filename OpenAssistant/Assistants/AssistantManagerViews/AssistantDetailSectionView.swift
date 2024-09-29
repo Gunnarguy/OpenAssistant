@@ -6,13 +6,25 @@ struct AssistantDetailsSection: View {
 
     var body: some View {
         Section(header: Text("Assistant Details")) {
-            TextField("Name", text: $assistant.name)
-            TextField("Instructions", text: Binding($assistant.instructions, default: ""))
+            nameField
+            instructionsField
             modelPicker
-            TextField("Description", text: Binding($assistant.description, default: ""))
+            descriptionField
             temperatureSlider
             topPSlider
         }
+    }
+
+    private var nameField: some View {
+        TextField("Name", text: $assistant.name)
+    }
+
+    private var instructionsField: some View {
+        TextField("Instructions", text: Binding($assistant.instructions, default: ""))
+    }
+
+    private var descriptionField: some View {
+        TextField("Description", text: Binding($assistant.description, default: ""))
     }
 
     private var modelPicker: some View {

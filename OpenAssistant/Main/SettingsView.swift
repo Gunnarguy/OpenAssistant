@@ -70,7 +70,6 @@ struct SettingsView: View {
         print("Dark Mode: \(isDarkMode)")
     }
     
-    
     struct SettingsView_Previews: PreviewProvider {
         static var previews: some View {
             SettingsView()

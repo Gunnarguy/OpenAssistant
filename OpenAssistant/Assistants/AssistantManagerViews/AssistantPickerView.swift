@@ -14,13 +14,19 @@ struct AssistantPickerView: View {
                     ChatView(assistant: assistant, messageStore: messageStore)
                 }
         }
+        .onAppear {
+            viewModel.fetchAssistants()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .settingsUpdated)) { _ in
+            viewModel.fetchAssistants()
+        }
     }
     
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading {
             ProgressView("Loading...")
-        } else if let errorMessage = viewModel.errorMessage?.message { // Extract the message property
+        } else if let errorMessage = viewModel.errorMessage?.message {
             ErrorView(message: errorMessage, retryAction: viewModel.fetchAssistants)
         } else {
             assistantList

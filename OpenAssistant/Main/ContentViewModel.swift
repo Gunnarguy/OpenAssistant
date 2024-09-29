@@ -6,13 +6,25 @@ import SwiftUI
 class ContentViewModel: ObservableObject {
     @Published var selectedAssistant: Assistant?
     @Published var isLoading = false
-    private var assistantManagerViewModel: AssistantManagerViewModel
+    private let assistantManagerViewModel: AssistantManagerViewModel
+    private var cancellables = Set<AnyCancellable>()
 
     init(assistantManagerViewModel: AssistantManagerViewModel) {
         self.assistantManagerViewModel = assistantManagerViewModel
+        setupBindings()
+    }
+
+    private func setupBindings() {
+        // Example of setting up bindings if needed
+        // assistantManagerViewModel.$somePublishedProperty
+        //     .sink { [weak self] value in
+        //         self?.handleValueChange(value)
+        //     }
+        //     .store(in: &cancellables)
     }
 
     func startLoading() {
+        isLoading = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             self.isLoading = false
         }
@@ -23,12 +35,8 @@ class ContentViewModel: ObservableObject {
     }
 
     func refreshContent() {
-        // Logic to refresh and reload the entire app
         print("Refreshing content...")
-        
-        // Fetch the latest assistants
         assistantManagerViewModel.fetchAssistants()
-        
-        // Optionally, you can add more logic here to refresh other parts of the app
+        // Optionally, add more logic here to refresh other parts of the app
     }
 }
