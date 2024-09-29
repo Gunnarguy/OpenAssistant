@@ -819,8 +819,11 @@ extension OpenAIService {
             let url = self.baseURL.appendingPathComponent("files")
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
-            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
+            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: HTTPHeaderField.authorization.rawValue)
+            request.addValue("assistants=v2", forHTTPHeaderField: HTTPHeaderField.openAIBeta.rawValue)
             let boundary = "Boundary-\(UUID().uuidString)"
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
             var body = Data()
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
@@ -829,7 +832,6 @@ extension OpenAIService {
             body.append("\r\n".data(using: .utf8)!)
             body.append("--\(boundary)--\r\n".data(using: .utf8)!)
             request.httpBody = body
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
             
             self.session.dataTask(with: request) { data, response, error in
                 if let error = error {
@@ -858,7 +860,7 @@ extension OpenAIService {
         }
     }
 }
-    
+
     
     
 // MARK: - Create File Batch Extension
