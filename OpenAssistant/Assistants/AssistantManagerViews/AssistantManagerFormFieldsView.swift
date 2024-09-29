@@ -86,59 +86,17 @@ struct SlidersView: View {
 
 struct ActionButtonsView: View {
     @Binding var refreshTrigger: Bool
-    let updateAction: () -> Void
-    let deleteAction: () -> Void
-    let createVectorStoreAction: () -> Void // Add this line
+    var updateAction: () -> Void
+    var deleteAction: () -> Void
+    var createVectorStoreAction: (() -> Void)? = nil // Make it optional
 
     var body: some View {
-        HStack {
-            updateButton
-            deleteButton
-            createVectorStoreButton // Add this line
+        VStack {
+            Button("Update", action: updateAction)
+            Button("Delete", action: deleteAction)
+            if let createAction = createVectorStoreAction {
+                Button("Create Vector Store", action: createAction)
+            }
         }
-        .padding()
-    }
-
-    private var updateButton: some View {
-        Button(action: {
-            updateAction()
-            triggerRefresh()
-        }) {
-            Text("Update")
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-        }
-    }
-
-    private var deleteButton: some View {
-        Button(action: {
-            deleteAction()
-            triggerRefresh()
-        }) {
-            Text("Delete")
-                .padding()
-                .background(Color.red)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-        }
-    }
-
-    private var createVectorStoreButton: some View { // Add this function
-        Button(action: {
-            createVectorStoreAction()
-            triggerRefresh()
-        }) {
-            Text("Create Vector Store")
-                .padding()
-                .background(Color.green)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-        }
-    }
-
-    private func triggerRefresh() {
-        refreshTrigger.toggle()
     }
 }

@@ -20,6 +20,7 @@ struct CreateAssistantView: View {
         NavigationView {
             Form {
                 assistantDetailsSection
+                toolsSection
             }
             .navigationTitle("Create Assistant")
             .toolbar {
@@ -124,10 +125,12 @@ struct CreateAssistantView: View {
     private func createToolResources() -> ToolResources? {
         var toolResources = ToolResources()
         if enableFileSearch {
-            toolResources.fileSearch = FileSearchResources(vectorStoreIds: ["your_vector_store_id"])
+            // Replace "your_vector_store_id" with a valid vector store ID
+            toolResources.fileSearch = FileSearchResources(vectorStoreIds: ["valid_vector_store_id"])
         }
         if enableCodeInterpreter {
-            toolResources.codeInterpreter = CodeInterpreterResources(fileIds: ["your_file_id"])
+            // Replace "your_file_id" with a valid file ID
+            toolResources.codeInterpreter = CodeInterpreterResources(fileIds: ["valid_file_id"])
         }
         return toolResources
     }
