@@ -14,6 +14,7 @@ class BaseAssistantViewModel: ObservableObject {
 
     init() {
         initializeOpenAIService()
+        setupNotificationObservers()
     }
 
     /// Initializes the OpenAIService with the API key.
@@ -54,5 +55,19 @@ class BaseAssistantViewModel: ObservableObject {
     /// - Parameter message: The error message to display.
     func handleError(_ message: String) {
         errorMessage = message
+    }
+
+    // MARK: - Notification Observers
+    private func setupNotificationObservers() {
+        NotificationCenter.default.publisher(for: .settingsUpdated)
+            .sink { [weak self] _ in
+                self?.updateApiKey()
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Update API Key
+    private func updateApiKey() {
+        openAIService = OpenAIServiceInitializer.reinitialize(apiKey: apiKey)
     }
 }

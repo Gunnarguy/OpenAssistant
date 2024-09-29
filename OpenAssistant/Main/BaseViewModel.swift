@@ -11,6 +11,7 @@ class BaseViewModel: ObservableObject {
 
     init() {
         initializeOpenAIService()
+        setupNotificationObservers()
     }
 
     // MARK: - Service Initialization
@@ -19,11 +20,25 @@ class BaseViewModel: ObservableObject {
             handleError(IdentifiableError(message: "API key is missing"))
             return
         }
-        openAIService = OpenAIService(apiKey: apiKey)
+        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
     }
 
     // MARK: - Error Handling
     func handleError(_ error: IdentifiableError) {
         errorMessage = error
+    }
+
+    // MARK: - Notification Observers
+    private func setupNotificationObservers() {
+        NotificationCenter.default.publisher(for: .settingsUpdated)
+            .sink { [weak self] _ in
+                self?.updateApiKey()
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Update API Key
+    private func updateApiKey() {
+        openAIService = OpenAIServiceInitializer.reinitialize(apiKey: apiKey)
     }
 }

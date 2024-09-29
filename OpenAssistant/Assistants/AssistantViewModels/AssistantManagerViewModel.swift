@@ -42,9 +42,8 @@ class AssistantManagerViewModel: ObservableObject {
         openAIService = OpenAIServiceInitializer.reinitialize(apiKey: newApiKey)
         fetchData()
     }
-
     
-    // MARK: - Data Fetching
+    // MARK: - Fetch Data
     
     private func fetchData() {
         fetchAssistants()
