@@ -14,7 +14,10 @@ struct AssistantManagerView: View {
                     addButton
                 }
         }
-        .onAppear(perform: viewModel.fetchAssistants)
+        .onAppear {
+            viewModel.fetchAssistants()
+            viewModel.setupNotificationObservers() // Ensure observers are set up
+        }
         .onReceive(NotificationCenter.default.publisher(for: .assistantCreated), perform: handleAssistantCreated)
         .onReceive(NotificationCenter.default.publisher(for: .settingsUpdated)) { _ in
             viewModel.fetchAssistants()

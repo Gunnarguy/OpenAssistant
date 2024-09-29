@@ -6,47 +6,85 @@ struct AssistantDetailsSection: View {
 
     var body: some View {
         Section(header: Text("Assistant Details")) {
-            nameField
-            instructionsField
-            modelPicker
-            descriptionField
-            temperatureSlider
-            topPSlider
+            NameField(name: $assistant.name)
+            InstructionsField(instructions: Binding($assistant.instructions, default: ""))
+            ModelPicker(model: $assistant.model, availableModels: availableModels)
+            DescriptionField(description: Binding($assistant.description, default: ""))
+            TemperatureSlider(temperature: $assistant.temperature)
+            TopPSlider(topP: $assistant.top_p)
         }
     }
+}
 
-    private var nameField: some View {
-        TextField("Name", text: $assistant.name)
+// MARK: - Subviews
+
+private struct NameField: View {
+    @Binding var name: String
+
+    var body: some View {
+        TextField("Name", text: $name)
     }
+}
 
-    private var instructionsField: some View {
-        TextField("Instructions", text: Binding($assistant.instructions, default: ""))
+private struct InstructionsField: View {
+    @Binding var instructions: String
+
+    var body: some View {
+        TextField("Instructions", text: $instructions)
     }
+}
 
-    private var descriptionField: some View {
-        TextField("Description", text: Binding($assistant.description, default: ""))
+private struct DescriptionField: View {
+    @Binding var description: String
+
+    var body: some View {
+        TextField("Description", text: $description)
     }
+}
 
-    private var modelPicker: some View {
-        Picker("Model", selection: $assistant.model) {
+private struct ModelPicker: View {
+    @Binding var model: String
+    var availableModels: [String]
+
+    var body: some View {
+        Picker("Model", selection: $model) {
             ForEach(availableModels, id: \.self) { model in
                 Text(model).tag(model)
             }
         }
         .pickerStyle(MenuPickerStyle())
     }
+}
 
-    private var temperatureSlider: some View {
+private struct TemperatureSlider: View {
+    @Binding var temperature: Double
+
+    var body: some View {
         VStack {
-            Text("Temperature: \(assistant.temperature, specifier: "%.2f")")
-            Slider(value: $assistant.temperature, in: 0.0...2.0, step: 0.01)
+            Text("Temperature: \(temperature, specifier: "%.2f")")
+            Slider(value: $temperature, in: 0.0...2.0, step: 0.01)
         }
     }
+}
 
-    private var topPSlider: some View {
+private struct TopPSlider: View {
+    @Binding var topP: Double
+
+    var body: some View {
         VStack {
-            Text("Top P: \(assistant.top_p, specifier: "%.2f")")
-            Slider(value: $assistant.top_p, in: 0.0...1.0, step: 0.01)
+            Text("Top P: \(topP, specifier: "%.2f")")
+            Slider(value: $topP, in: 0.0...1.0, step: 0.01)
         }
+    }
+}
+
+// MARK: - Extensions
+
+private extension Binding where Value == String {
+    init(_ source: Binding<String?>, default defaultValue: String) {
+        self.init(
+            get: { source.wrappedValue ?? defaultValue },
+            set: { source.wrappedValue = $0 }
+        )
     }
 }

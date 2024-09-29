@@ -3,14 +3,36 @@ import Combine
 import SwiftUI
 
 @MainActor
-class AssistantManagerViewModel: BaseAssistantViewModel {
+class AssistantManagerViewModel: ObservableObject {
     @Published var assistants: [Assistant] = []
     @Published var availableModels: [String] = []
     @Published var vectorStores: [VectorStore] = []
-
-    override init() {
-        super.init()
+    @Published var errorMessage: String?
+    
+    private var openAIService: OpenAIService?
+    var cancellables = Set<AnyCancellable>()
+    
+    @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
+    
+    init() {
+        initializeOpenAIService()
         fetchData()
+        setupNotificationObservers() // Ensure observers are set up during initialization
+    }
+    
+    // MARK: - Initialization
+    
+    private func initializeOpenAIService() {
+        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
+        if openAIService == nil {
+            handleError("API key is missing")
+        }
+    }
+    
+    // MARK: - Error Handling
+    
+    private func handleError(_ message: String) {
+        errorMessage = message
     }
     
     // MARK: - Data Fetching
@@ -117,7 +139,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
     
     // MARK: - Private Methods
     
-    override func performServiceAction(action: (OpenAIService) -> Void) {
+    private func performServiceAction(action: (OpenAIService) -> Void) {
         guard let openAIService = openAIService else {
             handleError("OpenAIService is not initialized")
             return
@@ -143,51 +165,32 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         }
     }
     
-    private func handleCreateResult(_ result: Result<Assistant, OpenAIServiceError>) {
+    private func handleResult<T>(_ result: Result<T, OpenAIServiceError>, successHandler: (T) -> Void) {
         switch result {
-        case .success(let assistant):
-            self.assistants.append(assistant)
-            NotificationCenter.default.post(name: .assistantCreated, object: assistant)
+        case .success(let value):
+            successHandler(value)
         case .failure(let error):
-            handleError("Create failed: \(error.localizedDescription)")
+            handleError("Operation failed: \(error.localizedDescription)")
         }
     }
     
-    private func handleUpdateResult(_ result: Result<Assistant, OpenAIServiceError>) {
-        switch result {
-        case .success(let updatedAssistant):
-            if let index = self.assistants.firstIndex(where: { $0.id == updatedAssistant.id }) {
-                self.assistants[index] = updatedAssistant
-                NotificationCenter.default.post(name: .assistantUpdated, object: updatedAssistant)
-            }
-        case .failure(let error):
-            handleError("Update failed: \(error.localizedDescription)")
-        }
-    }
+    // MARK: - Notification Observers
     
-    func handleDeleteResult(_ result: Result<Void, OpenAIServiceError>) {
-        switch result {
-        case .success:
-            NotificationCenter.default.post(name: .assistantDeleted, object: nil)
-        case .failure(let error):
-            handleError("Delete failed: \(error.localizedDescription)")
+    func setupNotificationObservers() {
+        let notificationCenter = NotificationCenter.default
+        let notifications: [Notification.Name] = [.assistantCreated, .assistantUpdated, .assistantDeleted, .settingsUpdated]
+
+        notifications.forEach { notification in
+            notificationCenter.publisher(for: notification)
+                .sink { [weak self] _ in self?.fetchAssistants() }
+                .store(in: &cancellables)
         }
-    }
-}
-
-// MARK: - Extensions
-
-extension Binding {
-    init(_ source: Binding<Value?>, default defaultValue: Value) {
-        self.init(
-            get: { source.wrappedValue ?? defaultValue },
-            set: { newValue in source.wrappedValue = newValue }
-        )
     }
 }
 
 extension Notification.Name {
+    static let assistantCreated = Notification.Name("assistantCreated")
     static let assistantUpdated = Notification.Name("assistantUpdated")
     static let assistantDeleted = Notification.Name("assistantDeleted")
-    static let assistantCreated = Notification.Name("assistantCreated")
+
 }

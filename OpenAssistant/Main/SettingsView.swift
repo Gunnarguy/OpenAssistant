@@ -52,23 +52,24 @@ struct SettingsView: View {
         isApiKeyValid = !apiKey.isEmpty
     }
     
-    private func saveSettings() {
-        validateApiKey()
-        if isApiKeyValid {
-            alertMessage = "Settings saved successfully."
-            print("API Key saved: \(apiKey)")
-            
-            // Notify other views to refresh data after API key is saved
-            NotificationCenter.default.post(name: .settingsUpdated, object: nil)
-            
-            // Optionally refresh the assistants in the assistant manager view model
-            assistantManagerViewModel.fetchAssistants()
-        } else {
-            alertMessage = "API Key cannot be empty."
-        }
-        showAlert = true
-        print("Dark Mode: \(isDarkMode)")
+private func saveSettings() {
+    validateApiKey()
+    if isApiKeyValid {
+        alertMessage = "Settings saved successfully."
+        print("API Key saved: \(apiKey)")
+
+        // Notify other views to refresh data after API key is saved
+        NotificationCenter.default.post(name: .settingsUpdated, object: nil)
+
+        // Optionally refresh the assistants in the assistant manager view model
+        assistantManagerViewModel.fetchAssistants()
+    } else {
+        alertMessage = "API Key cannot be empty."
     }
+    showAlert = true
+    print("Dark Mode: \(isDarkMode)")
+}
+
     
     struct SettingsView_Previews: PreviewProvider {
         static var previews: some View {

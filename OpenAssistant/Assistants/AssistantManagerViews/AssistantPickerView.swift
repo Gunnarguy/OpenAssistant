@@ -21,7 +21,7 @@ struct AssistantPickerView: View {
             viewModel.fetchAssistants()
         }
     }
-    
+
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading {
@@ -32,7 +32,7 @@ struct AssistantPickerView: View {
             assistantList
         }
     }
-    
+
     private var assistantList: some View {
         List(viewModel.assistants) { assistant in
             Button(action: { viewModel.selectAssistant(assistant) }) {

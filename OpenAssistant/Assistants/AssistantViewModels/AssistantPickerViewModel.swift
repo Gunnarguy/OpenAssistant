@@ -26,7 +26,10 @@ class AssistantPickerViewModel: BaseViewModel {
         errorMessage = nil
 
         openAIService.fetchAssistants { [weak self] result in
-            self?.handleFetchResult(result)
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.handleFetchResult(result)
+            }
         }
     }
 
@@ -36,28 +39,28 @@ class AssistantPickerViewModel: BaseViewModel {
     }
 
     // MARK: - Private Methods
-    func handleFetchResult(_ result: Result<[Assistant], OpenAIServiceError>) {
-        DispatchQueue.main.async {
-            switch result {
-            case .success(let assistants):
-                self.assistants = assistants
-            case .failure(let error):
-                self.handleError(IdentifiableError(message: error.localizedDescription))
-            }
-            self.isLoading = false
+    private func handleFetchResult(_ result: Result<[Assistant], OpenAIServiceError>) {
+        switch result {
+        case .success(let assistants):
+            self.assistants = assistants
+        case .failure(let error):
+            self.handleError(IdentifiableError(message: error.localizedDescription))
         }
+        self.isLoading = false
     }
 
-    func setupNotificationObservers() {
-        let notificationCenter = NotificationCenter.default
-        let notifications: [Notification.Name] = [.assistantCreated, .assistantUpdated, .assistantDeleted, .settingsUpdated]
+private func setupNotificationObservers() {
+    let notificationCenter = NotificationCenter.default
+    let notifications: [Notification.Name] = [.assistantCreated, .assistantUpdated, .assistantDeleted, .settingsUpdated]
 
-        notifications.forEach { notification in
-            notificationCenter.publisher(for: notification)
-                .sink { [weak self] _ in self?.fetchAssistants() }
-                .store(in: &cancellables)
-        }
+    notifications.forEach { notification in
+        notificationCenter.publisher(for: notification)
+            .sink { [weak self] _ in self?.fetchAssistants() }
+            .store(in: &cancellables)
     }
+}
+
+
 }
 
 extension Notification.Name {
