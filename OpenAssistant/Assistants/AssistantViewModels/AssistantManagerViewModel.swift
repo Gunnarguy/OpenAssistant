@@ -72,8 +72,9 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
                 topP: topP,
                 responseFormat: responseFormat
             ) { [weak self] result in
-                DispatchQueue.main.async {
-                    self?.handleCreateResult(result)
+                self?.handleResult(result) { assistant in
+                    self?.assistants.append(assistant)
+                    NotificationCenter.default.post(name: .assistantCreated, object: assistant)
                 }
             }
         }
@@ -94,8 +95,11 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
                 topP: assistant.top_p,
                 responseFormat: assistant.response_format
             ) { [weak self] result in
-                DispatchQueue.main.async {
-                    self?.handleUpdateResult(result)
+                self?.handleResult(result) { updatedAssistant in
+                    if let index = self?.assistants.firstIndex(where: { $0.id == updatedAssistant.id }) {
+                        self?.assistants[index] = updatedAssistant
+                        NotificationCenter.default.post(name: .assistantUpdated, object: updatedAssistant)
+                    }
                 }
             }
         }
@@ -104,8 +108,8 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
     func deleteAssistant(assistant: Assistant) {
         performServiceAction { openAIService in
             openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
-                DispatchQueue.main.async {
-                    self?.handleDeleteResult(result)
+                self?.handleResult(result) {
+                    NotificationCenter.default.post(name: .assistantDeleted, object: nil)
                 }
             }
         }

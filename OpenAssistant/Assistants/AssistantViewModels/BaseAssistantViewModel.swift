@@ -32,10 +32,7 @@ class BaseAssistantViewModel: ObservableObject {
         action(openAIService)
     }
 
-    func handleError(_ message: String) {
-        errorMessage = message
-    }
-
+    // Generic result handler for success and error management
     func handleResult<T>(_ result: Result<T, OpenAIServiceError>, successHandler: @escaping (T) -> Void) {
         DispatchQueue.main.async {
             switch result {
@@ -45,5 +42,10 @@ class BaseAssistantViewModel: ObservableObject {
                 self.handleError("Operation failed: \(error.localizedDescription)")
             }
         }
+    }
+    
+    // Centralized error handling
+    func handleError(_ message: String) {
+        errorMessage = message
     }
 }
