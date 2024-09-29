@@ -18,7 +18,7 @@ struct Assistant: Identifiable, Codable, Equatable {
     var tool_resources: ToolResources?
     var metadata: [String: String]?
     var response_format: ResponseFormat?
-    var file_ids: [String]? // Added property
+    var file_ids: [String]?
 
     static func ==(lhs: Assistant, rhs: Assistant) -> Bool {
         return lhs.id == rhs.id
@@ -58,10 +58,6 @@ struct AssistantsResponse: Decodable, Equatable {
     let first_id: String?
     let last_id: String?
     let has_more: Bool
-
-    private enum CodingKeys: String, CodingKey {
-        case object, data, first_id, last_id, has_more
-    }
 }
 
 // MARK: - Tool
@@ -69,7 +65,7 @@ struct Tool: Codable {
     var type: String
     var maxNumResults: Int?
     var function: FunctionTool?
-    var retrieval: RetrievalTool? // Added property
+    var retrieval: RetrievalTool?
 
     private enum CodingKeys: String, CodingKey {
         case type
@@ -105,7 +101,6 @@ struct FunctionTool: Codable {
         case parameters
     }
 
-    // Custom encoding
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(description, forKey: .description)
@@ -117,7 +112,6 @@ struct FunctionTool: Codable {
         }
     }
 
-    // Custom decoding
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         description = try container.decodeIfPresent(String.self, forKey: .description)
@@ -154,7 +148,6 @@ struct RetrievalTool: Codable {
         case options
     }
 
-    // Custom encoding
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(description, forKey: .description)
@@ -166,7 +159,6 @@ struct RetrievalTool: Codable {
         }
     }
 
-    // Custom decoding
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         description = try container.decodeIfPresent(String.self, forKey: .description)
@@ -242,7 +234,7 @@ struct CodeInterpreterResources: Codable {
 // MARK: - FileSearch
 struct FileSearch: Codable {
     let max_num_results: Int?
-    
+
     func toFileSearchDictionary() -> [String: Any] {
         var dict: [String: Any] = [:]
         if let max_num_results = max_num_results {
@@ -257,39 +249,22 @@ struct MessageContent: Codable, Equatable {
     let type: String
     let text: TextContent?
     let image: ImageContent?
-
-    private enum CodingKeys: String, CodingKey {
-        case type, text, image
-    }
 }
-
 
 // MARK: - TextContent
 struct TextContent: Codable, Equatable {
     let value: String
-
-    private enum CodingKeys: String, CodingKey {
-        case value
-    }
 }
 
 // MARK: - ImageContent
 struct ImageContent: Codable, Equatable {
     let url: String
-
-    private enum CodingKeys: String, CodingKey {
-        case url
-    }
 }
 
 // MARK: - TruncationStrategy
 struct TruncationStrategy: Decodable, Equatable {
     let type: String
     let last_messages: [String]?
-
-    private enum CodingKeys: String, CodingKey {
-        case type, last_messages
-    }
 }
 
 // MARK: - ExpiresAfter
@@ -299,7 +274,6 @@ struct ExpiresAfter: Codable {
 }
 
 // MARK: - ExpiresAfterType
-/// Enum to handle different types of expiration data.
 enum ExpiresAfterType: Codable {
     case int(Int)
     case dict(ExpiresAfter)
@@ -330,7 +304,6 @@ enum ExpiresAfterType: Codable {
 }
 
 // MARK: - File
-/// Represents a file with metadata and status information.
 struct File: Identifiable, Codable {
     let id: String
     let name: String?
@@ -374,7 +347,7 @@ struct AssistantSettings: Decodable {
     let tool_resources: ToolResources?
     let metadata: [String: String]?
     let response_format: ResponseFormat?
-    let file_ids: [String]? // Added property
+    let file_ids: [String]?
 }
 
 // MARK: - FileBatch

@@ -1,3 +1,5 @@
+import Foundation
+import Combine
 import SwiftUI
 
 struct ContentView: View {

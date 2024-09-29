@@ -3,35 +3,14 @@ import Combine
 import SwiftUI
 
 @MainActor
-class AssistantManagerViewModel: ObservableObject {
+class AssistantManagerViewModel: BaseAssistantViewModel {
     @Published var assistants: [Assistant] = []
     @Published var availableModels: [String] = []
     @Published var vectorStores: [VectorStore] = []
-    @Published var errorMessage: String?
-    
-    private var openAIService: OpenAIService?
-    var cancellables = Set<AnyCancellable>()
-    
-    @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
-    
-    init() {
-        initializeOpenAIService()
+
+    override init() {
+        super.init()
         fetchData()
-    }
-    
-    // MARK: - Initialization
-    
-    private func initializeOpenAIService() {
-        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
-        if openAIService == nil {
-            handleError("API key is missing")
-        }
-    }
-    
-    // MARK: - Error Handling
-    
-    private func handleError(_ message: String) {
-        errorMessage = message
     }
     
     // MARK: - Data Fetching
@@ -134,7 +113,7 @@ class AssistantManagerViewModel: ObservableObject {
     
     // MARK: - Private Methods
     
-    private func performServiceAction(action: (OpenAIService) -> Void) {
+    override func performServiceAction(action: (OpenAIService) -> Void) {
         guard let openAIService = openAIService else {
             handleError("OpenAIService is not initialized")
             return

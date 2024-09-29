@@ -1,4 +1,6 @@
 import Foundation
+import Combine
+import SwiftUI
 
 class OpenAIServiceInitializer {
     static func initialize(apiKey: String) -> OpenAIService? {

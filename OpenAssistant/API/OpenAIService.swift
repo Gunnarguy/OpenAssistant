@@ -189,15 +189,33 @@ class OpenAIService {
     ) {
         var body: [String: Any] = ["model": model]
 
-        body["name"] = name
-        body["description"] = description
-        body["instructions"] = instructions
-        body["tools"] = tools
-        body["tool_resources"] = toolResources
-        body["metadata"] = metadata
-        body["temperature"] = temperature
-        body["top_p"] = topP
-        body["response_format"] = responseFormat?.toAny()
+        if let name = name {
+            body["name"] = name
+        }
+        if let description = description {
+            body["description"] = description
+        }
+        if let instructions = instructions {
+            body["instructions"] = instructions
+        }
+        if let tools = tools {
+            body["tools"] = tools
+        }
+        if let toolResources = toolResources {
+            body["tool_resources"] = toolResources
+        }
+        if let metadata = metadata {
+            body["metadata"] = metadata
+        }
+        if let temperature = temperature {
+            body["temperature"] = temperature
+        }
+        if let topP = topP {
+            body["top_p"] = topP
+        }
+        if let responseFormat = responseFormat {
+            body["response_format"] = responseFormat.toAny()
+        }
 
         let request = makeRequest(endpoint: "assistants", httpMethod: "POST", body: body)
         session.dataTask(with: request) { data, response, error in
@@ -222,16 +240,36 @@ class OpenAIService {
     ) {
         var body: [String: Any] = [:]
 
-        body["model"] = model
-        body["name"] = name
-        body["description"] = description
-        body["instructions"] = instructions
-        body["tools"] = tools
-        body["tool_resources"] = toolResources
-        body["metadata"] = metadata
-        body["temperature"] = temperature
-        body["top_p"] = topP
-        body["response_format"] = responseFormat?.toAny()
+        if let model = model {
+            body["model"] = model
+        }
+        if let name = name {
+            body["name"] = name
+        }
+        if let description = description {
+            body["description"] = description
+        }
+        if let instructions = instructions {
+            body["instructions"] = instructions
+        }
+        if let tools = tools {
+            body["tools"] = tools
+        }
+        if let toolResources = toolResources {
+            body["tool_resources"] = toolResources
+        }
+        if let metadata = metadata {
+            body["metadata"] = metadata
+        }
+        if let temperature = temperature {
+            body["temperature"] = temperature
+        }
+        if let topP = topP {
+            body["top_p"] = topP
+        }
+        if let responseFormat = responseFormat {
+            body["response_format"] = responseFormat.toAny()
+        }
 
         let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "POST", body: body)
         session.dataTask(with: request) { data, response, error in

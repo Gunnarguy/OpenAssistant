@@ -33,7 +33,7 @@ struct VectorStoreListView: View {
             .alert("Create New Vector Store", isPresented: $isShowingCreateAlert, actions: {
                 TextField("Vector Store Name", text: $newVectorStoreName)
                 Button("Create", action: {
-                    createVectorStore()
+                    
                 })
                 Button("Cancel", role: .cancel, action: {})
             }, message: {
@@ -68,22 +68,6 @@ struct VectorStoreListView: View {
         offsets.forEach { index in
             let vectorStore = viewModel.vectorStores[index]
             viewModel.deleteVectorStore(vectorStoreId: vectorStore.id)
-        }
-    }
-
-    private func createVectorStore() {
-        let fileIds = newVectorStoreFiles.map { $0.id } // Assuming `File` has an `id` property
-        viewModel.createVectorStoreWithFileIds(name: newVectorStoreName, fileIds: fileIds) { result in
-            switch result {
-            case .success(let vectorStore):
-                DispatchQueue.main.async {
-                    viewModel.vectorStores.append(vectorStore)
-                }
-            case .failure(let error):
-                DispatchQueue.main.async {
-                    viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
-                }
-            }
         }
     }
 

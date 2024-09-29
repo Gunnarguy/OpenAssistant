@@ -152,8 +152,8 @@ struct OpenAIResponse: Codable {
     var metadata: [String: String]
 }
 
-// Create a fully functional request and send it to OpenAI API
-var jsonSchema = JSONSchema(
+// Example JSON Schema and Request Body
+let jsonSchema = JSONSchema(
     type: "object",
     properties: [
         "key1": JSONSchemaProperty(type: "string", description: "A string key"),
@@ -161,9 +161,9 @@ var jsonSchema = JSONSchema(
     ]
 )
 
-var responseFormat = ResponseFormat.jsonSchema(jsonSchema)
+let responseFormat = ResponseFormat.jsonSchema(jsonSchema)
 
-var requestBody: [String: Any] = [
+let requestBody: [String: Any] = [
     "top_p": 1.0,
     "tools": [],
     "temperature": 0.8,
@@ -175,6 +175,7 @@ var requestBody: [String: Any] = [
     "tool_resources": [:]
 ]
 
+// MARK: - DeleteResponse
 struct DeleteResponse: Decodable {
     let id: String
     let object: String

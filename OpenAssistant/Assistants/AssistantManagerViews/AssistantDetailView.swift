@@ -34,7 +34,7 @@ struct AssistantDetailView: View {
     @ViewBuilder
     private var errorMessageView: some View {
         if let errorMessage = viewModel.errorMessage {
-            Text(errorMessage)
+            Text(errorMessage.message) // Access the message property of IdentifiableError
                 .foregroundColor(.red)
                 .padding()
                 .multilineTextAlignment(.center)
@@ -96,7 +96,7 @@ struct AssistantDetailView: View {
                 print("Vector store created: \(vectorStore)")
             case .failure(let error):
                 DispatchQueue.main.async {
-                    viewModel.errorMessage = error.localizedDescription
+                    viewModel.errorMessage = IdentifiableError(message: error.localizedDescription) // Wrap the error message in IdentifiableError
                 }
             }
         }

@@ -3,33 +3,15 @@ import Combine
 import SwiftUI
 
 @MainActor
-class AssistantDetailViewModel: ObservableObject {
+class AssistantDetailViewModel: BaseViewModel {
     @Published var assistant: Assistant
-    @Published var errorMessage: String?
-    private var openAIService: OpenAIService?
-    private var cancellables = Set<AnyCancellable>()
-    private let errorHandler = ErrorHandler()
-    
-    // Fetch API Key from UserDefaults
-    private var apiKey: String {
-        UserDefaults.standard.string(forKey: "OpenAI_API_Key") ?? ""
-    }
-    
-    // Initialize the ViewModel with an Assistant
+
     init(assistant: Assistant) {
         self.assistant = assistant
-        initializeOpenAIService()
-    }
-    
-    // Initialize OpenAI service using the API key
-    private func initializeOpenAIService() {
-        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
-        if openAIService == nil {
-            errorHandler.handleError("API key is missing")
-        }
+        super.init()
     }
 
-        func createVectorStoreWithFileIds(name: String, fileIds: [String], completion: @escaping (Result<VectorStore, Error>) -> Void) {
+    func createVectorStoreWithFileIds(name: String, fileIds: [String], completion: @escaping (Result<VectorStore, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
             return
@@ -103,7 +85,7 @@ class AssistantDetailViewModel: ObservableObject {
             openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
                 self?.handleResult(result, successHandler: {
                     NotificationCenter.default.post(name: .assistantDeleted, object: self?.assistant)
-                    self?.errorHandler.handleError("Assistant deleted successfully")
+                    self?.handleError(IdentifiableError(message: "Assistant deleted successfully"))
                 })
             }
         }
@@ -112,7 +94,7 @@ class AssistantDetailViewModel: ObservableObject {
     // Perform a service action with OpenAI
     private func performServiceAction(action: (OpenAIService) -> Void) {
         guard let openAIService = openAIService else {
-            errorHandler.handleError("OpenAIService is not initialized")
+            handleError(IdentifiableError(message: "OpenAIService is not initialized"))
             return
         }
         action(openAIService)
@@ -125,7 +107,7 @@ class AssistantDetailViewModel: ObservableObject {
             case .success(let value):
                 successHandler(value)
             case .failure(let error):
-                self.errorHandler.handleError("Operation failed: \(error.localizedDescription)")
+                self.handleError(IdentifiableError(message: "Operation failed: \(error.localizedDescription)"))
             }
         }
     }
