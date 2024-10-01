@@ -5,7 +5,7 @@ import SwiftUI
 @MainActor
 class BaseViewModel: ObservableObject {
     @Published var errorMessage: IdentifiableError?
-    @AppStorage("OpenAI_API_Key") var apiKey: String = ""
+    @AppStorage("OpenAI_API_Key") private var storedApiKey: String = ""
     var openAIService: OpenAIService?
     var cancellables = Set<AnyCancellable>()
 
@@ -16,11 +16,11 @@ class BaseViewModel: ObservableObject {
 
     // MARK: - Service Initialization
     func initializeOpenAIService() {
-        guard !apiKey.isEmpty else {
+        guard !storedApiKey.isEmpty else {
             handleError(IdentifiableError(message: "API key is missing"))
             return
         }
-        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
+        openAIService = OpenAIServiceInitializer.initialize(apiKey: storedApiKey)
     }
 
     // MARK: - Error Handling
@@ -29,7 +29,7 @@ class BaseViewModel: ObservableObject {
     }
 
     // MARK: - Notification Observers
-    private func setupNotificationObservers() {
+    func setupNotificationObservers() {
         NotificationCenter.default.publisher(for: .settingsUpdated)
             .sink { [weak self] _ in
                 self?.updateApiKey()
@@ -38,7 +38,11 @@ class BaseViewModel: ObservableObject {
     }
 
     // MARK: - Update API Key
-    private func updateApiKey() {
-        openAIService = OpenAIServiceInitializer.reinitialize(apiKey: apiKey)
+    func updateApiKey(newApiKey: String? = nil) {
+        if let newApiKey = newApiKey {
+            UserDefaults.standard.set(newApiKey, forKey: "OpenAI_API_Key")
+            storedApiKey = newApiKey
+        }
+        openAIService = OpenAIServiceInitializer.reinitialize(apiKey: storedApiKey)
     }
 }

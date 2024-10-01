@@ -55,7 +55,6 @@ class AssistantDetailViewModel: BaseViewModel {
         action(openAIService)
     }
 
-    // Generic result handler for success and error management
     private func handleResult<T>(_ result: Result<T, OpenAIServiceError>, successHandler: @escaping (T) -> Void) {
         DispatchQueue.main.async {
             switch result {

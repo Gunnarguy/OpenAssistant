@@ -9,7 +9,7 @@ struct SettingsView: View {
     @State private var alertMessage = ""
     @State private var isApiKeyValid = true
     @EnvironmentObject var assistantManagerViewModel: AssistantManagerViewModel
-    
+
     var body: some View {
         VStack {
             apiKeySection
@@ -23,9 +23,9 @@ struct SettingsView: View {
             Alert(title: Text("Settings"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
         }
     }
-    
+
     // MARK: - Sections
-    
+
     private var apiKeySection: some View {
         VStack(alignment: .leading) {
             Text("API Key")
@@ -34,24 +34,24 @@ struct SettingsView: View {
                 .textFieldStyle(RoundedBorderTextFieldStyle())
         }
     }
-    
+
     private var darkModeToggle: some View {
         Toggle("Dark Mode", isOn: $isDarkMode)
             .padding()
     }
-    
+
     private var saveButton: some View {
         Button(action: saveSettings) {
             Text("Save")
         }
     }
-    
+
     // MARK: - Helper Methods
-    
+
     private func validateApiKey() {
         isApiKeyValid = !apiKey.isEmpty
     }
-    
+
     private func saveSettings() {
         validateApiKey()
         if isApiKeyValid {
@@ -69,7 +69,7 @@ struct SettingsView: View {
         showAlert = true
         print("Dark Mode: \(isDarkMode)")
     }
-    
+
     struct SettingsView_Previews: PreviewProvider {
         static var previews: some View {
             SettingsView()

@@ -8,9 +8,16 @@ class AssistantPickerViewModel: BaseViewModel {
     @Published var selectedAssistant: Assistant?
     @Published var isLoading = true
     @Published var navigateToChat = false
+    @AppStorage("OpenAI_API_Key") private var apiKey: String = "" {
+        didSet {
+            initializeOpenAIService()
+            fetchAssistants()
+        }
+    }
 
     override init() {
         super.init()
+        initializeOpenAIService()
         fetchAssistants()
         setupNotificationObservers()
     }
@@ -21,7 +28,7 @@ class AssistantPickerViewModel: BaseViewModel {
             handleError(IdentifiableError(message: "OpenAIService is not initialized."))
             return
         }
-        
+
         isLoading = true
         errorMessage = nil
 
@@ -49,20 +56,14 @@ class AssistantPickerViewModel: BaseViewModel {
         self.isLoading = false
     }
 
-private func setupNotificationObservers() {
-    let notificationCenter = NotificationCenter.default
-    let notifications: [Notification.Name] = [.assistantCreated, .assistantUpdated, .assistantDeleted, .settingsUpdated]
+    override func setupNotificationObservers() {
+        let notificationCenter = NotificationCenter.default
+        let notifications: [Notification.Name] = [.assistantCreated, .assistantUpdated, .assistantDeleted, .settingsUpdated]
 
-    notifications.forEach { notification in
-        notificationCenter.publisher(for: notification)
-            .sink { [weak self] _ in self?.fetchAssistants() }
-            .store(in: &cancellables)
+        notifications.forEach { notification in
+            notificationCenter.publisher(for: notification)
+                .sink { [weak self] _ in self?.fetchAssistants() }
+                .store(in: &cancellables)
+        }
     }
-}
-
-
-}
-
-extension Notification.Name {
-    static let settingsUpdated = Notification.Name("settingsUpdated")
 }

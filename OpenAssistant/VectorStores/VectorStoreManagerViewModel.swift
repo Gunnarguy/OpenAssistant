@@ -5,6 +5,13 @@ import SwiftUI
 @MainActor
 class VectorStoreManagerViewModel: BaseViewModel {
     @Published var vectorStores: [VectorStore] = []
+    @AppStorage("OpenAI_API_Key") private var apiKey: String = "" {
+        didSet {
+            fetchVectorStores()
+                .sink(receiveValue: { _ in })
+                .store(in: &cancellables)
+        }
+    }
 
     override init() {
         super.init()
@@ -32,7 +39,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
             .eraseToAnyPublisher()
     }
     
-    
     // MARK: - Fetch Files
 
     func fetchFiles(for vectorStore: VectorStore) {
@@ -52,11 +58,9 @@ class VectorStoreManagerViewModel: BaseViewModel {
             .store(in: &cancellables)
     }
 
+    // MARK: - Create File Batch with Chunking Strategy
     
-    
-    // MARK: - Create File Batch
-    
-    func createFileBatch(vectorStoreId: String, fileIds: [String], completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
+    func createFileBatch(vectorStoreId: String, fileIds: [String], chunkingStrategy: ChunkingStrategy?, completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/file_batches") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
             return
@@ -67,10 +71,13 @@ class VectorStoreManagerViewModel: BaseViewModel {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
         
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "file_ids": fileIds
-            // Optionally add "chunking_strategy" if needed
         ]
+        
+        if let chunkingStrategy = chunkingStrategy {
+            body["chunking_strategy"] = chunkingStrategy.toDictionary()
+        }
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
@@ -150,7 +157,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }
     }
 
-    
     // MARK: - Delete Vector Store
 
     func deleteVectorStore(vectorStoreId: String) {
@@ -217,5 +223,18 @@ extension OpenAIService {
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
         return request
+    }
+}
+
+extension ChunkingStrategy {
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = ["type": type]
+        if let staticStrategy = staticStrategy {
+            dict["static"] = [
+                "max_chunk_size_tokens": staticStrategy.maxChunkSizeTokens,
+                "chunk_overlap_tokens": staticStrategy.chunkOverlapTokens
+            ]
+        }
+        return dict
     }
 }

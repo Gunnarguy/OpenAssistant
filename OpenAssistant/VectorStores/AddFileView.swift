@@ -10,11 +10,14 @@ struct AddFileView: View {
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @State private var isUploading = false
+    @State private var maxChunkSizeTokens: Int = 1000
+    @State private var chunkOverlapTokens: Int = 200
 
     var body: some View {
         VStack(spacing: 20) {
             fileSelectionText
             selectFilesButton
+            chunkingStrategySection
             uploadFilesButton
             if isUploading {
                 ProgressView("Uploading files...")
@@ -41,6 +44,26 @@ struct AddFileView: View {
         Button("Select Files") {
             isFilePickerPresented = true
         }
+    }
+
+    private var chunkingStrategySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Chunking Strategy")
+                .font(.headline)
+            HStack {
+                Text("Max Chunk Size Tokens:")
+                TextField("Max Chunk Size Tokens", value: $maxChunkSizeTokens, formatter: NumberFormatter())
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .keyboardType(.numberPad)
+            }
+            HStack {
+                Text("Chunk Overlap Tokens:")
+                TextField("Chunk Overlap Tokens", value: $chunkOverlapTokens, formatter: NumberFormatter())
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .keyboardType(.numberPad)
+            }
+        }
+        .padding(.vertical)
     }
 
     private var uploadFilesButton: some View {
@@ -86,7 +109,8 @@ struct AddFileView: View {
         }
 
         if !fileIds.isEmpty {
-            await createFileBatch(fileIds)
+            let chunkingStrategy = ChunkingStrategy(type: "static", staticStrategy: StaticStrategy(maxChunkSizeTokens: maxChunkSizeTokens, chunkOverlapTokens: chunkOverlapTokens))
+            await createFileBatch(fileIds, chunkingStrategy: chunkingStrategy)
         } else {
             showError("No files were uploaded successfully.")
         }
@@ -126,9 +150,9 @@ struct AddFileView: View {
         }
     }
 
-    private func createFileBatch(_ fileIds: [String]) async {
+    private func createFileBatch(_ fileIds: [String], chunkingStrategy: ChunkingStrategy) async {
         await withCheckedContinuation { continuation in
-            viewModel.createFileBatch(vectorStoreId: vectorStore.id, fileIds: fileIds) { result in
+            viewModel.createFileBatch(vectorStoreId: vectorStore.id, fileIds: fileIds, chunkingStrategy: chunkingStrategy) { result in
                 DispatchQueue.main.async {
                     switch result {
                     case .success:

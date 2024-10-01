@@ -26,8 +26,6 @@ class BaseAssistantViewModel: ObservableObject {
         openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
     }
 
-    /// Performs an action with the OpenAIService if it is initialized.
-    /// - Parameter action: The action to perform.
     func performServiceAction(action: (OpenAIService) -> Void) {
         guard let openAIService = openAIService else {
             handleError("OpenAIService is not initialized")
@@ -36,10 +34,6 @@ class BaseAssistantViewModel: ObservableObject {
         action(openAIService)
     }
 
-    /// Handles the result of a service action.
-    /// - Parameters:
-    ///   - result: The result of the service action.
-    ///   - successHandler: The handler to call on success.
     func handleResult<T>(_ result: Result<T, OpenAIServiceError>, successHandler: @escaping (T) -> Void) {
         DispatchQueue.main.async {
             switch result {
@@ -50,15 +44,13 @@ class BaseAssistantViewModel: ObservableObject {
             }
         }
     }
-    
-    /// Handles errors by setting the errorMessage property.
-    /// - Parameter message: The error message to display.
+
     func handleError(_ message: String) {
         errorMessage = message
     }
 
     // MARK: - Notification Observers
-    private func setupNotificationObservers() {
+    func setupNotificationObservers() {
         NotificationCenter.default.publisher(for: .settingsUpdated)
             .sink { [weak self] _ in
                 self?.updateApiKey()
@@ -67,7 +59,10 @@ class BaseAssistantViewModel: ObservableObject {
     }
 
     // MARK: - Update API Key
-    private func updateApiKey() {
+    func updateApiKey(newApiKey: String? = nil) {
+        if let newApiKey = newApiKey {
+            UserDefaults.standard.set(newApiKey, forKey: "OpenAI_API_Key")
+        }
         openAIService = OpenAIServiceInitializer.reinitialize(apiKey: apiKey)
     }
 }
