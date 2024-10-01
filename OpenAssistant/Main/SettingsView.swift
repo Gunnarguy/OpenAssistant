@@ -11,13 +11,14 @@ struct SettingsView: View {
     @EnvironmentObject var assistantManagerViewModel: AssistantManagerViewModel
 
     var body: some View {
-        VStack {
+        VStack(alignment: .leading, spacing: 20) {
             apiKeySection
             darkModeToggle
             saveButton
+            Spacer()
         }
         .padding()
-        .navigationBarTitle("Settings")
+        .navigationBarTitle("Settings", displayMode: .inline)
         .preferredColorScheme(isDarkMode ? .dark : .light)
         .alert(isPresented: $showAlert) {
             Alert(title: Text("Settings"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
@@ -37,13 +38,15 @@ struct SettingsView: View {
 
     private var darkModeToggle: some View {
         Toggle("Dark Mode", isOn: $isDarkMode)
-            .padding()
+            .padding(.vertical)
     }
 
     private var saveButton: some View {
         Button(action: saveSettings) {
             Text("Save")
+                .frame(maxWidth: .infinity)
         }
+        .buttonStyle(.borderedProminent)
     }
 
     // MARK: - Helper Methods

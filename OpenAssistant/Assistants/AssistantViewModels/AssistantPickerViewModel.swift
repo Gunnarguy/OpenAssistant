@@ -1,23 +1,15 @@
 import Foundation
 import Combine
-import SwiftUI
 
 @MainActor
-class AssistantPickerViewModel: BaseViewModel {
+class AssistantPickerViewModel: BaseAssistantViewModel {
     @Published var assistants: [Assistant] = []
     @Published var selectedAssistant: Assistant?
     @Published var isLoading = true
     @Published var navigateToChat = false
-    @AppStorage("OpenAI_API_Key") private var apiKey: String = "" {
-        didSet {
-            initializeOpenAIService()
-            fetchAssistants()
-        }
-    }
 
     override init() {
         super.init()
-        initializeOpenAIService()
         fetchAssistants()
         setupNotificationObservers()
     }
@@ -25,7 +17,7 @@ class AssistantPickerViewModel: BaseViewModel {
     // MARK: - Public Methods
     func fetchAssistants() {
         guard let openAIService = openAIService else {
-            handleError(IdentifiableError(message: "OpenAIService is not initialized."))
+            handleError("OpenAIService is not initialized.")
             return
         }
 
@@ -34,8 +26,9 @@ class AssistantPickerViewModel: BaseViewModel {
 
         openAIService.fetchAssistants { [weak self] result in
             guard let self = self else { return }
-            DispatchQueue.main.async {
-                self.handleFetchResult(result)
+            self.handleResult(result) { assistants in
+                self.assistants = assistants
+                self.isLoading = false
             }
         }
     }
@@ -45,18 +38,9 @@ class AssistantPickerViewModel: BaseViewModel {
         navigateToChat = true
     }
 
-    // MARK: - Private Methods
-    private func handleFetchResult(_ result: Result<[Assistant], OpenAIServiceError>) {
-        switch result {
-        case .success(let assistants):
-            self.assistants = assistants
-        case .failure(let error):
-            self.handleError(IdentifiableError(message: error.localizedDescription))
-        }
-        self.isLoading = false
-    }
-
+    // MARK: - Override Notification Observers
     override func setupNotificationObservers() {
+        super.setupNotificationObservers()
         let notificationCenter = NotificationCenter.default
         let notifications: [Notification.Name] = [.assistantCreated, .assistantUpdated, .assistantDeleted, .settingsUpdated]
 

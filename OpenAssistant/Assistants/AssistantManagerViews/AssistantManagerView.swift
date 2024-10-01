@@ -3,7 +3,7 @@ import Combine
 import SwiftUI
 
 struct AssistantManagerView: View {
-    @StateObject private var viewModel = AssistantManagerViewModel()
+    @EnvironmentObject var viewModel: AssistantManagerViewModel
     @State private var showingCreateAssistantSheet = false
 
     var body: some View {

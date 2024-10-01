@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SwiftUI
 
 @MainActor
 class BaseAssistantViewModel: ObservableObject {
@@ -7,10 +8,7 @@ class BaseAssistantViewModel: ObservableObject {
     var openAIService: OpenAIService?
     var cancellables = Set<AnyCancellable>()
 
-    // Fetch API Key from UserDefaults or AppStorage
-    var apiKey: String {
-        UserDefaults.standard.string(forKey: "OpenAI_API_Key") ?? ""
-    }
+    @AppStorage("OpenAI_API_Key") private var apiKey: String = "" // Use @AppStorage
 
     init() {
         initializeOpenAIService()
