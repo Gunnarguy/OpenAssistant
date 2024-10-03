@@ -106,35 +106,52 @@ class VectorStoreManagerViewModel: BaseViewModel {
 
     // MARK: - Add File to Vector Store
 
-    func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/files") else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
-            return
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let body: [String: Any] = [
-            "file_name": fileName,
-            "file_data": fileData.base64EncodedString()
-        ]
-
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
-        } catch {
-            completion(.failure(error))
-            return
-        }
-
-        URLSession.shared.dataTask(with: request) { _, _, error in
-            if let error = error {
-                completion(.failure(error))
+    func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String) -> Future<String, Error> {
+        return Future { promise in
+            guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/files") else {
+                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
                 return
             }
-            completion(.success(()))
-        }.resume()
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+            
+            let file: [String: Any] = [
+                "file_name": fileName,
+                "file_data": fileData.base64EncodedString()
+            ]
+            
+            request.httpBody = try? JSONSerialization.data(withJSONObject: file)
+            
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    promise(.failure(error))
+                    return
+                }
+                
+                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
+                    promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
+                    return
+                }
+                
+                guard let data = data else {
+                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                    return
+                }
+                
+                do {
+                    let response = try JSONDecoder().decode(VectorStore.self, from: data)
+                    promise(.success(response.id))
+                } catch {
+                    promise(.failure(error))
+                }
+            }.resume()
+        }
     }
 
     // MARK: - Delete File from Vector Store
@@ -247,3 +264,4 @@ extension ChunkingStrategy {
         return dict
     }
 }
+

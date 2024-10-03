@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -10,14 +9,11 @@ struct AddFileView: View {
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @State private var isUploading = false
-    @State private var maxChunkSizeTokens: Int = 1000
-    @State private var chunkOverlapTokens: Int = 200
 
     var body: some View {
         VStack(spacing: 20) {
             fileSelectionText
             selectFilesButton
-            chunkingStrategySection
             uploadFilesButton
             if isUploading {
                 ProgressView("Uploading files...")
@@ -33,7 +29,6 @@ struct AddFileView: View {
         .alert(isPresented: $showErrorAlert) {
             Alert(title: Text("Error"), message: Text(errorMessage), dismissButton: .default(Text("OK"), action: resetErrorState))
         }
-        .edgesIgnoringSafeArea(.all)
     }
 
     private var fileSelectionText: some View {
@@ -44,26 +39,6 @@ struct AddFileView: View {
         Button("Select Files") {
             isFilePickerPresented = true
         }
-    }
-
-    private var chunkingStrategySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Chunking Strategy")
-                .font(.headline)
-            HStack {
-                Text("Max Chunk Size Tokens:")
-                TextField("Max Chunk Size Tokens", value: $maxChunkSizeTokens, formatter: NumberFormatter())
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .keyboardType(.numberPad)
-            }
-            HStack {
-                Text("Chunk Overlap Tokens:")
-                TextField("Chunk Overlap Tokens", value: $chunkOverlapTokens, formatter: NumberFormatter())
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .keyboardType(.numberPad)
-            }
-        }
-        .padding(.vertical)
     }
 
     private var uploadFilesButton: some View {
@@ -97,7 +72,7 @@ struct AddFileView: View {
         await withTaskGroup(of: String?.self) { group in
             for fileURL in selectedFiles {
                 group.addTask {
-                    await self.uploadFile(fileURL, maxSize)
+                    await self.uploadFile(fileURL, maxSize: maxSize) // Include the 'maxSize:' label here
                 }
             }
 
@@ -108,15 +83,12 @@ struct AddFileView: View {
             }
         }
 
-        if !fileIds.isEmpty {
-            let chunkingStrategy = ChunkingStrategy(type: "static", staticStrategy: StaticStrategy(maxChunkSizeTokens: maxChunkSizeTokens, chunkOverlapTokens: chunkOverlapTokens))
-            await createFileBatch(fileIds, chunkingStrategy: chunkingStrategy)
-        } else {
+        if fileIds.isEmpty {
             showError("No files were uploaded successfully.")
         }
     }
 
-    private func uploadFile(_ fileURL: URL, _ maxSize: Int) async -> String? {
+    private func uploadFile(_ fileURL: URL, maxSize: Int) async -> String? {
         do {
             guard fileURL.startAccessingSecurityScopedResource() else {
                 showError("Failed to access file at \(fileURL).")
@@ -126,7 +98,7 @@ struct AddFileView: View {
 
             let fileSize = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
             if fileSize > maxSize {
-                showError("File \(fileURL.lastPathComponent) is too large. Maximum allowed size is 10MB.")
+                showError("File \(fileURL.lastPathComponent) is too large. Maximum allowed size is \(maxSize) bytes.")
                 return nil
             }
 
@@ -134,41 +106,29 @@ struct AddFileView: View {
             let fileName = fileURL.lastPathComponent
 
             return try await withCheckedThrowingContinuation { continuation in
-                viewModel.addFileToVectorStore(vectorStoreId: vectorStore.id, fileData: fileData, fileName: fileName) { result in
-                    switch result {
-                    case .success:
-                        continuation.resume(returning: fileName)
-                    case .failure(let error):
-                        self.showError("Failed to upload file \(fileName): \(error.localizedDescription)")
-                        continuation.resume(returning: nil)
-                    }
-                }
+                viewModel.addFileToVectorStore(vectorStoreId: vectorStore.id, fileData: fileData, fileName: fileName)
+                    .sink(receiveCompletion: { completion in
+                        switch completion {
+                        case .finished:
+                            break
+                        case .failure(let error):
+                            self.showError("Failed to upload file \(fileName): \(error.localizedDescription)")
+                            continuation.resume(returning: nil)
+                        }
+                    }, receiveValue: { fileId in
+                        continuation.resume(returning: fileId)
+                    })
+                    .store(in: &viewModel.cancellables)
             }
+
         } catch {
             showError("Failed to read or upload file data for \(fileURL.lastPathComponent): \(error.localizedDescription)")
             return nil
         }
     }
 
-    private func createFileBatch(_ fileIds: [String], chunkingStrategy: ChunkingStrategy) async {
-        await withCheckedContinuation { continuation in
-            viewModel.createFileBatch(vectorStoreId: vectorStore.id, fileIds: fileIds, chunkingStrategy: chunkingStrategy) { result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .success:
-                        print("Files successfully uploaded.")
-                    case .failure(let error):
-                        self.showError("Failed to create file batch: \(error.localizedDescription)")
-                    }
-                    continuation.resume()
-                }
-            }
-        }
-    }
-
     private func showError(_ message: String) {
         errorMessage = "Error occurred: " + message
-        print("Debug Log: \(message)")
         showErrorAlert = true
     }
 

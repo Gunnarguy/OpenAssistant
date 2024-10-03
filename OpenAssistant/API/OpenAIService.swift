@@ -576,46 +576,54 @@ class OpenAIService {
         }
     
 
-    func addFileToVectorStore(vectorStoreId: String, file: [String: Any]) -> Future<VectorStore, Error> {
-        return Future { promise in
-            guard let url = URL(string: "\(self.baseURL)/vector_stores/\(vectorStoreId)/files") else {
-                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
-                return
+        // MARK: - Add File to Vector Store
+        func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String) -> Future<VectorStore, Error> {
+            return Future { promise in
+                guard let url = URL(string: "\(self.baseURL)/vector_stores/\(vectorStoreId)/files") else {
+                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+                    return
+                }
+                
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
+                request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                let file: [String: Any] = [
+                    "file_name": fileName,
+                    "file_data": fileData.base64EncodedString()
+                ]
+                
+                request.httpBody = try? JSONSerialization.data(withJSONObject: file)
+                
+                self.session.dataTask(with: request) { data, response, error in
+                    if let error = error {
+                        promise(.failure(error))
+                        return
+                    }
+                    
+                    guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                        let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
+                        promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
+                        return
+                    }
+                    
+                    guard let data = data else {
+                        promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                        return
+                    }
+                    
+                    do {
+                        let vectorStore = try JSONDecoder().decode(VectorStore.self, from: data)
+                        promise(.success(vectorStore))
+                    } catch {
+                        promise(.failure(error))
+                    }
+                }.resume()
             }
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try? JSONSerialization.data(withJSONObject: file)
-
-            self.session.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    promise(.failure(error))
-                    return
-                }
-
-                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                    promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-                    return
-                }
-
-                guard let data = data else {
-                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                    return
-                }
-
-                do {
-                    let vectorStore = try JSONDecoder().decode(VectorStore.self, from: data)
-                    promise(.success(vectorStore))
-                } catch {
-                    promise(.failure(error))
-                }
-            }.resume()
         }
-    }
+    
 
     func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
         return Future { promise in
