@@ -7,19 +7,21 @@ class VectorStoreManagerViewModel: BaseViewModel {
     @Published var vectorStores: [VectorStore] = []
     @AppStorage("OpenAI_API_Key") private var apiKey: String = "" {
         didSet {
+            print("API Key updated: \(apiKey)")
             fetchVectorStores()
-                .sink(receiveValue: { _ in })
+                .sink(receiveCompletion: handleFetchCompletion, receiveValue: { _ in })
                 .store(in: &cancellables)
         }
     }
 
     override init() {
         super.init()
+        print("VectorStoreManagerViewModel initialized")
         fetchVectorStores()
-            .sink(receiveValue: { _ in })
+            .sink(receiveCompletion: handleFetchCompletion, receiveValue: { _ in })
             .store(in: &cancellables)
     }
-    
+
     // MARK: - Data Fetching
 
     func fetchVectorStores() -> AnyPublisher<[VectorStore], Never> {
@@ -34,11 +36,12 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 return Just([])
             }
             .handleEvents(receiveOutput: { [weak self] vectorStores in
+                print("Received vector stores: \(vectorStores)")
                 self?.vectorStores = vectorStores
             })
             .eraseToAnyPublisher()
     }
-    
+
     // MARK: - Fetch Files
 
     func fetchFiles(for vectorStore: VectorStore) {
@@ -59,7 +62,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
     }
 
     // MARK: - Create File Batch with Chunking Strategy
-    
+
     func createFileBatch(vectorStoreId: String, fileIds: [String], chunkingStrategy: ChunkingStrategy?, completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/file_batches") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -70,22 +73,19 @@ class VectorStoreManagerViewModel: BaseViewModel {
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-        
-        var body: [String: Any] = [
-            "file_ids": fileIds
-        ]
-        
+
+        var body: [String: Any] = ["file_ids": fileIds]
         if let chunkingStrategy = chunkingStrategy {
             body["chunking_strategy"] = chunkingStrategy.toDictionary()
         }
-        
+
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
         } catch {
             completion(.failure(error))
             return
         }
-        
+
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 completion(.failure(error))
@@ -103,9 +103,9 @@ class VectorStoreManagerViewModel: BaseViewModel {
             }
         }.resume()
     }
-    
+
     // MARK: - Add File to Vector Store
-    
+
     func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String, completion: @escaping (Result<Void, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/files") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -128,7 +128,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
             return
         }
 
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        URLSession.shared.dataTask(with: request) { _, _, error in
             if let error = error {
                 completion(.failure(error))
                 return
@@ -136,7 +136,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
             completion(.success(()))
         }.resume()
     }
-    
+
     // MARK: - Delete File from Vector Store
 
     func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
@@ -147,7 +147,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Request"])))
                 return
             }
-            self.openAIService?.session.dataTask(with: request) { _, response, error in
+            self.openAIService?.session.dataTask(with: request) { _, _, error in
                 if let error = error {
                     promise(.failure(error))
                     return
@@ -177,9 +177,9 @@ class VectorStoreManagerViewModel: BaseViewModel {
             })
             .store(in: &cancellables)
     }
-    
+
     // MARK: - Update Vector Store Files
-    
+
     private func updateVectorStoreFiles(vectorStore: VectorStore, files: [File]) {
         guard let index = vectorStoreIndex(for: vectorStore) else {
             print("VectorStore not found")
@@ -199,14 +199,23 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }
         vectorStores[index].files = vectorStoreFiles
     }
-    
+
     private func vectorStoreIndex(for vectorStore: VectorStore) -> Int? {
         return vectorStores.firstIndex(where: { $0.id == vectorStore.id })
     }
-    
+
     private func handleError(_ error: VectorStoreError) {
         DispatchQueue.main.async {
             self.errorMessage = IdentifiableError(message: error.localizedDescription)
+        }
+    }
+
+    private func handleFetchCompletion(_ completion: Subscribers.Completion<Never>) {
+        switch completion {
+        case .finished:
+            print("Fetch completed successfully")
+        case .failure(let error):
+            print("Fetch failed with error: \(error)")
         }
     }
 }

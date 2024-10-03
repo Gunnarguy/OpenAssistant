@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var alertMessage = ""
     @State private var isApiKeyValid = true
     @EnvironmentObject var assistantManagerViewModel: AssistantManagerViewModel
+    @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -66,6 +67,9 @@ struct SettingsView: View {
 
             // Update the API key in the assistant manager view model
             assistantManagerViewModel.updateApiKey(newApiKey: apiKey)
+
+            // Dismiss the settings view if presented modally
+            presentationMode.wrappedValue.dismiss()
         } else {
             alertMessage = "API Key cannot be empty."
         }

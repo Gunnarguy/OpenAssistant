@@ -6,12 +6,21 @@ import SwiftUI
 struct OpenAssistantApp: App {
     @StateObject private var assistantManagerViewModel = AssistantManagerViewModel()
     @State private var selectedAssistant: Assistant?
+    @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
+    @State private var showSettingsView = false
 
     var body: some Scene {
         WindowGroup {
             ContentView(assistantManagerViewModel: assistantManagerViewModel)
                 .environmentObject(assistantManagerViewModel)
-                .onAppear(perform: assistantManagerViewModel.fetchAssistants)
+                .onAppear {
+                    assistantManagerViewModel.fetchAssistants()
+                    showSettingsView = apiKey.isEmpty
+                }
+                .sheet(isPresented: $showSettingsView) {
+                    SettingsView()
+                        .environmentObject(assistantManagerViewModel)
+                }
         }
     }
 }

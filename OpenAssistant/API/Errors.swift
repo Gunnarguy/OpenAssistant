@@ -51,25 +51,23 @@ struct APIErrorDetail: Decodable, Equatable {
 
 // MARK: - VectorStoreError
 
-enum VectorStoreError: Error {
-    case missingAPIKey
+enum VectorStoreError: LocalizedError {
     case serviceNotInitialized
     case fetchFailed(String)
-    case uploadFailed(String)
+    case unknownError
 
     var errorDescription: String? {
         switch self {
-        case .missingAPIKey:
-            return "Missing API Key"
         case .serviceNotInitialized:
-            return "Service not initialized"
+            return "The service is not initialized."
         case .fetchFailed(let message):
-            return message
-        case .uploadFailed(let message):
-            return message
+            return "Fetch failed: \(message)"
+        case .unknownError:
+            return "An unknown error occurred."
         }
     }
 }
+
 
 // MARK: - FileUploadError
 
