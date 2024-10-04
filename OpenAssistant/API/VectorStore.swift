@@ -116,3 +116,15 @@ struct VectorStoreFilesResponse: Codable {
         case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
     }
 }
+
+// Define the response struct
+struct FileUploadResponse: Decodable {
+    let fileId: String
+
+    enum CodingKeys: String, CodingKey {
+        case fileId = "file_id"
+    }
+}
+
+// Example of resolving ambiguous type
+let parameters: [String: Any] = ["key": "value"]
