@@ -15,11 +15,15 @@ enum OpenAIServiceError: Error, Equatable {
     case unknownError
     case invalidRequest
     case custom(String)
+    case authenticationError(String?) // New case
+    case invalidRequestError(String?) // New case
+    
     
     static func ==(lhs: OpenAIServiceError, rhs: OpenAIServiceError) -> Bool {
         return lhs.localizedDescription == rhs.localizedDescription
     }
 }
+
 
 // MARK: - IdentifiableError
 

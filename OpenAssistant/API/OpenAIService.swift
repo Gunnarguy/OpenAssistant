@@ -27,11 +27,20 @@ class OpenAIService {
     private func makeRequest(endpoint: String, httpMethod: String = "GET", body: [String: Any]? = nil) -> URLRequest {
         let safeEndpoint = endpoint.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? endpoint
         var request = URLRequest(url: baseURL.appendingPathComponent(safeEndpoint))
+        var organizationId: String?
+        var projectId: String?
         request.httpMethod = httpMethod
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: HTTPHeaderField.authorization.rawValue)
         request.addValue(ContentType.json.rawValue, forHTTPHeaderField: HTTPHeaderField.contentType.rawValue)
         request.addValue("assistants=v2", forHTTPHeaderField: HTTPHeaderField.openAIBeta.rawValue)
 
+        if let organizationId = organizationId {
+            request.addValue(organizationId, forHTTPHeaderField: "OpenAI-Organization")
+        }
+        if let projectId = projectId {
+            request.addValue(projectId, forHTTPHeaderField: "OpenAI-Project")
+        }
+        
         if let body = body {
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
@@ -84,7 +93,25 @@ class OpenAIService {
         case 500:
             completion(.failure(.internalServerError))
         default:
-            completion(.failure(.invalidResponse(httpResponse)))
+            if let data = data, let errorResponse = try? JSONDecoder().decode(OpenAIErrorResponse.self, from: data) {
+                if httpResponse.statusCode == 401 {
+                    completion(.failure(.authenticationError(errorResponse.error?.message)))
+                } else if httpResponse.statusCode == 400 {
+                    completion(.failure(.invalidRequestError(errorResponse.error?.message)))
+                } else {
+                    completion(.failure(.invalidResponse(httpResponse)))  // Keep as a fallback
+                }
+                return
+            } else {
+                completion(.failure(.invalidResponse(httpResponse)))
+            }
+        }
+    }
+    struct OpenAIErrorResponse: Decodable {
+        let error: ErrorDetail?
+        
+        struct ErrorDetail: Decodable {
+            let message: String?
         }
     }
 
