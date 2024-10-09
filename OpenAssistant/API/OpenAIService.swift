@@ -27,8 +27,9 @@ class OpenAIService {
     private func makeRequest(endpoint: String, httpMethod: String = "GET", body: [String: Any]? = nil) -> URLRequest {
         let safeEndpoint = endpoint.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? endpoint
         var request = URLRequest(url: baseURL.appendingPathComponent(safeEndpoint))
-        var organizationId: String?
-        var projectId: String?
+        // Initialize organizationId and projectId
+        let organizationId: String? = nil
+        let projectId: String? = nil
         request.httpMethod = httpMethod
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: HTTPHeaderField.authorization.rawValue)
         request.addValue(ContentType.json.rawValue, forHTTPHeaderField: HTTPHeaderField.contentType.rawValue)
@@ -39,14 +40,6 @@ class OpenAIService {
         }
         if let projectId = projectId {
             request.addValue(projectId, forHTTPHeaderField: "OpenAI-Project")
-        }
-        
-        if let body = body {
-            do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
-            } catch {
-                print("Error serializing JSON body: \(error.localizedDescription)")
-            }
         }
 
         return request
