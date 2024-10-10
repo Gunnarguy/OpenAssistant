@@ -667,18 +667,7 @@ class OpenAIService {
         }.resume()
     }
 
-    // MARK: - Add Message to Thread
 
-    /**
-     Adds a new message to the specified thread.
-
-     - Parameters:
-        - threadId: The unique identifier of the thread.
-        - message: The message to be added.
-        - completion: A closure that will be called with the result of the operation. The closure will receive a `Result` object, which will be either a `.success` case containing `Void` (indicating the message was added successfully) or a `.failure` case containing an `OpenAIServiceError`.
-
-     - Important: This function does not handle the execution of the assistant's response to the added message. It only adds the message to the thread.
-     */
     func addMessageToThread(threadId: String, message: Message, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/messages"
         let body: [String: Any] = [
@@ -716,15 +705,7 @@ class OpenAIService {
             }
         }.resume()
     }
-    /**
-     Fetches the details of a specific thread from the OpenAI API.
 
-     - Parameters:
-        - threadId: The unique identifier of the thread.
-        - completion: A closure that will be called with the result of the operation. The closure will receive a `Result` object, which will be either a `.success` case containing a `Thread` object (indicating the thread details were fetched successfully) or a `.failure` case containing an `OpenAIServiceError`.
-
-     - Important: This function does not handle the execution of the assistant's response to the fetched thread details. It only fetches the thread details.
-     */
     func fetchThreadDetails(threadId: String, completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)"
         let request = makeRequest(endpoint: endpoint)
