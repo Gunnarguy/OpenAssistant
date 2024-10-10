@@ -23,6 +23,12 @@
 		B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */; };
 		B0BFE4442C9BDC8800EB6D81 /* AssistantFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */; };
 		B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */; };
+		B0C93C012CB7810F0037C5E1 /* Tool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C002CB7810F0037C5E1 /* Tool.swift */; };
+		B0C93C032CB7812C0037C5E1 /* ExpiresAfter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C022CB7812C0037C5E1 /* ExpiresAfter.swift */; };
+		B0C93C052CB781400037C5E1 /* TruncationStrategy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C042CB781400037C5E1 /* TruncationStrategy.swift */; };
+		B0C93C072CB781550037C5E1 /* MessageContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C062CB781550037C5E1 /* MessageContent.swift */; };
+		B0C93C092CB781740037C5E1 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C082CB781740037C5E1 /* File.swift */; };
+		B0C93C0B2CB781870037C5E1 /* ToolResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C0A2CB781870037C5E1 /* ToolResources.swift */; };
 		B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */; };
 		B0DD9C5E2C9DFA7000A0D623 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */; };
 		B0DD9C602C9DFAB100A0D623 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */; };
@@ -74,6 +80,12 @@
 		B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailView.swift; sourceTree = "<group>"; };
 		B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantFormView.swift; sourceTree = "<group>"; };
 		B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
+		B0C93C002CB7810F0037C5E1 /* Tool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tool.swift; sourceTree = "<group>"; };
+		B0C93C022CB7812C0037C5E1 /* ExpiresAfter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpiresAfter.swift; sourceTree = "<group>"; };
+		B0C93C042CB781400037C5E1 /* TruncationStrategy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruncationStrategy.swift; sourceTree = "<group>"; };
+		B0C93C062CB781550037C5E1 /* MessageContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageContent.swift; sourceTree = "<group>"; };
+		B0C93C082CB781740037C5E1 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
+		B0C93C0A2CB781870037C5E1 /* ToolResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolResources.swift; sourceTree = "<group>"; };
 		B0DD9C572C9DE4B800A0D623 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B0DD9C592C9DE90000A0D623 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		B0DD9C5A2C9DE91B00A0D623 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
@@ -259,6 +271,12 @@
 				B0EEE7382C99326A0012F2BA /* Errors.swift */,
 				B0EEE7392C99326A0012F2BA /* Usage.swift */,
 				B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */,
+				B0C93C002CB7810F0037C5E1 /* Tool.swift */,
+				B0C93C022CB7812C0037C5E1 /* ExpiresAfter.swift */,
+				B0C93C042CB781400037C5E1 /* TruncationStrategy.swift */,
+				B0C93C062CB781550037C5E1 /* MessageContent.swift */,
+				B0C93C082CB781740037C5E1 /* File.swift */,
+				B0C93C0A2CB781870037C5E1 /* ToolResources.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -340,6 +358,7 @@
 				B0DD9C5E2C9DFA7000A0D623 /* MainTabView.swift in Sources */,
 				B0DD9C602C9DFAB100A0D623 /* LoadingView.swift in Sources */,
 				B0EEE7432C99326A0012F2BA /* Usage.swift in Sources */,
+				B0C93C0B2CB781870037C5E1 /* ToolResources.swift in Sources */,
 				B0B14F702CB626EC00778895 /* ChatContentView.swift in Sources */,
 				B059E6C72CAB8DDD00B1028E /* Extensions.swift in Sources */,
 				B0EEE7442C99326A0012F2BA /* MessageStore.swift in Sources */,
@@ -361,13 +380,17 @@
 				B0EEE74E2C99326A0012F2BA /* VectorStoreListView.swift in Sources */,
 				B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */,
 				B0EEE74F2C99326A0012F2BA /* Errors.swift in Sources */,
+				B0C93C092CB781740037C5E1 /* File.swift in Sources */,
 				B0EEE7502C99326A0012F2BA /* AssistantDetailViewModel.swift in Sources */,
 				B0B14F7A2CB6276B00778895 /* MessageView.swift in Sources */,
 				B0EEE7512C99326A0012F2BA /* FileDetailView.swift in Sources */,
+				B0C93C072CB781550037C5E1 /* MessageContent.swift in Sources */,
+				B0C93C032CB7812C0037C5E1 /* ExpiresAfter.swift in Sources */,
 				B0B14F722CB626FF00778895 /* MessageListView.swift in Sources */,
 				B0B14F742CB6271300778895 /* InputView.swift in Sources */,
 				B0EEE7522C99326A0012F2BA /* AssistantManagerViewModel.swift in Sources */,
 				B0B14F7C2CB6279900778895 /* ChatHistoryView.swift in Sources */,
+				B0C93C052CB781400037C5E1 /* TruncationStrategy.swift in Sources */,
 				B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */,
 				B0EEE7532C99326A0012F2BA /* AssistantPickerViewModel.swift in Sources */,
 				B0B14F782CB6275200778895 /* StepCounterView.swift in Sources */,
@@ -379,6 +402,7 @@
 				B0DD9C622C9DFC3A00A0D623 /* OpenAIInitializer.swift in Sources */,
 				B0EEE75A2C99326A0012F2BA /* MessageRunThread.swift in Sources */,
 				B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */,
+				B0C93C012CB7810F0037C5E1 /* Tool.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
