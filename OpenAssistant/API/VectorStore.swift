@@ -17,9 +17,7 @@ struct VectorStore: Identifiable, Codable {
     var files: [VectorStoreFile]? // Mutable to allow updates
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, status, usageBytes = "bytes", createdAt = "created_at"
-        case fileCounts = "file_counts", metadata, expiresAfter = "expires_after"
-        case expiresAt = "expires_at", lastActiveAt = "last_active_at", files
+        case id, name, status, usageBytes = "bytes", createdAt = "created_at", fileCounts = "file_counts", metadata, expiresAfter = "expires_after", expiresAt = "expires_at", lastActiveAt = "last_active_at", files
     }
 }
 
@@ -52,8 +50,7 @@ struct VectorStoreFileBatch: Decodable {
     let fileCounts: FileCounts
 
     private enum CodingKeys: String, CodingKey {
-        case id, object, createdAt = "created_at", vectorStoreId = "vector_store_id"
-        case status, fileCounts = "file_counts"
+        case id, object, createdAt = "created_at", vectorStoreId = "vector_store_id", status, fileCounts = "file_counts"
     }
 }
 
@@ -116,15 +113,3 @@ struct VectorStoreFilesResponse: Codable {
         case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
     }
 }
-
-// Define the response struct
-struct FileUploadResponse: Decodable {
-    let fileId: String
-
-    enum CodingKeys: String, CodingKey {
-        case fileId = "file_id"
-    }
-}
-
-// Example of resolving ambiguous type
-let parameters: [String: Any] = ["key": "value"]

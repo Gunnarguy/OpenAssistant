@@ -6,8 +6,8 @@ class OpenAIService {
     let apiKey: String
     let baseURL = URL(string: "https://api.openai.com/v1/")!
     let session: URLSession
-
-    init(apiKey: String, session: URLSession = .shared) {
+    
+    init(apiKey: String, session: URLSession = .shared, baseURL: URL = URL(string: "https://api.openai.com/v1")!) {
         self.apiKey = apiKey
         self.session = session
     }
@@ -24,22 +24,19 @@ class OpenAIService {
 
     // MARK: - Request Creation
 
-    private func makeRequest(endpoint: String, httpMethod: String = "GET", body: [String: Any]? = nil) -> URLRequest {
-        let safeEndpoint = endpoint.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? endpoint
-        var request = URLRequest(url: baseURL.appendingPathComponent(safeEndpoint))
-        // Initialize organizationId and projectId
-        let organizationId: String? = nil
-        let projectId: String? = nil
+    func makeRequest(endpoint: String, httpMethod: String = "GET", body: [String: Any]? = nil) -> URLRequest {
+        var request = URLRequest(url: baseURL.appendingPathComponent(endpoint))
         request.httpMethod = httpMethod
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: HTTPHeaderField.authorization.rawValue)
         request.addValue(ContentType.json.rawValue, forHTTPHeaderField: HTTPHeaderField.contentType.rawValue)
         request.addValue("assistants=v2", forHTTPHeaderField: HTTPHeaderField.openAIBeta.rawValue)
 
-        if let organizationId = organizationId {
-            request.addValue(organizationId, forHTTPHeaderField: "OpenAI-Organization")
-        }
-        if let projectId = projectId {
-            request.addValue(projectId, forHTTPHeaderField: "OpenAI-Project")
+        if let body = body {
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+            } catch {
+                print("Error serializing JSON body: \(error.localizedDescription)")
+            }
         }
 
         return request
@@ -50,61 +47,87 @@ class OpenAIService {
     private func handleResponse<T: Decodable>(_ data: Data?, _ response: URLResponse?, _ error: Error?, completion: @escaping (Result<T, OpenAIServiceError>) -> Void) {
         if let error = error {
             logError("Network error: \(error.localizedDescription)")
-            completion(.failure(.networkError(error)))
+            DispatchQueue.main.async {
+                completion(.failure(.networkError(error)))
+            }
             return
         }
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            completion(.failure(.unknownError))
+            DispatchQueue.main.async {
+                completion(.failure(.unknownError))
+            }
             return
-
         }
 
+        // Log the status code and response data
         logInfo("HTTP Status Code: \(httpResponse.statusCode)")
-        if let data = data { logResponseData(data) }
+        if let data = data {
+            logResponseData(data)
+        }
 
-        switch httpResponse.statusCode {
-        case 200...299:
-            guard let data = data else {
-                logError("No data received")
-                completion(.failure(.noData))
-                return
-            }
-
-            do {
-                let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-                completion(.success(decodedResponse))
-
-            } catch {
-                logError("Decoding error: \(error.localizedDescription)")
-                logError("Response data: \(String(data: data, encoding: .utf8) ?? "N/A")")
-                completion(.failure(.decodingError(data, error)))
-            }
-        case 429:
-            let retryAfter = httpResponse.allHeaderFields["Retry-After"] as? Int ?? 1
-            completion(.failure(.rateLimitExceeded(retryAfter)))
-        case 500:
-            completion(.failure(.internalServerError))
-        default:
-            if let data = data, let errorResponse = try? JSONDecoder().decode(OpenAIErrorResponse.self, from: data) {
-                if httpResponse.statusCode == 401 {
-                    completion(.failure(.authenticationError(errorResponse.error?.message)))
-                } else if httpResponse.statusCode == 400 {
-                    completion(.failure(.invalidRequestError(errorResponse.error?.message)))
-                } else {
-                    completion(.failure(.invalidResponse(httpResponse)))  // Keep as a fallback
+        if !(200...299).contains(httpResponse.statusCode) {
+            switch httpResponse.statusCode {
+            case 429:
+                let retryAfter = httpResponse.allHeaderFields["Retry-After"] as? Int ?? 1
+                DispatchQueue.main.async {
+                    completion(.failure(.rateLimitExceeded(retryAfter)))
                 }
-                return
-            } else {
-                completion(.failure(.invalidResponse(httpResponse)))
+            case 500:
+                DispatchQueue.main.async {
+                    completion(.failure(.internalServerError))
+                }
+            default:
+                DispatchQueue.main.async {
+                    completion(.failure(.invalidResponse(httpResponse)))
+                }
+            }
+            return
+        }
+
+        guard let data = data else {
+            logError("No data received")
+            DispatchQueue.main.async {
+                completion(.failure(.noData))
+            }
+            return
+        }
+
+        do {
+            let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+            DispatchQueue.main.async {
+                completion(.success(decodedResponse))
+            }
+        } catch {
+            logError("Decoding error: \(error.localizedDescription)")
+            logError("Response data: \(String(data: data, encoding: .utf8) ?? "N/A")")
+            DispatchQueue.main.async {
+                completion(.failure(.decodingError(data, error)))
             }
         }
     }
-    struct OpenAIErrorResponse: Decodable {
-        let error: ErrorDetail?
-        
-        struct ErrorDetail: Decodable {
-            let message: String?
+
+    // MARK: - GET Requests
+
+    func handleDeleteResponse(_ data: Data?, _ response: URLResponse?, _ error: Error?, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
+        if let error = error {
+            logError("Network error: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                completion(.failure(.networkError(error)))
+            }
+            return
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            logError("Invalid response: \(String(describing: response))")
+            DispatchQueue.main.async {
+                completion(.failure(.invalidResponse(response!)))
+            }
+            return
+        }
+
+        DispatchQueue.main.async {
+            completion(.success(()))
         }
     }
 
@@ -115,7 +138,7 @@ class OpenAIService {
         if let body = body {
             print("Request Body: \(body)")
         }
-    }
+    }   
 
     private func logResponseData(_ data: Data) {
         if let jsonString = String(data: data, encoding: .utf8) {
@@ -124,6 +147,7 @@ class OpenAIService {
             print("Unable to convert response data to JSON string")
         }
     }
+
 
     private func logError(_ message: String) {
         print("Error: \(message)")
@@ -150,49 +174,18 @@ class OpenAIService {
         }.resume()
     }
 
-    // MARK: - Create Assistant
-    func createAssistant(
-        model: String,
-        name: String? = nil,
-        description: String? = nil,
-        instructions: String? = nil,
-        tools: [[String: Any]]? = nil,
-        toolResources: [String: Any]? = nil,
-        metadata: [String: String]? = nil,
-        temperature: Double? = nil,
-        topP: Double? = nil,
-        responseFormat: ResponseFormat? = nil,
-        completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
-    ) {
+    func createAssistant(model: String, name: String? = nil, description: String? = nil, instructions: String? = nil, tools: [[String: Any]]? = nil, toolResources: [String: Any]? = nil, metadata: [String: String]? = nil, temperature: Double? = nil, topP: Double? = nil, responseFormat: ResponseFormat? = nil, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void) {
         var body: [String: Any] = ["model": model]
 
-        if let name = name {
-            body["name"] = name
-        }
-        if let description = description {
-            body["description"] = description
-        }
-        if let instructions = instructions {
-            body["instructions"] = instructions
-        }
-        if let tools = tools {
-            body["tools"] = tools
-        }
-        if let toolResources = toolResources {
-            body["tool_resources"] = toolResources
-        }
-        if let metadata = metadata {
-            body["metadata"] = metadata
-        }
-        if let temperature = temperature {
-            body["temperature"] = temperature
-        }
-        if let topP = topP {
-            body["top_p"] = topP
-        }
-        if let responseFormat = responseFormat {
-            body["response_format"] = responseFormat.toAny()
-        }
+        body["name"] = name
+        body["description"] = description
+        body["instructions"] = instructions
+        body["tools"] = tools
+        body["tool_resources"] = toolResources
+        body["metadata"] = metadata
+        body["temperature"] = temperature
+        body["top_p"] = topP
+        body["response_format"] = responseFormat?.toAny()
 
         let request = makeRequest(endpoint: "assistants", httpMethod: "POST", body: body)
         session.dataTask(with: request) { data, response, error in
@@ -200,53 +193,19 @@ class OpenAIService {
         }.resume()
     }
 
-    // MARK: - Update Assistant
-    func updateAssistant(
-        assistantId: String,
-        model: String? = nil,
-        name: String? = nil,
-        description: String? = nil,
-        instructions: String? = nil,
-        tools: [[String: Any]]? = nil,
-        toolResources: [String: Any]? = nil,
-        metadata: [String: String]? = nil,
-        temperature: Double? = nil,
-        topP: Double? = nil,
-        responseFormat: ResponseFormat? = nil,
-        completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
-    ) {
+    func updateAssistant(assistantId: String, model: String? = nil, name: String? = nil, description: String? = nil, instructions: String? = nil, tools: [[String: Any]]? = nil, toolResources: [String: Any]? = nil, metadata: [String: String]? = nil, temperature: Double? = nil, topP: Double? = nil, responseFormat: ResponseFormat? = nil, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void) {
         var body: [String: Any] = [:]
 
-        if let model = model {
-            body["model"] = model
-        }
-        if let name = name {
-            body["name"] = name
-        }
-        if let description = description {
-            body["description"] = description
-        }
-        if let instructions = instructions {
-            body["instructions"] = instructions
-        }
-        if let tools = tools {
-            body["tools"] = tools
-        }
-        if let toolResources = toolResources {
-            body["tool_resources"] = toolResources
-        }
-        if let metadata = metadata {
-            body["metadata"] = metadata
-        }
-        if let temperature = temperature {
-            body["temperature"] = temperature
-        }
-        if let topP = topP {
-            body["top_p"] = topP
-        }
-        if let responseFormat = responseFormat {
-            body["response_format"] = responseFormat.toAny()
-        }
+        body["model"] = model
+        body["name"] = name
+        body["description"] = description
+        body["instructions"] = instructions
+        body["tools"] = tools
+        body["tool_resources"] = toolResources
+        body["metadata"] = metadata
+        body["temperature"] = temperature
+        body["top_p"] = topP
+        body["response_format"] = responseFormat?.toAny()
 
         let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "POST", body: body)
         session.dataTask(with: request) { data, response, error in
@@ -254,21 +213,13 @@ class OpenAIService {
         }.resume()
     }
 
-    // Dummy struct to conform to Decodable for DELETE requests with no body
-    private struct EmptyResponse: Decodable {}
-
     func deleteAssistant(assistantId: String, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
-        let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "DELETE")
-        session.dataTask(with: request!) { data, response, error in
-            // Use the EmptyResponse type
-            self.handleResponse(data, response, error) { (result: Result<EmptyResponse, OpenAIServiceError>) in
-                switch result {
-                case .success:
-                    completion(.success(())) // Success, no body to process
-                case .failure(let error):
-                    completion(.failure(error))
-                }
-            }
+        guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "DELETE") else {
+            completion(.failure(.invalidRequest))
+            return
+        }
+        session.dataTask(with: request) { data, response, error in
+            self.handleDeleteResponse(data, response, error, completion: completion)
         }.resume()
     }
 
@@ -366,7 +317,7 @@ class OpenAIService {
             .eraseToAnyPublisher()
     }
 
-    func createVectorStore(name: String, fileIds: [String], completion: @escaping (Result<VectorStore, Error>) -> Void) {
+    func createVectorStore(name: String, files: [[String: Any]], completion: @escaping (Result<VectorStore, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
             return
@@ -380,7 +331,7 @@ class OpenAIService {
 
         let body: [String: Any] = [
             "name": name,
-            "file_ids": fileIds
+            "files": files
         ]
 
         do {
@@ -403,8 +354,8 @@ class OpenAIService {
                 return
             }
             do {
-                let vectorStore = try JSONDecoder().decode(VectorStore.self, from: data)
-                completion(.success(vectorStore))
+                let response = try JSONDecoder().decode(VectorStore.self, from: data)
+                completion(.success(response))
             } catch {
                 completion(.failure(error))
             }
@@ -561,54 +512,46 @@ class OpenAIService {
         }
     
 
-        // MARK: - Add File to Vector Store
-        func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String) -> Future<VectorStore, Error> {
-            return Future { promise in
-                guard let url = URL(string: "\(self.baseURL)/vector_stores/\(vectorStoreId)/files") else {
-                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+    func addFileToVectorStore(vectorStoreId: String, file: [String: Any]) -> Future<VectorStore, Error> {
+        return Future { promise in
+            guard let url = URL(string: "\(self.baseURL)/vector_stores/\(vectorStoreId)/files") else {
+                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+                return
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try? JSONSerialization.data(withJSONObject: file)
+
+            self.session.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    promise(.failure(error))
                     return
                 }
-                
-                var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
-                request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                let file: [String: Any] = [
-                    "file_name": fileName,
-                    "file_data": fileData.base64EncodedString()
-                ]
-                
-                request.httpBody = try? JSONSerialization.data(withJSONObject: file)
-                
-                self.session.dataTask(with: request) { data, response, error in
-                    if let error = error {
-                        promise(.failure(error))
-                        return
-                    }
-                    
-                    guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                        let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                        promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-                        return
-                    }
-                    
-                    guard let data = data else {
-                        promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                        return
-                    }
-                    
-                    do {
-                        let vectorStore = try JSONDecoder().decode(VectorStore.self, from: data)
-                        promise(.success(vectorStore))
-                    } catch {
-                        promise(.failure(error))
-                    }
-                }.resume()
-            }
+
+                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
+                    promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
+                    return
+                }
+
+                guard let data = data else {
+                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                    return
+                }
+
+                do {
+                    let vectorStore = try JSONDecoder().decode(VectorStore.self, from: data)
+                    promise(.success(vectorStore))
+                } catch {
+                    promise(.failure(error))
+                }
+            }.resume()
         }
-    
+    }
 
     func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
         return Future { promise in
@@ -726,6 +669,16 @@ class OpenAIService {
 
     // MARK: - Add Message to Thread
 
+    /**
+     Adds a new message to the specified thread.
+
+     - Parameters:
+        - threadId: The unique identifier of the thread.
+        - message: The message to be added.
+        - completion: A closure that will be called with the result of the operation. The closure will receive a `Result` object, which will be either a `.success` case containing `Void` (indicating the message was added successfully) or a `.failure` case containing an `OpenAIServiceError`.
+
+     - Important: This function does not handle the execution of the assistant's response to the added message. It only adds the message to the thread.
+     */
     func addMessageToThread(threadId: String, message: Message, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/messages"
         let body: [String: Any] = [
@@ -763,22 +716,21 @@ class OpenAIService {
             }
         }.resume()
     }
-    
-    func fetchThreadDetails(threadId: String) -> Future<Thread, OpenAIServiceError> {
-        return Future { promise in
-            let endpoint = "threads/\(threadId)"
-            let request = self.makeRequest(endpoint: endpoint)
-            self.session.dataTask(with: request) { data, response, error in
-                self.handleResponse(data, response, error) { (result: Result<Thread, OpenAIServiceError>) in
-                    switch result {
-                    case .success(let thread):
-                        promise(.success(thread))
-                    case .failure(let error):
-                        promise(.failure(error))
-                    }
-                }
-            }.resume()
-        }
+    /**
+     Fetches the details of a specific thread from the OpenAI API.
+
+     - Parameters:
+        - threadId: The unique identifier of the thread.
+        - completion: A closure that will be called with the result of the operation. The closure will receive a `Result` object, which will be either a `.success` case containing a `Thread` object (indicating the thread details were fetched successfully) or a `.failure` case containing an `OpenAIServiceError`.
+
+     - Important: This function does not handle the execution of the assistant's response to the fetched thread details. It only fetches the thread details.
+     */
+    func fetchThreadDetails(threadId: String, completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
+        let endpoint = "threads/\(threadId)"
+        let request = makeRequest(endpoint: endpoint)
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
     }
 
     func fetchAvailableModels(completion: @escaping (Result<[String], Error>) -> Void) {
@@ -813,20 +765,16 @@ class OpenAIService {
 }
 
 // MARK: - Upload File Extension
+
 extension OpenAIService {
     func uploadFile(fileData: Data, fileName: String) -> Future<String, Error> {
-        Future { [weak self] promise in
+        return Future { [weak self] promise in
             guard let self = self else { return }
-            
-            // Construct the URL
             let url = self.baseURL.appendingPathComponent("files")
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
-            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: HTTPHeaderField.authorization.rawValue)
+            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
             let boundary = "Boundary-\(UUID().uuidString)"
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-
-            // Construct body data
             var body = Data()
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
@@ -835,29 +783,28 @@ extension OpenAIService {
             body.append("\r\n".data(using: .utf8)!)
             body.append("--\(boundary)--\r\n".data(using: .utf8)!)
             request.httpBody = body
-
-            // Perform the request
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            
             self.session.dataTask(with: request) { data, response, error in
                 if let error = error {
                     promise(.failure(error))
                     return
                 }
-
                 guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                    promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
+                    promise(.failure(NSError(domain: "", code: (response as? HTTPURLResponse)?.statusCode ?? -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])))
                     return
                 }
-
                 guard let data = data else {
                     promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
                     return
                 }
-
                 do {
-                    let response = try JSONDecoder().decode(FileUploadResponse.self, from: data)
-                    promise(.success(response.fileId))
+                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    if let fileId = json?["id"] as? String {
+                        promise(.success(fileId))
+                    } else {
+                        promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response structure"])))
+                    }
                 } catch {
                     promise(.failure(error))
                 }
@@ -865,7 +812,7 @@ extension OpenAIService {
         }
     }
 }
-
+    
     
     
 // MARK: - Create File Batch Extension
@@ -954,7 +901,7 @@ extension OpenAIService {
     // MARK: - Delete File from Vector Store Extension
     extension OpenAIService {
         func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
-            Future { [weak self] promise in
+            return Future { [weak self] promise in
                 guard let self = self else { return }
                 let endpoint = "vector_stores/\(vectorStoreId)/files/\(fileId)"
                 guard let request = self.makeRequest(endpoint: endpoint, httpMethod: "DELETE") else {
@@ -980,4 +927,3 @@ extension OpenAIService {
             }
         }
     }
-
