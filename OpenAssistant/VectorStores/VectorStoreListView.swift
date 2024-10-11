@@ -20,7 +20,7 @@ struct VectorStoreListView: View {
                 .onDelete(perform: deleteVectorStore)
             }
             .navigationTitle("Vector Stores")
-            .navigationBarItems(trailing: addButton)
+            
             .alert("Create New Vector Store", isPresented: $isShowingCreateAlert, actions: {
                 createAlertActions
             }, message: {

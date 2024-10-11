@@ -5,18 +5,17 @@ import SwiftUI
 @MainActor
 class VectorStoreManagerViewModel: BaseViewModel {
     @Published var vectorStores: [VectorStore] = []
-    @AppStorage("OpenAI_API_Key") private var apiKey: String = "" {
-        didSet {
-            print("API Key updated: \(apiKey)")
-            fetchVectorStores()
-                .sink(receiveCompletion: handleFetchCompletion, receiveValue: { _ in })
-                .store(in: &cancellables)
-        }
-    }
 
     override init() {
         super.init()
         print("VectorStoreManagerViewModel initialized")
+        initializeAndFetch()
+    }
+
+    // MARK: - Initialization and Fetching
+
+    private func initializeAndFetch() {
+        // Ensure all properties are initialized before fetching
         fetchVectorStores()
             .sink(receiveCompletion: handleFetchCompletion, receiveValue: { _ in })
             .store(in: &cancellables)
@@ -26,13 +25,12 @@ class VectorStoreManagerViewModel: BaseViewModel {
 
     func fetchVectorStores() -> AnyPublisher<[VectorStore], Never> {
         guard let openAIService = openAIService else {
-            handleError(.serviceNotInitialized)
             return Just([]).eraseToAnyPublisher()
         }
         return openAIService.fetchVectorStores()
             .receive(on: DispatchQueue.main)
             .catch { [weak self] error -> Just<[VectorStore]> in
-                self?.handleError(.fetchFailed(error.localizedDescription))
+                self?.handleError(IdentifiableError(message: error.localizedDescription))
                 return Just([])
             }
             .handleEvents(receiveOutput: { [weak self] vectorStores in
@@ -41,6 +39,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
             })
             .eraseToAnyPublisher()
     }
+
 
     // MARK: - Fetch Files
 
@@ -103,6 +102,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
             }
         }.resume()
     }
+    
 
     // MARK: - Add File to Vector Store
 
@@ -262,6 +262,17 @@ extension ChunkingStrategy {
             ]
         }
         return dict
+    }
+}
+
+// MARK: - Handle Fetch Completion
+
+private func handleFetchCompletion(_ completion: Subscribers.Completion<Never>) {
+    switch completion {
+    case .finished:
+        print("Fetch completed successfully")
+    case .failure(let error):
+        print("Fetch failed with error: \(error)")
     }
 }
 
