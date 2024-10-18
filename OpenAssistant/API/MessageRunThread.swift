@@ -1,11 +1,9 @@
 import Foundation
-import Combine
-import SwiftUI
 
 // MARK: - Message
 
 struct Message: Identifiable, Codable, Equatable {
-    let id: String
+    var id: String = UUID().uuidString // Unique identifier for each message
     let object: String
     let created_at: Int
     let assistant_id: String?
@@ -28,7 +26,7 @@ struct Message: Identifiable, Codable, Equatable {
         private enum CodingKeys: String, CodingKey {
             case type, text
         }
-        
+
         func toDictionary() -> [String: Any] {
             var dict: [String: Any] = ["type": type]
             if let text = text {
@@ -163,7 +161,7 @@ struct Run: Decodable {
 // MARK: - RunResult
 
 struct RunResult: Decodable, Equatable {
-    let content: [MessageContent]
+    let content: [Message.Content]
 
     private enum CodingKeys: String, CodingKey {
         case content

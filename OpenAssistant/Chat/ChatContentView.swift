@@ -10,11 +10,10 @@ struct ChatContentView: View {
             MessageListView(viewModel: viewModel, colorScheme: colorScheme)
             Spacer()
             InputView(viewModel: viewModel, messageStore: messageStore, colorScheme: colorScheme)
-                .padding(.horizontal)
             StepCounterView(stepCounter: viewModel.stepCounter)
-                .padding(.horizontal)
                 .padding(.bottom, 10)
         }
+        .padding(.horizontal)
         .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
     }
 }

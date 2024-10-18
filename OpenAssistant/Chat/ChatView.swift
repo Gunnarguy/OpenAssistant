@@ -47,7 +47,7 @@ struct ChatView_Previews: PreviewProvider {
             tool_resources: nil,
             metadata: nil,
             response_format: nil,
-            file_ids: [] // Provide an empty array or appropriate file IDs
+            file_ids: []
         )
         let messageStore = MessageStore()
         ChatView(assistant: assistant, messageStore: messageStore)

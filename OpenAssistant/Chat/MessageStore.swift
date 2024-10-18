@@ -5,7 +5,7 @@ import SwiftUI
 /// A store that manages chat messages, providing functionality to add, save, and load messages.
 class MessageStore: ObservableObject {
     // MARK: - Published Properties
-    @Published var messages: [Message] = []
+    @Published private(set) var messages: [Message] = []
 
     // MARK: - Private Properties
     private let userDefaultsKey = "savedMessages"
