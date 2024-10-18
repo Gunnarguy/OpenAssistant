@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Message
 
 struct Message: Identifiable, Codable, Equatable {
-    var id: String = UUID().uuidString // Unique identifier for each message
+    let id: String // Remove the default value
     let object: String
     let created_at: Int
     let assistant_id: String?

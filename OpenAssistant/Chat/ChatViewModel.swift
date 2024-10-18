@@ -147,8 +147,11 @@ class ChatViewModel: BaseViewModel {
         switch result {
         case .success(let messages):
             let assistantMessages = messages.filter { $0.role == .assistant }
-            self.messages.append(contentsOf: assistantMessages)
-            messageStore.addMessages(assistantMessages)
+            let newMessages = assistantMessages.filter { newMessage in
+                !self.messages.contains(where: { $0.id == newMessage.id })
+            }
+            self.messages.append(contentsOf: newMessages)
+            messageStore.addMessages(newMessages)
             scrollToLastMessage()
         case .failure(let error):
             handleError("Failed to fetch messages: \(error.localizedDescription)")
@@ -182,7 +185,7 @@ class ChatViewModel: BaseViewModel {
     }
 
     private func createUserMessage(threadId: String) -> Message {
-        let uniqueID = generateUniqueMessageID()
+        let uniqueID = UUID().uuidString
         return Message(
             id: uniqueID,
             object: "thread.message",
@@ -238,9 +241,9 @@ class ChatViewModel: BaseViewModel {
 
     private func checkForDuplicateIDs() {
         let ids = messages.map { $0.id }
-        let uniqueIDs = Set(ids)
-        if ids.count != uniqueIDs.count {
-            print("Duplicate IDs found!")
+        let duplicates = Dictionary(grouping: ids, by: { $0 }).filter { $1.count > 1 }.keys
+        if !duplicates.isEmpty {
+            print("Duplicate IDs found: \(duplicates)")
         } else {
             print("All IDs are unique.")
         }
