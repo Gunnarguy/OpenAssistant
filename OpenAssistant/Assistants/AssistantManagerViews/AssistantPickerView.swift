@@ -1,5 +1,3 @@
-import Foundation
-import Combine
 import SwiftUI
 
 struct AssistantPickerView: View {
@@ -26,8 +24,8 @@ struct AssistantPickerView: View {
     private var content: some View {
         if viewModel.isLoading {
             ProgressView("Loading...")
-        } else if let errorMessage = viewModel.errorMessage {
-            ErrorView(message: errorMessage, retryAction: viewModel.fetchAssistants)
+        } else if let error = viewModel.errorMessage {
+            ErrorView(message: error.message, retryAction: viewModel.fetchAssistants)
         } else {
             assistantList
         }
@@ -48,6 +46,7 @@ struct AssistantPickerView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
+            .accessibilityLabel("Select \(assistant.name)")
         }
         .listStyle(InsetGroupedListStyle())
     }
@@ -71,6 +70,8 @@ struct ErrorView: View {
             Button("Retry", action: retryAction)
                 .padding(.top, 10)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Error: \(message). Retry button.")
     }
 }
 

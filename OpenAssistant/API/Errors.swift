@@ -30,6 +30,7 @@ enum OpenAIServiceError: Error, Equatable {
 struct IdentifiableError: Identifiable {
     let id = UUID()
     let message: String
+    
 }
 
 // MARK: - APIError

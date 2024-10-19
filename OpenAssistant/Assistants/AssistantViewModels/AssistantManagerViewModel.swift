@@ -27,12 +27,10 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         performServiceAction { openAIService in
             self.isLoading = true
             openAIService.fetchAssistants { [weak self] result in
-                DispatchQueue.main.async {
-                    self?.handleResult(result) { assistants in
-                        self?.assistants = assistants
-                    }
-                    self?.isLoading = false
+                self?.handleResult(result) { assistants in
+                    self?.assistants = assistants
                 }
+                self?.isLoading = false
             }
         }
     }
@@ -40,9 +38,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
     func fetchAvailableModels() {
         performServiceAction { openAIService in
             openAIService.fetchAvailableModels { [weak self] result in
-                DispatchQueue.main.async {
-                    self?.handleModelsResult(result)
-                }
+                self?.handleModelsResult(result)
             }
         }
     }
@@ -53,7 +49,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
                 .receive(on: DispatchQueue.main)
                 .sink(receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
-                        self?.handleError("Fetch vector stores failed: \(error.localizedDescription)")
+                        self?.handleError(IdentifiableError(message: "Fetch vector stores failed: \(error.localizedDescription)"))
                     }
                 }, receiveValue: { [weak self] vectorStores in
                     self?.vectorStores = vectorStores
@@ -140,7 +136,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         case .success(let models):
             self.availableModels = models.filter { $0.contains("gpt-3.5") || $0.contains("gpt-4") }
         case .failure(let error):
-            self.handleError("Fetch models failed: \(error.localizedDescription)")
+            self.handleError(IdentifiableError(message: "Fetch models failed: \(error.localizedDescription)"))
         }
     }
 
