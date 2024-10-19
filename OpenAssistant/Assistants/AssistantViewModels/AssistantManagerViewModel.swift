@@ -23,6 +23,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         fetchVectorStores()
     }
 
+    // Fetches the list of assistants from the API
     func fetchAssistants() {
         performServiceAction { openAIService in
             self.isLoading = true
@@ -35,6 +36,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         }
     }
 
+    // Fetches the available models from the API
     func fetchAvailableModels() {
         performServiceAction { openAIService in
             openAIService.fetchAvailableModels { [weak self] result in
@@ -43,6 +45,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         }
     }
 
+    // Fetches the vector stores from the API
     func fetchVectorStores() {
         performServiceAction { openAIService in
             openAIService.fetchVectorStores()
@@ -60,6 +63,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
 
     // MARK: - Assistant Management
 
+    // Creates a new assistant using the specified parameters
     func createAssistant(model: String,
                          name: String,
                          description: String?,
@@ -91,6 +95,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         }
     }
 
+    // Updates an existing assistant
     func updateAssistant(assistant: Assistant) {
         performServiceAction { openAIService in
             openAIService.updateAssistant(
@@ -116,6 +121,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         }
     }
 
+    // Deletes an assistant
     func deleteAssistant(assistant: Assistant) {
         performServiceAction { openAIService in
             openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
@@ -131,12 +137,24 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
 
     // MARK: - Private Methods
 
+    // Handles the result of fetching models
     private func handleModelsResult(_ result: Result<[String], Error>) {
         switch result {
         case .success(let models):
-            self.availableModels = models.filter { $0.contains("gpt-3.5") || $0.contains("gpt-4") }
+            // Define a set of prefixes for models you want to include
+            let modelPrefixes = ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]
+            let excludedKeywords = ["audio", "realtime"]
+
+            DispatchQueue.main.async {
+                self.availableModels = models.filter { model in
+                    modelPrefixes.contains { prefix in model.hasPrefix(prefix) } &&
+                    !excludedKeywords.contains { keyword in model.contains(keyword) }
+                }
+            }
         case .failure(let error):
-            self.handleError(IdentifiableError(message: "Fetch models failed: \(error.localizedDescription)"))
+            DispatchQueue.main.async {
+                self.handleError(IdentifiableError(message: "Fetch models failed: \(error.localizedDescription)"))
+            }
         }
     }
 
