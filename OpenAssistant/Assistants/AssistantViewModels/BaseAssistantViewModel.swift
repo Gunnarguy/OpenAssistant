@@ -17,7 +17,7 @@ class BaseAssistantViewModel: ObservableObject {
 
     func initializeOpenAIService() {
         guard !apiKey.isEmpty else {
-            handleError(IdentifiableError(message: "API key is missing"))
+            
             return
         }
         openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
