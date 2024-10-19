@@ -1,5 +1,3 @@
-import Foundation
-import Combine
 import SwiftUI
 
 // MARK: - LoadingView
@@ -9,7 +7,7 @@ struct LoadingView: View {
     
     // MARK: - Constants
     
-    private enum Constants {
+    private struct Constants {
         static let loadingText = "Loading..."
         static let textColor = Color.blue
         static let backgroundColor = Color.white.opacity(0.8)
@@ -21,18 +19,27 @@ struct LoadingView: View {
     // MARK: - Body
     
     var body: some View {
-        VStack {
-            Text(Constants.loadingText)
-                .font(Constants.fontSize)
-                .foregroundColor(Constants.textColor)
-                .padding(Constants.padding)
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: Constants.textColor))
-                .scaleEffect(Constants.progressViewScale)
+        VStack(spacing: Constants.padding) {
+            loadingText
+            loadingIndicator
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Constants.backgroundColor)
         .edgesIgnoringSafeArea(.all)
+    }
+    
+    // MARK: - Subviews
+    
+    private var loadingText: some View {
+        Text(Constants.loadingText)
+            .font(Constants.fontSize)
+            .foregroundColor(Constants.textColor)
+    }
+    
+    private var loadingIndicator: some View {
+        ProgressView()
+            .progressViewStyle(CircularProgressViewStyle(tint: Constants.textColor))
+            .scaleEffect(Constants.progressViewScale)
     }
 }
 

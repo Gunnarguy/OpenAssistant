@@ -15,32 +15,25 @@ enum OpenAIServiceError: Error, Equatable {
     case unknownError
     case invalidRequest
     case custom(String)
-    case authenticationError(String?) // New case
-    case invalidRequestError(String?) // New case
-    
+    case authenticationError(String?)
+    case invalidRequestError(String?)
     
     static func ==(lhs: OpenAIServiceError, rhs: OpenAIServiceError) -> Bool {
         return lhs.localizedDescription == rhs.localizedDescription
     }
 }
 
-
 // MARK: - IdentifiableError
 
 struct IdentifiableError: Identifiable {
     let id = UUID()
     let message: String
-    
 }
 
 // MARK: - APIError
 
 struct APIError: Decodable, Equatable {
     let error: APIErrorDetail
-
-    private enum CodingKeys: String, CodingKey {
-        case error
-    }
 }
 
 struct APIErrorDetail: Decodable, Equatable {
@@ -48,10 +41,6 @@ struct APIErrorDetail: Decodable, Equatable {
     let type: String
     let param: String?
     let code: String?
-
-    private enum CodingKeys: String, CodingKey {
-        case message, type, param, code
-    }
 }
 
 // MARK: - VectorStoreError
@@ -72,7 +61,6 @@ enum VectorStoreError: LocalizedError {
         }
     }
 }
-
 
 // MARK: - FileUploadError
 

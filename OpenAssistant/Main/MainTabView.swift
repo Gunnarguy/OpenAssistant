@@ -8,10 +8,9 @@ struct MainTabView: View {
     
     var body: some View {
         TabView {
-            createTab(view: AssistantPickerView(messageStore: messageStore), label: "Assistants", systemImage: "person.3")
-            createTab(view: AssistantManagerView(), label: "Manage", systemImage: "person.2.badge.gearshape")
-            createTab(view: VectorStoreListView(viewModel: VectorStoreManagerViewModel()), label: "Vector Stores", systemImage: "folder")
-            createTab(view: SettingsView(), label: "Settings", systemImage: "gear")
+            ForEach(Tab.allCases, id: \.self) { tab in
+                createTab(view: tab.view(messageStore: messageStore), label: tab.label, systemImage: tab.systemImage)
+            }
         }
         .sheet(item: $selectedAssistant) { assistant in
             NavigationView {
@@ -29,5 +28,44 @@ struct MainTabView: View {
             .onAppear {
                 print("\(label) tab appeared")
             }
+    }
+}
+
+private enum Tab: CaseIterable {
+    case assistants
+    case manage
+    case vectorStores
+    case settings
+    
+    var label: String {
+        switch self {
+        case .assistants: return "Assistants"
+        case .manage: return "Manage"
+        case .vectorStores: return "Vector Stores"
+        case .settings: return "Settings"
+        }
+    }
+    
+    var systemImage: String {
+        switch self {
+        case .assistants: return "person.3"
+        case .manage: return "person.2.badge.gearshape"
+        case .vectorStores: return "folder"
+        case .settings: return "gear"
+        }
+    }
+    
+    @MainActor @ViewBuilder
+    func view(messageStore: MessageStore) -> some View {
+        switch self {
+        case .assistants:
+            AssistantPickerView(messageStore: messageStore)
+        case .manage:
+            AssistantManagerView()
+        case .vectorStores:
+            VectorStoreListView(viewModel: VectorStoreManagerViewModel())
+        case .settings:
+            SettingsView()
+        }
     }
 }

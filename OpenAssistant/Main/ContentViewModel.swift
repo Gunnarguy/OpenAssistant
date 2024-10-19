@@ -15,8 +15,10 @@ class ContentViewModel: ObservableObject {
     }
 
     private func setupBindings() {
-        // Example of setting up bindings if needed
+        // Setup bindings with the assistant manager view model if needed
+        // Example:
         // assistantManagerViewModel.$somePublishedProperty
+        //     .receive(on: DispatchQueue.main)
         //     .sink { [weak self] value in
         //         self?.handleValueChange(value)
         //     }
@@ -25,8 +27,8 @@ class ContentViewModel: ObservableObject {
 
     func startLoading() {
         isLoading = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            self.isLoading = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            self?.isLoading = false
         }
     }
 
@@ -37,6 +39,6 @@ class ContentViewModel: ObservableObject {
     func refreshContent() {
         print("Refreshing content...")
         assistantManagerViewModel.fetchAssistants()
-        // Optionally, add more logic here to refresh other parts of the app
+        // Add more logic here to refresh other parts of the app if necessary
     }
 }

@@ -1,6 +1,9 @@
+
 import SwiftUI
+import Combine
 import UniformTypeIdentifiers
 
+// Main View for adding files to a Vector Store
 struct AddFileView: View {
     @ObservedObject var viewModel: VectorStoreManagerViewModel
     let vectorStore: VectorStore
@@ -31,16 +34,19 @@ struct AddFileView: View {
         }
     }
 
+    // Display selected files or a placeholder text
     private var fileSelectionText: some View {
         Text(selectedFiles.isEmpty ? "No files selected" : "Selected files: \(selectedFiles.map { $0.lastPathComponent }.joined(separator: ", "))")
     }
 
+    // Button to trigger file selection
     private var selectFilesButton: some View {
         Button("Select Files") {
             isFilePickerPresented = true
         }
     }
 
+    // Button to upload selected files
     private var uploadFilesButton: some View {
         Button("Upload Files") {
             Task {
@@ -50,6 +56,7 @@ struct AddFileView: View {
         .disabled(selectedFiles.isEmpty || isUploading)
     }
 
+    // Handle file selection result
     private func handleFileSelection(result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
@@ -62,6 +69,7 @@ struct AddFileView: View {
         }
     }
 
+    // Upload files concurrently with size check
     private func uploadFilesConcurrently() async {
         isUploading = true
         defer { isUploading = false }
@@ -72,7 +80,7 @@ struct AddFileView: View {
         await withTaskGroup(of: String?.self) { group in
             for fileURL in selectedFiles {
                 group.addTask {
-                    await self.uploadFile(fileURL, maxSize: maxSize) // Include the 'maxSize:' label here
+                    await self.uploadFile(fileURL, maxSize: maxSize)
                 }
             }
 
@@ -88,6 +96,7 @@ struct AddFileView: View {
         }
     }
 
+    // Upload a single file to the vector store
     private func uploadFile(_ fileURL: URL, maxSize: Int) async -> String? {
         do {
             guard fileURL.startAccessingSecurityScopedResource() else {
@@ -127,17 +136,22 @@ struct AddFileView: View {
         }
     }
 
+    // Display error message in an alert
     private func showError(_ message: String) {
         errorMessage = "Error occurred: " + message
         showErrorAlert = true
     }
 
+    // Reset error state after alert dismissal
     private func resetErrorState() {
         showErrorAlert = false
         errorMessage = ""
     }
 
+    // Allowed content types for file selection
     private var allowedContentTypes: [UTType] {
         return [UTType.pdf, UTType.plainText, UTType.image, UTType.json]
     }
 }
+
+// ViewModel for managing vector stores and file operations

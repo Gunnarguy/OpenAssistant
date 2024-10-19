@@ -18,11 +18,11 @@ struct ContentView: View {
                     .onAppear(perform: viewModel.startLoading)
             }
         }
-        .onAppear(perform: viewModel.onAppear) // Called when view appears
+        .onAppear(perform: viewModel.onAppear)
         .onReceive(NotificationCenter.default.publisher(for: .settingsUpdated)) { _ in
             viewModel.refreshContent()
         }
-        .environmentObject(viewModel) // Provide the viewModel to the environment
+        .environmentObject(viewModel)
     }
 }
 

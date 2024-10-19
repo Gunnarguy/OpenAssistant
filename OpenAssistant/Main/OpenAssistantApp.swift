@@ -13,14 +13,17 @@ struct OpenAssistantApp: App {
         WindowGroup {
             ContentView(assistantManagerViewModel: assistantManagerViewModel)
                 .environmentObject(assistantManagerViewModel)
-                .onAppear {
-                    assistantManagerViewModel.fetchAssistants()
-                    showSettingsView = apiKey.isEmpty
-                }
+                .onAppear(perform: handleOnAppear)
                 .sheet(isPresented: $showSettingsView) {
                     SettingsView()
                         .environmentObject(assistantManagerViewModel)
                 }
         }
+    }
+
+    /// Handles actions to perform when the view appears
+    private func handleOnAppear() {
+        assistantManagerViewModel.fetchAssistants()
+        showSettingsView = apiKey.isEmpty
     }
 }

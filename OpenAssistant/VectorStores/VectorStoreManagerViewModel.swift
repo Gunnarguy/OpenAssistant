@@ -12,17 +12,14 @@ class VectorStoreManagerViewModel: BaseViewModel {
         initializeAndFetch()
     }
 
-    // MARK: - Initialization and Fetching
-
+    // Initialize and fetch vector stores
     private func initializeAndFetch() {
-        // Ensure all properties are initialized before fetching
         fetchVectorStores()
             .sink(receiveCompletion: handleFetchCompletion, receiveValue: { _ in })
             .store(in: &cancellables)
     }
 
-    // MARK: - Data Fetching
-
+    // Fetch vector stores from OpenAI API
     func fetchVectorStores() -> AnyPublisher<[VectorStore], Never> {
         guard let openAIService = openAIService else {
             return Just([]).eraseToAnyPublisher()
@@ -39,6 +36,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
             })
             .eraseToAnyPublisher()
     }
+
 
 
     // MARK: - Fetch Files
@@ -112,38 +110,38 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
                 return
             }
-            
+
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-            
+
             let file: [String: Any] = [
                 "file_name": fileName,
                 "file_data": fileData.base64EncodedString()
             ]
-            
+
             request.httpBody = try? JSONSerialization.data(withJSONObject: file)
-            
+
             URLSession.shared.dataTask(with: request) { data, response, error in
                 if let error = error {
                     promise(.failure(error))
                     return
                 }
-                
+
                 guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
                     let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
                     let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
                     promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
                     return
                 }
-                
+
                 guard let data = data else {
                     promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
                     return
                 }
-                
+
                 do {
                     let response = try JSONDecoder().decode(VectorStore.self, from: data)
                     promise(.success(response.id))
@@ -153,6 +151,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
             }.resume()
         }
     }
+
 
     // MARK: - Delete File from Vector Store
 
@@ -275,4 +274,6 @@ private func handleFetchCompletion(_ completion: Subscribers.Completion<Never>) 
         print("Fetch failed with error: \(error)")
     }
 }
+
+
 
