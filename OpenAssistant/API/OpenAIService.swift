@@ -24,9 +24,16 @@ class OpenAIService {
 
     // MARK: - Request Creation
 
-    func makeRequest(endpoint: String, httpMethod: String = "GET", body: [String: Any]? = nil) -> URLRequest {
+    private enum HTTPMethod: String {
+        case get = "GET"
+        case post = "POST"
+        case delete = "DELETE"
+        // Add other methods as needed
+    }
+
+    private func makeRequest(endpoint: String, httpMethod: HTTPMethod = .get, body: [String: Any]? = nil) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent(endpoint))
-        request.httpMethod = httpMethod
+        request.httpMethod = httpMethod.rawValue
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: HTTPHeaderField.authorization.rawValue)
         request.addValue(ContentType.json.rawValue, forHTTPHeaderField: HTTPHeaderField.contentType.rawValue)
         request.addValue("assistants=v2", forHTTPHeaderField: HTTPHeaderField.openAIBeta.rawValue)
@@ -138,7 +145,7 @@ class OpenAIService {
         if let body = body {
             print("Request Body: \(body)")
         }
-    }   
+    }
 
     private func logResponseData(_ data: Data) {
         if let jsonString = String(data: data, encoding: .utf8) {
@@ -187,7 +194,7 @@ class OpenAIService {
         body["top_p"] = topP
         body["response_format"] = responseFormat?.toAny()
 
-        let request = makeRequest(endpoint: "assistants", httpMethod: "POST", body: body)
+        let request = makeRequest(endpoint: "assistants", httpMethod: .post, body: body)
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
@@ -207,7 +214,7 @@ class OpenAIService {
         body["top_p"] = topP
         body["response_format"] = responseFormat?.toAny()
 
-        let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "POST", body: body)
+        let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: .post, body: body)
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
@@ -265,6 +272,7 @@ class OpenAIService {
             }.resume()
         }
     }
+    
     
     func fetchFiles(for vectorStoreId: String) -> Future<[File], Error> {
         return Future { promise in
@@ -512,46 +520,55 @@ class OpenAIService {
         }
     
 
-    func addFileToVectorStore(vectorStoreId: String, file: [String: Any]) -> Future<VectorStore, Error> {
-        return Future { promise in
-            guard let url = URL(string: "\(self.baseURL)/vector_stores/\(vectorStoreId)/files") else {
-                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
-                return
+        func addFileToVectorStore(fileData: Data, fileName: String) -> Future<String, Error> {
+            return Future { [weak self] promise in
+                guard let self = self else { return }
+                let vectorStoreId = "vs_8PR9QELAC1BAO5ea5GKSuQLo" // Use the specific vector store ID
+                guard let url = URL(string: "\(self.baseURL)/vector_stores/\(vectorStoreId)/files") else {
+                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+                    return
+                }
+                
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
+                
+                let boundary = "Boundary-\(UUID().uuidString)"
+                var body = Data()
+                body.append("--\(boundary)\r\n".data(using: .utf8)!)
+                body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+                body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
+                body.append(fileData)
+                body.append("\r\n".data(using: .utf8)!)
+                body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+                
+                request.httpBody = body
+                request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+                
+                self.session.dataTask(with: request) { data, response, error in
+                    if let error = error {
+                        promise(.failure(error))
+                        return
+                    }
+                    guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                        let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
+                        promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
+                        return
+                    }
+                    guard let data = data else {
+                        promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                        return
+                    }
+                    do {
+                        let response = try JSONDecoder().decode(VectorStore.self, from: data)
+                        promise(.success(response.id))
+                    } catch {
+                        promise(.failure(error))
+                    }
+                }.resume()
             }
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try? JSONSerialization.data(withJSONObject: file)
-
-            self.session.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    promise(.failure(error))
-                    return
-                }
-
-                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                    promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-                    return
-                }
-
-                guard let data = data else {
-                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                    return
-                }
-
-                do {
-                    let vectorStore = try JSONDecoder().decode(VectorStore.self, from: data)
-                    promise(.success(vectorStore))
-                } catch {
-                    promise(.failure(error))
-                }
-            }.resume()
         }
-    }
 
     func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
         return Future { promise in
@@ -597,7 +614,7 @@ class OpenAIService {
     func runAssistantOnThread(threadId: String, assistantId: String, completion: @escaping (Result<Run, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/runs"
         let body: [String: Any] = ["assistant_id": assistantId]
-        let request = makeRequest(endpoint: endpoint, httpMethod: "POST", body: body)
+        let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body)
         logRequestDetails(request, body: body)
         session.dataTask(with: request) { data, response, error in
             if let data = data {
@@ -674,7 +691,7 @@ class OpenAIService {
             "role": message.role.rawValue,
             "content": message.content.map { $0.toDictionary() }
         ]
-        let request = makeRequest(endpoint: endpoint, httpMethod: "POST", body: body)
+        let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body)
         logRequestDetails(request, body: body)
         session.dataTask(with: request) { data, response, error in
             if let error = error {
@@ -755,7 +772,10 @@ extension OpenAIService {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
-            let boundary = "Boundary-\(UUID().uuidString)"
+            
+            let boundary = "Boundary-\(UUID().uuidString)" // Declare boundary here
+            request.addValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            
             var body = Data()
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
@@ -763,8 +783,8 @@ extension OpenAIService {
             body.append(fileData)
             body.append("\r\n".data(using: .utf8)!)
             body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+            
             request.httpBody = body
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
             
             self.session.dataTask(with: request) { data, response, error in
                 if let error = error {
@@ -772,7 +792,9 @@ extension OpenAIService {
                     return
                 }
                 guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                    promise(.failure(NSError(domain: "", code: (response as? HTTPURLResponse)?.statusCode ?? -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])))
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
+                    promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
                     return
                 }
                 guard let data = data else {
@@ -796,115 +818,3 @@ extension OpenAIService {
     
     
     
-// MARK: - Create File Batch Extension
-
-extension OpenAIService {
-    func createVectorStoreFileBatch(vectorStoreId: String, fileIds: [String]) -> Future<Void, Error> {
-        return Future { [weak self] promise in
-            guard let self = self else { return }
-            
-            // Encode the vectorStoreId for safe URL usage
-            let safeVectorStoreId = vectorStoreId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? vectorStoreId
-            
-            // Construct the URL
-            guard let url = URL(string: "\(self.baseURL.absoluteString)/vector_stores/\(safeVectorStoreId)/file_batches") else {
-                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
-                return
-            }
-            
-            // Set up the request
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            // Prepare the request body
-            let body: [String: Any] = ["file_ids": fileIds]
-            do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
-                
-                // Perform the network request
-                self.session.dataTask(with: request) { data, response, error in
-                    if let error = error {
-                        promise(.failure(error))
-                        return
-                    }
-                    guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                        promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response or status code"])))
-                        return
-                    }
-                    promise(.success(()))
-                }.resume()
-            } catch {
-                promise(.failure(error))
-            }
-        }
-    }
-}
-
-
-// MARK: - Attach File to Vector Store Extension
-
-extension OpenAIService {
-    func attachFileToVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
-        return Future { [weak self] promise in
-            guard let self = self else { return }
-            let url = self.baseURL.appendingPathComponent("vector_stores/\(vectorStoreId)/files")
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            let body: [String: Any] = ["file_id": fileId]
-            
-            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-            
-            self.session.dataTask(with: request) { _, response, error in
-                if let error = error {
-                    promise(.failure(error))
-                    return
-                }
-                
-                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                    promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-                    return
-                }
-                
-                promise(.success(()))
-                
-            }.resume()
-        }
-    }
-}
-    
-    // MARK: - Delete File from Vector Store Extension
-    extension OpenAIService {
-        func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
-            return Future { [weak self] promise in
-                guard let self = self else { return }
-                let endpoint = "vector_stores/\(vectorStoreId)/files/\(fileId)"
-                guard let request = self.makeRequest(endpoint: endpoint, httpMethod: "DELETE") else {
-                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Request"])))
-                    return
-                }
-                
-                self.session.dataTask(with: request) { _, response, error in
-                    if let error = error {
-                        promise(.failure(error))
-                        return
-                    }
-                    
-                    guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                        let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                        promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-                        return
-                    }
-                    
-                    promise(.success(()))
-                }.resume()
-            }
-        }
-    }

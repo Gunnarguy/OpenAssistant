@@ -49,6 +49,15 @@ struct VectorStoreFileBatch: Decodable {
     let status: String
     let fileCounts: FileCounts
 
+    struct FileCounts: Decodable {
+        let inProgress: Int
+        let completed: Int
+        let failed: Int
+        let cancelled: Int
+        let total: Int
+    }
+
+
     private enum CodingKeys: String, CodingKey {
         case id, object, createdAt = "created_at", vectorStoreId = "vector_store_id", status, fileCounts = "file_counts"
     }

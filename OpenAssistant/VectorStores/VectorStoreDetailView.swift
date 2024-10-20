@@ -17,7 +17,7 @@ struct VectorStoreDetailView: View {
             vectorStoreDetailsSection
             fileCountsSection
             filesSection
-            addFileSection  
+            //addFileSection
         }
         .navigationTitle(vectorStore.name ?? "Vector Store Details")
         .onAppear(perform: loadFiles)

@@ -1,9 +1,7 @@
-
 import SwiftUI
 import Combine
 import UniformTypeIdentifiers
 
-// Main View for adding files to a Vector Store
 struct AddFileView: View {
     @ObservedObject var viewModel: VectorStoreManagerViewModel
     let vectorStore: VectorStore
@@ -12,12 +10,14 @@ struct AddFileView: View {
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @State private var isUploading = false
+    @State private var uploadTask: Task<Void, Never>? = nil
 
     var body: some View {
         VStack(spacing: 20) {
             fileSelectionText
             selectFilesButton
             uploadFilesButton
+            cancelUploadButton
             if isUploading {
                 ProgressView("Uploading files...")
             }
@@ -34,29 +34,30 @@ struct AddFileView: View {
         }
     }
 
-    // Display selected files or a placeholder text
     private var fileSelectionText: some View {
         Text(selectedFiles.isEmpty ? "No files selected" : "Selected files: \(selectedFiles.map { $0.lastPathComponent }.joined(separator: ", "))")
     }
 
-    // Button to trigger file selection
     private var selectFilesButton: some View {
         Button("Select Files") {
             isFilePickerPresented = true
         }
     }
 
-    // Button to upload selected files
     private var uploadFilesButton: some View {
         Button("Upload Files") {
-            Task {
-                await uploadFilesConcurrently()
-            }
+            startUploadTask()
         }
         .disabled(selectedFiles.isEmpty || isUploading)
     }
 
-    // Handle file selection result
+    private var cancelUploadButton: some View {
+        Button("Cancel Upload") {
+            uploadTask?.cancel()
+        }
+        .disabled(!isUploading)
+    }
+
     private func handleFileSelection(result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
@@ -69,89 +70,96 @@ struct AddFileView: View {
         }
     }
 
-    // Upload files concurrently with size check
-    private func uploadFilesConcurrently() async {
+    private func startUploadTask() {
+        uploadTask = Task {
+            do {
+                try await uploadFilesConcurrently()
+            } catch {
+                showError("Upload failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func uploadFilesConcurrently() async throws {
         isUploading = true
         defer { isUploading = false }
 
         let maxSize = 10 * 1024 * 1024 // 10MB limit per file
         var fileIds: [String] = []
 
-        await withTaskGroup(of: String?.self) { group in
+        try await withThrowingTaskGroup(of: String?.self) { group in
             for fileURL in selectedFiles {
                 group.addTask {
-                    await self.uploadFile(fileURL, maxSize: maxSize)
+                    return try await self.uploadFile(fileURL, maxSize: maxSize)
                 }
             }
 
-            for await result in group {
-                if let fileId = result {
+            for try await fileId in group {
+                if let fileId = fileId {
                     fileIds.append(fileId)
                 }
             }
         }
 
         if fileIds.isEmpty {
-            showError("No files were uploaded successfully.")
+            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No files were uploaded successfully."])
         }
+
+        createFileBatch(with: fileIds)
     }
 
-    // Upload a single file to the vector store
-    private func uploadFile(_ fileURL: URL, maxSize: Int) async -> String? {
-        do {
-            guard fileURL.startAccessingSecurityScopedResource() else {
-                showError("Failed to access file at \(fileURL).")
-                return nil
-            }
-            defer { fileURL.stopAccessingSecurityScopedResource() }
-
-            let fileSize = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-            if fileSize > maxSize {
-                showError("File \(fileURL.lastPathComponent) is too large. Maximum allowed size is \(maxSize) bytes.")
-                return nil
-            }
-
-            let fileData = try Data(contentsOf: fileURL)
-            let fileName = fileURL.lastPathComponent
-
-            return try await withCheckedThrowingContinuation { continuation in
-                viewModel.addFileToVectorStore(vectorStoreId: vectorStore.id, fileData: fileData, fileName: fileName)
-                    .sink(receiveCompletion: { completion in
-                        switch completion {
-                        case .finished:
-                            break
-                        case .failure(let error):
-                            self.showError("Failed to upload file \(fileName): \(error.localizedDescription)")
-                            continuation.resume(returning: nil)
-                        }
-                    }, receiveValue: { fileId in
-                        continuation.resume(returning: fileId)
-                    })
-                    .store(in: &viewModel.cancellables)
-            }
-
-        } catch {
-            showError("Failed to read or upload file data for \(fileURL.lastPathComponent): \(error.localizedDescription)")
+    private func uploadFile(_ fileURL: URL, maxSize: Int) async throws -> String? {
+        guard fileURL.startAccessingSecurityScopedResource() else {
+            showError("Failed to access file at \(fileURL).")
             return nil
         }
+        defer { fileURL.stopAccessingSecurityScopedResource() }
+
+        let fileSize = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        if fileSize > maxSize {
+            showError("File \(fileURL.lastPathComponent) is too large. Size: \(ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)). Max allowed: \(ByteCountFormatter.string(fromByteCount: Int64(maxSize), countStyle: .file)).")
+            return nil
+        }
+
+        let fileData = try Data(contentsOf: fileURL)
+        let fileName = fileURL.lastPathComponent
+
+        return try await withCheckedThrowingContinuation { continuation in
+            viewModel.addFileToVectorStore(vectorStoreId: vectorStore.id, fileData: fileData, fileName: fileName)
+                .sink(receiveCompletion: { completion in
+                    if case .failure(let error) = completion {
+                        self.showError("Failed to upload file \(fileName): \(error.localizedDescription)")
+                        continuation.resume(returning: nil)
+                    }
+                }, receiveValue: { fileId in
+                    continuation.resume(returning: fileId)
+                })
+                .store(in: &viewModel.cancellables)
+        }
     }
 
-    // Display error message in an alert
+    private func createFileBatch(with fileIds: [String]) {
+        viewModel.createFileBatch(vectorStoreId: vectorStore.id, fileIds: fileIds, chunkingStrategy: nil) { result in
+            switch result {
+            case .success:
+                print("File batch created successfully.")
+            case .failure(let error):
+                showError("Failed to create file batch: \(error.localizedDescription)")
+            }
+        }
+    }
+
     private func showError(_ message: String) {
-        errorMessage = "Error occurred: " + message
+        errorMessage = message
         showErrorAlert = true
     }
 
-    // Reset error state after alert dismissal
     private func resetErrorState() {
         showErrorAlert = false
         errorMessage = ""
     }
 
-    // Allowed content types for file selection
     private var allowedContentTypes: [UTType] {
         return [UTType.pdf, UTType.plainText, UTType.image, UTType.json]
     }
 }
-
-// ViewModel for managing vector stores and file operations
