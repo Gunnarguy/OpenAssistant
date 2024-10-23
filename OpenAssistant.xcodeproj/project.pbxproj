@@ -24,11 +24,7 @@
 		B0BFE4442C9BDC8800EB6D81 /* AssistantFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */; };
 		B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */; };
 		B0C93C012CB7810F0037C5E1 /* Tool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C002CB7810F0037C5E1 /* Tool.swift */; };
-		B0C93C032CB7812C0037C5E1 /* ExpiresAfter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C022CB7812C0037C5E1 /* ExpiresAfter.swift */; };
-		B0C93C052CB781400037C5E1 /* TruncationStrategy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C042CB781400037C5E1 /* TruncationStrategy.swift */; };
-		B0C93C072CB781550037C5E1 /* MessageContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C062CB781550037C5E1 /* MessageContent.swift */; };
-		B0C93C092CB781740037C5E1 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C082CB781740037C5E1 /* File.swift */; };
-		B0C93C0B2CB781870037C5E1 /* ToolResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C0A2CB781870037C5E1 /* ToolResources.swift */; };
+		B0DC00802CC895FB0080C096 /* Additional.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC007F2CC895FB0080C096 /* Additional.swift */; };
 		B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */; };
 		B0DD9C5E2C9DFA7000A0D623 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */; };
 		B0DD9C602C9DFAB100A0D623 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */; };
@@ -36,7 +32,6 @@
 		B0EEE73F2C99326A0012F2BA /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */; };
 		B0EEE7402C99326A0012F2BA /* VectorStoreManagerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7302C99326A0012F2BA /* VectorStoreManagerViewModel.swift */; };
 		B0EEE7412C99326A0012F2BA /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE72A2C99326A0012F2BA /* ChatView.swift */; };
-		B0EEE7432C99326A0012F2BA /* Usage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7392C99326A0012F2BA /* Usage.swift */; };
 		B0EEE7442C99326A0012F2BA /* MessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7282C99326A0012F2BA /* MessageStore.swift */; };
 		B0EEE7452C99326A0012F2BA /* OpenAssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */; };
 		B0EEE7462C99326A0012F2BA /* CreateAssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE71D2C99326A0012F2BA /* CreateAssistantView.swift */; };
@@ -56,7 +51,6 @@
 		B0EEE7542C99326A0012F2BA /* AddFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE72C2C99326A0012F2BA /* AddFileView.swift */; };
 		B0EEE7552C99326A0012F2BA /* Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7332C99326A0012F2BA /* Assistant.swift */; };
 		B0EEE7562C99326A0012F2BA /* VectorStoreDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE72F2C99326A0012F2BA /* VectorStoreDetailView.swift */; };
-		B0EEE7572C99326A0012F2BA /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7362C99326A0012F2BA /* Model.swift */; };
 		B0EEE7592C99326A0012F2BA /* VectorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7342C99326A0012F2BA /* VectorStore.swift */; };
 		B0EEE75A2C99326A0012F2BA /* MessageRunThread.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7352C99326A0012F2BA /* MessageRunThread.swift */; };
 		B0EEE75B2C99326A0012F2BA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B0EEE73E2C99326A0012F2BA /* PrivacyInfo.xcprivacy */; };
@@ -81,11 +75,7 @@
 		B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantFormView.swift; sourceTree = "<group>"; };
 		B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
 		B0C93C002CB7810F0037C5E1 /* Tool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tool.swift; sourceTree = "<group>"; };
-		B0C93C022CB7812C0037C5E1 /* ExpiresAfter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpiresAfter.swift; sourceTree = "<group>"; };
-		B0C93C042CB781400037C5E1 /* TruncationStrategy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruncationStrategy.swift; sourceTree = "<group>"; };
-		B0C93C062CB781550037C5E1 /* MessageContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageContent.swift; sourceTree = "<group>"; };
-		B0C93C082CB781740037C5E1 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
-		B0C93C0A2CB781870037C5E1 /* ToolResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolResources.swift; sourceTree = "<group>"; };
+		B0DC007F2CC895FB0080C096 /* Additional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Additional.swift; sourceTree = "<group>"; };
 		B0DD9C572C9DE4B800A0D623 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B0DD9C592C9DE90000A0D623 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		B0DD9C5A2C9DE91B00A0D623 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
@@ -115,10 +105,8 @@
 		B0EEE7332C99326A0012F2BA /* Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assistant.swift; sourceTree = "<group>"; };
 		B0EEE7342C99326A0012F2BA /* VectorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorStore.swift; sourceTree = "<group>"; };
 		B0EEE7352C99326A0012F2BA /* MessageRunThread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRunThread.swift; sourceTree = "<group>"; };
-		B0EEE7362C99326A0012F2BA /* Model.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
 		B0EEE7372C99326A0012F2BA /* ResponseFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseFormat.swift; sourceTree = "<group>"; };
 		B0EEE7382C99326A0012F2BA /* Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
-		B0EEE7392C99326A0012F2BA /* Usage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Usage.swift; sourceTree = "<group>"; };
 		B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
 		B0EEE73C2C99326A0012F2BA /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B0EEE73D2C99326A0012F2BA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -263,20 +251,14 @@
 		B0EEE73B2C99326A0012F2BA /* API */ = {
 			isa = PBXGroup;
 			children = (
+				B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */,
 				B0EEE7332C99326A0012F2BA /* Assistant.swift */,
-				B0EEE7342C99326A0012F2BA /* VectorStore.swift */,
 				B0EEE7352C99326A0012F2BA /* MessageRunThread.swift */,
-				B0EEE7362C99326A0012F2BA /* Model.swift */,
+				B0C93C002CB7810F0037C5E1 /* Tool.swift */,
+				B0EEE7342C99326A0012F2BA /* VectorStore.swift */,
 				B0EEE7372C99326A0012F2BA /* ResponseFormat.swift */,
 				B0EEE7382C99326A0012F2BA /* Errors.swift */,
-				B0EEE7392C99326A0012F2BA /* Usage.swift */,
-				B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */,
-				B0C93C002CB7810F0037C5E1 /* Tool.swift */,
-				B0C93C022CB7812C0037C5E1 /* ExpiresAfter.swift */,
-				B0C93C042CB781400037C5E1 /* TruncationStrategy.swift */,
-				B0C93C062CB781550037C5E1 /* MessageContent.swift */,
-				B0C93C082CB781740037C5E1 /* File.swift */,
-				B0C93C0A2CB781870037C5E1 /* ToolResources.swift */,
+				B0DC007F2CC895FB0080C096 /* Additional.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -351,14 +333,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B0DC00802CC895FB0080C096 /* Additional.swift in Sources */,
 				B0EEE73F2C99326A0012F2BA /* OpenAIService.swift in Sources */,
 				B0EEE7402C99326A0012F2BA /* VectorStoreManagerViewModel.swift in Sources */,
 				B0EEE7412C99326A0012F2BA /* ChatView.swift in Sources */,
 				B0067AF62CA8B43E0043E2DD /* BaseAssistantViewModel.swift in Sources */,
 				B0DD9C5E2C9DFA7000A0D623 /* MainTabView.swift in Sources */,
 				B0DD9C602C9DFAB100A0D623 /* LoadingView.swift in Sources */,
-				B0EEE7432C99326A0012F2BA /* Usage.swift in Sources */,
-				B0C93C0B2CB781870037C5E1 /* ToolResources.swift in Sources */,
 				B0B14F702CB626EC00778895 /* ChatContentView.swift in Sources */,
 				B059E6C72CAB8DDD00B1028E /* Extensions.swift in Sources */,
 				B0EEE7442C99326A0012F2BA /* MessageStore.swift in Sources */,
@@ -380,24 +361,19 @@
 				B0EEE74E2C99326A0012F2BA /* VectorStoreListView.swift in Sources */,
 				B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */,
 				B0EEE74F2C99326A0012F2BA /* Errors.swift in Sources */,
-				B0C93C092CB781740037C5E1 /* File.swift in Sources */,
 				B0EEE7502C99326A0012F2BA /* AssistantDetailViewModel.swift in Sources */,
 				B0B14F7A2CB6276B00778895 /* MessageView.swift in Sources */,
 				B0EEE7512C99326A0012F2BA /* FileDetailView.swift in Sources */,
-				B0C93C072CB781550037C5E1 /* MessageContent.swift in Sources */,
-				B0C93C032CB7812C0037C5E1 /* ExpiresAfter.swift in Sources */,
 				B0B14F722CB626FF00778895 /* MessageListView.swift in Sources */,
 				B0B14F742CB6271300778895 /* InputView.swift in Sources */,
 				B0EEE7522C99326A0012F2BA /* AssistantManagerViewModel.swift in Sources */,
 				B0B14F7C2CB6279900778895 /* ChatHistoryView.swift in Sources */,
-				B0C93C052CB781400037C5E1 /* TruncationStrategy.swift in Sources */,
 				B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */,
 				B0EEE7532C99326A0012F2BA /* AssistantPickerViewModel.swift in Sources */,
 				B0B14F782CB6275200778895 /* StepCounterView.swift in Sources */,
 				B0EEE7542C99326A0012F2BA /* AddFileView.swift in Sources */,
 				B0EEE7552C99326A0012F2BA /* Assistant.swift in Sources */,
 				B0EEE7562C99326A0012F2BA /* VectorStoreDetailView.swift in Sources */,
-				B0EEE7572C99326A0012F2BA /* Model.swift in Sources */,
 				B0EEE7592C99326A0012F2BA /* VectorStore.swift in Sources */,
 				B0DD9C622C9DFC3A00A0D623 /* OpenAIInitializer.swift in Sources */,
 				B0EEE75A2C99326A0012F2BA /* MessageRunThread.swift in Sources */,
@@ -557,7 +533,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.2;
 				PRODUCT_BUNDLE_IDENTIFIER = AI.FascinAIting.OpenAssistant;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -601,7 +577,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1;
+				MARKETING_VERSION = 2.2;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = AI.FascinAIting.OpenAssistant;
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -1,9 +1,8 @@
 import Foundation
 
 // MARK: - Message
-
 struct Message: Identifiable, Codable, Equatable {
-    let id: String // Remove the default value
+    let id: String
     let object: String
     let created_at: Int
     let assistant_id: String?
@@ -93,7 +92,6 @@ struct Message: Identifiable, Codable, Equatable {
 }
 
 // MARK: - MessageResponse
-
 struct MessageResponse: Codable, Equatable {
     let id: String
     let object: String
@@ -112,7 +110,6 @@ struct MessageResponse: Codable, Equatable {
 }
 
 // MARK: - MessageResponseList
-
 struct MessageResponseList: Codable {
     let object: String
     let data: [Message]
@@ -122,7 +119,6 @@ struct MessageResponseList: Codable {
 }
 
 // MARK: - Run
-
 struct Run: Decodable {
     let id: String
     let object: String
@@ -159,7 +155,6 @@ struct Run: Decodable {
 }
 
 // MARK: - RunResult
-
 struct RunResult: Decodable, Equatable {
     let content: [Message.Content]
 
@@ -169,7 +164,6 @@ struct RunResult: Decodable, Equatable {
 }
 
 // MARK: - Thread
-
 struct Thread: Identifiable, Decodable, Equatable {
     let id: String
     let object: String

@@ -7,37 +7,37 @@ class OpenAIService {
     let baseURL = URL(string: "https://api.openai.com/v1/")!
     let session: URLSession
     
-    init(apiKey: String, session: URLSession = .shared, baseURL: URL = URL(string: "https://api.openai.com/v1")!) {
+    init(apiKey: String, session: URLSession = .shared) {
         self.apiKey = apiKey
         self.session = session
     }
-
+    
     private enum HTTPHeaderField: String {
         case authorization = "Authorization"
         case contentType = "Content-Type"
         case openAIBeta = "OpenAI-Beta"
     }
-
+    
     private enum ContentType: String {
         case json = "application/json"
+        case multipartFormData = "multipart/form-data"
     }
-
-    // MARK: - Request Creation
-
+    
     private enum HTTPMethod: String {
         case get = "GET"
         case post = "POST"
+        case put = "PUT"
         case delete = "DELETE"
-        // Add other methods as needed
     }
-
+    
+    // MARK: - Request Creation
     private func makeRequest(endpoint: String, httpMethod: HTTPMethod = .get, body: [String: Any]? = nil) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent(endpoint))
         request.httpMethod = httpMethod.rawValue
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: HTTPHeaderField.authorization.rawValue)
         request.addValue(ContentType.json.rawValue, forHTTPHeaderField: HTTPHeaderField.contentType.rawValue)
         request.addValue("assistants=v2", forHTTPHeaderField: HTTPHeaderField.openAIBeta.rawValue)
-
+        
         if let body = body {
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
@@ -45,7 +45,6 @@ class OpenAIService {
                 print("Error serializing JSON body: \(error.localizedDescription)")
             }
         }
-
         return request
     }
 
@@ -772,8 +771,7 @@ extension OpenAIService {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
-            
-            let boundary = "Boundary-\(UUID().uuidString)" // Declare boundary here
+            let boundary = "Boundary-\(UUID().uuidString)"
             request.addValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
             
             var body = Data()
@@ -783,7 +781,6 @@ extension OpenAIService {
             body.append(fileData)
             body.append("\r\n".data(using: .utf8)!)
             body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-            
             request.httpBody = body
             
             self.session.dataTask(with: request) { data, response, error in
@@ -815,6 +812,3 @@ extension OpenAIService {
         }
     }
 }
-    
-    
-    

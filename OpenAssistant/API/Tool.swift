@@ -46,9 +46,13 @@ struct FunctionTool: Codable {
         try container.encode(description, forKey: .description)
         try container.encode(name, forKey: .name)
         if let parameters = parameters {
-            let data = try JSONSerialization.data(withJSONObject: parameters, options: [])
-            let jsonString = String(data: data, encoding: .utf8)
-            try container.encode(jsonString, forKey: .parameters)
+            do {
+                let data = try JSONSerialization.data(withJSONObject: parameters, options: [])
+                let jsonString = String(data: data, encoding: .utf8)
+                try container.encode(jsonString, forKey: .parameters)
+            } catch {
+                print("Failed to encode parameters: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -57,8 +61,14 @@ struct FunctionTool: Codable {
         description = try container.decodeIfPresent(String.self, forKey: .description)
         name = try container.decode(String.self, forKey: .name)
         if let jsonString = try container.decodeIfPresent(String.self, forKey: .parameters) {
-            let data = jsonString.data(using: .utf8)!
-            parameters = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+            if let data = jsonString.data(using: .utf8) {
+                do {
+                    parameters = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+                } catch {
+                    print("Failed to decode parameters: \(error.localizedDescription)")
+                    parameters = nil
+                }
+            }
         } else {
             parameters = nil
         }
@@ -93,9 +103,13 @@ struct RetrievalTool: Codable {
         try container.encode(description, forKey: .description)
         try container.encode(name, forKey: .name)
         if let options = options {
-            let data = try JSONSerialization.data(withJSONObject: options, options: [])
-            let jsonString = String(data: data, encoding: .utf8)
-            try container.encode(jsonString, forKey: .options)
+            do {
+                let data = try JSONSerialization.data(withJSONObject: options, options: [])
+                let jsonString = String(data: data, encoding: .utf8)
+                try container.encode(jsonString, forKey: .options)
+            } catch {
+                print("Failed to encode options: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -104,8 +118,14 @@ struct RetrievalTool: Codable {
         description = try container.decodeIfPresent(String.self, forKey: .description)
         name = try container.decode(String.self, forKey: .name)
         if let jsonString = try container.decodeIfPresent(String.self, forKey: .options) {
-            let data = jsonString.data(using: .utf8)!
-            options = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+            if let data = jsonString.data(using: .utf8) {
+                do {
+                    options = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+                } catch {
+                    print("Failed to decode options: \(error.localizedDescription)")
+                    options = nil
+                }
+            }
         } else {
             options = nil
         }
@@ -120,5 +140,53 @@ struct RetrievalTool: Codable {
             dict["options"] = options
         }
         return dict
+    }
+}
+
+// MARK: - ToolResources
+struct ToolResources: Codable {
+    var fileSearch: FileSearchResources?
+    var codeInterpreter: CodeInterpreterResources?
+
+    private enum CodingKeys: String, CodingKey {
+        case fileSearch = "file_search"
+        case codeInterpreter = "code_interpreter"
+    }
+
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        if let fileSearch = fileSearch {
+            dict["file_search"] = fileSearch.toDictionary()
+        }
+        if let codeInterpreter = codeInterpreter {
+            dict["code_interpreter"] = codeInterpreter.toDictionary()
+        }
+        return dict
+    }
+}
+
+// MARK: - FileSearchResources
+struct FileSearchResources: Codable {
+    let vectorStoreIds: [String]?
+
+    private enum CodingKeys: String, CodingKey {
+        case vectorStoreIds = "vector_store_ids"
+    }
+
+    func toDictionary() -> [String: Any] {
+        return ["vector_store_ids": vectorStoreIds ?? []]
+    }
+}
+
+// MARK: - CodeInterpreterResources
+struct CodeInterpreterResources: Codable {
+    let fileIds: [String]?
+
+    private enum CodingKeys: String, CodingKey {
+        case fileIds = "file_ids"
+    }
+
+    func toDictionary() -> [String: Any] {
+        return ["file_ids": fileIds ?? []]
     }
 }
