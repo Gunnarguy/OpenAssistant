@@ -1,0 +1,324 @@
+import Foundation
+import Combine
+import SwiftUI
+
+extension OpenAIService {
+    
+    // MARK: - Create Thread
+    func createThread(completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
+        guard let request = makeRequest(endpoint: "threads", httpMethod: "POST") else {
+            completion(.failure(.invalidRequest))
+            return
+        }
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
+    }
+    
+    // MARK: - Run Assistant on Thread
+    func runAssistantOnThread(threadId: String, assistantId: String, completion: @escaping (Result<Run, OpenAIServiceError>) -> Void) {
+        let endpoint = "threads/\(threadId)/runs"
+        let body: [String: Any] = ["assistant_id": assistantId]
+        let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body)
+        logRequestDetails(request, body: body)
+        session.dataTask(with: request) { data, response, error in
+            if let data = data {
+                self.logResponseData(data)
+            }
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
+    }
+    
+    // MARK: - Fetch Run Status
+    func fetchRunStatus(threadId: String, runId: String, completion: @escaping (Result<Run, OpenAIServiceError>) -> Void) {
+        let endpoint = "threads/\(threadId)/runs/\(runId)"
+        let request = makeRequest(endpoint: endpoint)
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
+    }
+    
+    // MARK: - Fetch Run Messages
+    func fetchRunMessages(threadId: String, completion: @escaping (Result<[Message], OpenAIServiceError>) -> Void) {
+        let endpoint = "threads/\(threadId)/messages"
+        let request = makeRequest(endpoint: endpoint)
+        session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                self.logError("Network error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                self.logError("Invalid response: \(String(describing: response))")
+                DispatchQueue.main.async {
+                    completion(.failure(.unknownError))
+                }
+                return
+            }
+
+            if !(200...299).contains(httpResponse.statusCode) {
+                self.logError("HTTP error: \(httpResponse.statusCode)")
+                DispatchQueue.main.async {
+                    completion(.failure(.invalidResponse(httpResponse)))
+                }
+                return
+            }
+
+            guard let data = data else {
+                self.logError("No data received")
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+
+            self.logResponseData(data)
+
+            do {
+                let decodedResponse = try JSONDecoder().decode(MessageResponseList.self, from: data)
+                DispatchQueue.main.async {
+                    completion(.success(decodedResponse.data))
+                }
+            } catch {
+                self.logError("Decoding error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError(data, error)))
+                }
+            }
+        }.resume()
+    }
+    
+    // MARK: - Add Message to Thread
+    func addMessageToThread(threadId: String, message: Message, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
+        let endpoint = "threads/\(threadId)/messages"
+        let body: [String: Any] = [
+            "role": message.role.rawValue,
+            "content": message.content.map { $0.toDictionary() }
+        ]
+        let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body)
+        logRequestDetails(request, body: body)
+        session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                self.logError("Network error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(.failure(.networkError(error)))
+                }
+                return
+            }
+            guard let data = data else {
+                self.logError("No data received")
+                DispatchQueue.main.async {
+                    completion(.failure(.noData))
+                }
+                return
+            }
+            self.logResponseData(data)
+            do {
+                _ = try JSONDecoder().decode(OpenAIResponse.self, from: data)
+                DispatchQueue.main.async {
+                    completion(.success(()))
+                }
+            } catch {
+                self.logError("Decoding error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(.failure(.decodingError(data, error)))
+                }
+            }
+        }.resume()
+    }
+    
+    // MARK: - Fetch Thread Details
+    func fetchThreadDetails(threadId: String, completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
+        let endpoint = "threads/\(threadId)"
+        let request = makeRequest(endpoint: endpoint)
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
+    }
+}
+
+// MARK: - Message
+struct Message: Identifiable, Codable, Equatable {
+    let id: String
+    let object: String
+    let created_at: Int
+    let assistant_id: String?
+    let thread_id: String
+    let run_id: String?
+    let role: Role
+    let content: [Content]
+    let attachments: [String]
+    let metadata: [String: String]
+
+    enum Role: String, Codable {
+        case user
+        case assistant
+    }
+
+    struct Content: Codable, Equatable {
+        let type: String
+        let text: Text?
+
+        private enum CodingKeys: String, CodingKey {
+            case type, text
+        }
+
+        func toDictionary() -> [String: Any] {
+            var dict: [String: Any] = ["type": type]
+            if let text = text {
+                dict["text"] = text.value
+            }
+            return dict
+        }
+    }
+
+    struct Text: Codable, Equatable {
+        let value: String
+        let annotations: [Annotation]
+
+        private enum CodingKeys: String, CodingKey {
+            case value, annotations
+        }
+        
+        func toDictionary() -> [String: Any] {
+            return [
+                "value": value,
+                "annotations": annotations.map { $0.toDictionary() }
+            ]
+        }
+    }
+
+    struct Annotation: Codable, Equatable {
+        let type: String
+        let text: String
+        let startIndex: Int
+        let endIndex: Int
+        let fileCitation: FileCitation?
+
+        private enum CodingKeys: String, CodingKey {
+            case type, text, startIndex = "start_index", endIndex = "end_index", fileCitation = "file_citation"
+        }
+        
+        func toDictionary() -> [String: Any] {
+            var dict: [String: Any] = [
+                "type": type,
+                "text": text,
+                "start_index": startIndex,
+                "end_index": endIndex
+            ]
+            if let fileCitation = fileCitation {
+                dict["file_citation"] = fileCitation.toDictionary()
+            }
+            return dict
+        }
+    }
+
+    struct FileCitation: Codable, Equatable {
+        let fileId: String
+
+        private enum CodingKeys: String, CodingKey {
+            case fileId = "file_id"
+        }
+        
+        func toDictionary() -> [String: Any] {
+            return [
+                "file_id": fileId
+            ]
+        }
+    }
+}
+
+// MARK: - MessageResponse
+struct MessageResponse: Codable, Equatable {
+    let id: String
+    let object: String
+    let created_at: Int
+    let assistant_id: String?
+    let thread_id: String
+    let run_id: String?
+    let role: String
+    let content: [Message.Content]
+    let attachments: [String]
+    let metadata: [String: String]
+
+    private enum CodingKeys: String, CodingKey {
+        case id, object, created_at, assistant_id, thread_id, run_id, role, content, attachments, metadata
+    }
+}
+
+// MARK: - MessageResponseList
+struct MessageResponseList: Codable {
+    let object: String
+    let data: [Message]
+    let first_id: String?
+    let last_id: String?
+    let has_more: Bool
+}
+
+// MARK: - Run
+struct Run: Decodable {
+    let id: String
+    let object: String
+    let created_at: Int
+    let assistant_id: String
+    let thread_id: String
+    let status: String
+    let started_at: Int?
+    let expires_at: Int?
+    let cancelled_at: Int?
+    let failed_at: Int?
+    let completed_at: Int?
+    let required_action: String?
+    let last_error: String?
+    let model: String
+    let instructions: String
+    let tools: [Tool]
+    let tool_resources: ToolResources?
+    let metadata: [String: String]?
+    let temperature: Double
+    let top_p: Double
+    let max_completion_tokens: Int?
+    let max_prompt_tokens: Int?
+    let truncation_strategy: TruncationStrategy?
+    let usage: Usage?
+    let response_format: ResponseFormat
+    let tool_choice: String
+    let parallel_tool_calls: Bool
+    let incomplete_details: String?
+    
+    private enum CodingKeys: String, CodingKey {
+        case id, object, created_at, assistant_id, thread_id, status, started_at, expires_at, cancelled_at, failed_at, completed_at, required_action, last_error, model, instructions, tools, tool_resources, metadata, temperature, top_p, max_completion_tokens, max_prompt_tokens, truncation_strategy, usage, response_format, tool_choice, parallel_tool_calls, incomplete_details
+    }
+}
+
+// MARK: - RunResult
+struct RunResult: Decodable, Equatable {
+    let content: [Message.Content]
+
+    private enum CodingKeys: String, CodingKey {
+        case content
+    }
+}
+
+// MARK: - Thread
+struct Thread: Identifiable, Decodable, Equatable {
+    let id: String
+    let object: String
+    let created_at: Int
+    let metadata: [String: String]?
+    let tool_resources: ToolResources?
+    let messages: [Message]?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, object, metadata, messages
+        case created_at
+        case tool_resources
+    }
+
+    static func ==(lhs: Thread, rhs: Thread) -> Bool {
+        return lhs.id == rhs.id
+    }
+}

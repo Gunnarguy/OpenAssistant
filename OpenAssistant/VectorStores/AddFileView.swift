@@ -115,28 +115,39 @@ struct AddFileView: View {
         }
         defer { fileURL.stopAccessingSecurityScopedResource() }
 
-        let fileSize = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        if fileSize > maxSize {
-            showError("File \(fileURL.lastPathComponent) is too large. Size: \(ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)). Max allowed: \(ByteCountFormatter.string(fromByteCount: Int64(maxSize), countStyle: .file)).")
+        // Add validation for file data
+        guard let fileData = try? Data(contentsOf: fileURL), !fileData.isEmpty else {
+            showError("File \(fileURL.lastPathComponent) is empty or cannot be read.")
             return nil
         }
 
-        let fileData = try Data(contentsOf: fileURL)
+        let fileSize = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        if fileSize > maxSize {
+            showError("File \(fileURL.lastPathComponent) is too large.")
+            return nil
+        }
+
         let fileName = fileURL.lastPathComponent
+        
+        // Add debug logging
+        print("Uploading file: \(fileName) with size: \(fileSize) bytes")
 
         return try await withCheckedThrowingContinuation { continuation in
             viewModel.addFileToVectorStore(vectorStoreId: vectorStore.id, fileData: fileData, fileName: fileName)
                 .sink(receiveCompletion: { completion in
                     if case .failure(let error) = completion {
+                        print("Upload failed for \(fileName): \(error)")
                         self.showError("Failed to upload file \(fileName): \(error.localizedDescription)")
                         continuation.resume(returning: nil)
                     }
                 }, receiveValue: { fileId in
+                    print("Successfully uploaded \(fileName) with ID: \(fileId)")
                     continuation.resume(returning: fileId)
                 })
                 .store(in: &viewModel.cancellables)
         }
     }
+
 
     private func createFileBatch(with fileIds: [String]) {
         viewModel.createFileBatch(vectorStoreId: vectorStore.id, fileIds: fileIds, chunkingStrategy: nil) { result in

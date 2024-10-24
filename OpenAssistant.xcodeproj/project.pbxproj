@@ -10,6 +10,9 @@
 		B0067AF62CA8B43E0043E2DD /* BaseAssistantViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0067AF52CA8B43E0043E2DD /* BaseAssistantViewModel.swift */; };
 		B0067AFB2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */; };
 		B0067AFD2CA8F95D0043E2DD /* ActionButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0067AFC2CA8F95D0043E2DD /* ActionButtonsView.swift */; };
+		B033D41A2CCAFECD00984B82 /* OpenAIService-Vector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */; };
+		B033D41C2CCB05F700984B82 /* OpenAIService-Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */; };
+		B033D41E2CCB0AB000984B82 /* OpenAIService-Threads.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */; };
 		B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */; };
 		B059E6C72CAB8DDD00B1028E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B059E6C62CAB8DDD00B1028E /* Extensions.swift */; };
 		B0B14F702CB626EC00778895 /* ChatContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B14F6F2CB626EC00778895 /* ChatContentView.swift */; };
@@ -61,6 +64,9 @@
 		B0067AF52CA8B43E0043E2DD /* BaseAssistantViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseAssistantViewModel.swift; sourceTree = "<group>"; };
 		B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailSectionView.swift; sourceTree = "<group>"; };
 		B0067AFC2CA8F95D0043E2DD /* ActionButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionButtonsView.swift; sourceTree = "<group>"; };
+		B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Vector.swift"; sourceTree = "<group>"; };
+		B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Assistant.swift"; sourceTree = "<group>"; };
+		B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Threads.swift"; sourceTree = "<group>"; };
 		B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		B059E6C62CAB8DDD00B1028E /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		B0B14F6F2CB626EC00778895 /* ChatContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatContentView.swift; sourceTree = "<group>"; };
@@ -252,6 +258,9 @@
 			isa = PBXGroup;
 			children = (
 				B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */,
+				B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */,
+				B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */,
+				B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */,
 				B0EEE7332C99326A0012F2BA /* Assistant.swift */,
 				B0EEE7352C99326A0012F2BA /* MessageRunThread.swift */,
 				B0C93C002CB7810F0037C5E1 /* Tool.swift */,
@@ -346,6 +355,7 @@
 				B0B14F7E2CB627D100778895 /* NewCustomLoadingIndicator.swift in Sources */,
 				B0EEE7452C99326A0012F2BA /* OpenAssistantApp.swift in Sources */,
 				B0EEE7462C99326A0012F2BA /* CreateAssistantView.swift in Sources */,
+				B033D41A2CCAFECD00984B82 /* OpenAIService-Vector.swift in Sources */,
 				B0EEE7472C99326A0012F2BA /* ChatViewModel.swift in Sources */,
 				B0067AFD2CA8F95D0043E2DD /* ActionButtonsView.swift in Sources */,
 				B0EEE7482C99326A0012F2BA /* AssistantPickerView.swift in Sources */,
@@ -367,6 +377,7 @@
 				B0B14F722CB626FF00778895 /* MessageListView.swift in Sources */,
 				B0B14F742CB6271300778895 /* InputView.swift in Sources */,
 				B0EEE7522C99326A0012F2BA /* AssistantManagerViewModel.swift in Sources */,
+				B033D41C2CCB05F700984B82 /* OpenAIService-Assistant.swift in Sources */,
 				B0B14F7C2CB6279900778895 /* ChatHistoryView.swift in Sources */,
 				B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */,
 				B0EEE7532C99326A0012F2BA /* AssistantPickerViewModel.swift in Sources */,
@@ -375,6 +386,7 @@
 				B0EEE7552C99326A0012F2BA /* Assistant.swift in Sources */,
 				B0EEE7562C99326A0012F2BA /* VectorStoreDetailView.swift in Sources */,
 				B0EEE7592C99326A0012F2BA /* VectorStore.swift in Sources */,
+				B033D41E2CCB0AB000984B82 /* OpenAIService-Threads.swift in Sources */,
 				B0DD9C622C9DFC3A00A0D623 /* OpenAIInitializer.swift in Sources */,
 				B0EEE75A2C99326A0012F2BA /* MessageRunThread.swift in Sources */,
 				B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */,
