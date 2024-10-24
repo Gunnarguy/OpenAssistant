@@ -46,13 +46,9 @@ struct FunctionTool: Codable {
         try container.encode(description, forKey: .description)
         try container.encode(name, forKey: .name)
         if let parameters = parameters {
-            do {
-                let data = try JSONSerialization.data(withJSONObject: parameters, options: [])
-                let jsonString = String(data: data, encoding: .utf8)
-                try container.encode(jsonString, forKey: .parameters)
-            } catch {
-                print("Failed to encode parameters: \(error.localizedDescription)")
-            }
+            let data = try JSONSerialization.data(withJSONObject: parameters, options: [])
+            let jsonString = String(data: data, encoding: .utf8)
+            try container.encode(jsonString, forKey: .parameters)
         }
     }
 
@@ -60,15 +56,9 @@ struct FunctionTool: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         description = try container.decodeIfPresent(String.self, forKey: .description)
         name = try container.decode(String.self, forKey: .name)
-        if let jsonString = try container.decodeIfPresent(String.self, forKey: .parameters) {
-            if let data = jsonString.data(using: .utf8) {
-                do {
-                    parameters = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-                } catch {
-                    print("Failed to decode parameters: \(error.localizedDescription)")
-                    parameters = nil
-                }
-            }
+        if let jsonString = try container.decodeIfPresent(String.self, forKey: .parameters),
+           let data = jsonString.data(using: .utf8) {
+            parameters = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         } else {
             parameters = nil
         }
@@ -103,13 +93,9 @@ struct RetrievalTool: Codable {
         try container.encode(description, forKey: .description)
         try container.encode(name, forKey: .name)
         if let options = options {
-            do {
-                let data = try JSONSerialization.data(withJSONObject: options, options: [])
-                let jsonString = String(data: data, encoding: .utf8)
-                try container.encode(jsonString, forKey: .options)
-            } catch {
-                print("Failed to encode options: \(error.localizedDescription)")
-            }
+            let data = try JSONSerialization.data(withJSONObject: options, options: [])
+            let jsonString = String(data: data, encoding: .utf8)
+            try container.encode(jsonString, forKey: .options)
         }
     }
 
@@ -117,15 +103,9 @@ struct RetrievalTool: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         description = try container.decodeIfPresent(String.self, forKey: .description)
         name = try container.decode(String.self, forKey: .name)
-        if let jsonString = try container.decodeIfPresent(String.self, forKey: .options) {
-            if let data = jsonString.data(using: .utf8) {
-                do {
-                    options = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-                } catch {
-                    print("Failed to decode options: \(error.localizedDescription)")
-                    options = nil
-                }
-            }
+        if let jsonString = try container.decodeIfPresent(String.self, forKey: .options),
+           let data = jsonString.data(using: .utf8) {
+            options = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         } else {
             options = nil
         }

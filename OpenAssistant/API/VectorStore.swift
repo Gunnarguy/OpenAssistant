@@ -24,7 +24,6 @@ struct VectorStore: Identifiable, Codable {
 // MARK: - VectorStoreFile
 struct VectorStoreFile: Codable, Identifiable {
     let id: String
-    var files: [File] = [] // Mutable to allow dynamic updates
     let object: String
     let usageBytes: Int
     let createdAt: Int
@@ -48,14 +47,6 @@ struct VectorStoreFileBatch: Decodable {
     let vectorStoreId: String
     let status: String
     let fileCounts: FileCounts
-
-    struct FileCounts: Decodable {
-        let inProgress: Int
-        let completed: Int
-        let failed: Int
-        let cancelled: Int
-        let total: Int
-    }
 
     private enum CodingKeys: String, CodingKey {
         case id, object, createdAt = "created_at", vectorStoreId = "vector_store_id", status, fileCounts = "file_counts"
@@ -103,7 +94,7 @@ struct VectorStoreResponse: Codable {
     let firstId: String?
     let lastId: String?
     let hasMore: Bool
-    
+
     private enum CodingKeys: String, CodingKey {
         case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
     }
@@ -116,7 +107,7 @@ struct VectorStoreFilesResponse: Codable {
     let firstId: String?
     let lastId: String?
     let hasMore: Bool
-    
+
     private enum CodingKeys: String, CodingKey {
         case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
     }
@@ -158,12 +149,12 @@ struct FileBatch: Codable {
 
 // MARK: - FileSearch
 struct FileSearch: Codable {
-    let max_num_results: Int?
+    let maxNumResults: Int?
 
     func toFileSearchDictionary() -> [String: Any] {
         var dict: [String: Any] = [:]
-        if let max_num_results = max_num_results {
-            dict["max_num_results"] = max_num_results
+        if let maxNumResults = maxNumResults {
+            dict["max_num_results"] = maxNumResults
         }
         return dict
     }

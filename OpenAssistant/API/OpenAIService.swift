@@ -369,6 +369,36 @@ class OpenAIService {
         }.resume()
     }
 
+    func createVectorStoreWithFiles(fileIds: [String], completion: @escaping (Result<String, Error>) -> Void) {
+    var request = URLRequest(url: URL(string: "https://api.openai.com/v1/vector_stores")!)
+    request.httpMethod = "POST"
+    request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+    let body: [String: Any] = [
+        "name": "New Vector Store",
+        "description": "A vector store with files",
+        "file_ids": fileIds
+    ]
+    let bodyData = try? JSONSerialization.data(withJSONObject: body)
+    request.httpBody = bodyData
+
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            completion(.failure(error))
+            return
+        }
+        // Parse response and return the vector store ID
+        if let data = data, let jsonResponse = try? JSONSerialization.jsonObject(with: data, options: []),
+           let vectorStoreId = (jsonResponse as? [String: Any])?["id"] as? String {
+            completion(.success(vectorStoreId))
+        } else {
+            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create vector store."])))
+        }
+    }
+    task.resume()
+}
+
     func updateVectorStore(vectorStoreId: String, name: String? = nil, files: [[String: Any]]? = nil, completion: @escaping (Result<VectorStore, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))

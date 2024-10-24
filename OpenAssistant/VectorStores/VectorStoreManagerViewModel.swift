@@ -16,7 +16,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
     private func initializeAndFetch() {
         fetchVectorStores()
             .sink(receiveCompletion: handleFetchCompletion, receiveValue: { _ in })
-            .store(in: &cancellables)
+            .store(in: &cancellables) // Use the cancellables from the superclass
     }
 
     // Fetch vector stores from OpenAI API
@@ -37,10 +37,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
             .eraseToAnyPublisher()
     }
 
-
-
-    // MARK: - Fetch Files
-
+    // Fetch Files
     func fetchFiles(for vectorStore: VectorStore) {
         guard let openAIService = openAIService else {
             handleError(.serviceNotInitialized)
@@ -55,11 +52,10 @@ class VectorStoreManagerViewModel: BaseViewModel {
             }, receiveValue: { [weak self] files in
                 self?.updateVectorStoreFiles(vectorStore: vectorStore, files: files)
             })
-            .store(in: &cancellables)
+            .store(in: &cancellables) // Use the cancellables from the superclass
     }
 
-    // MARK: - Create File Batch with Chunking Strategy
-
+    // Create File Batch with Chunking Strategy
     func createFileBatch(vectorStoreId: String, fileIds: [String], chunkingStrategy: ChunkingStrategy?, completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/file_batches") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -101,10 +97,8 @@ class VectorStoreManagerViewModel: BaseViewModel {
             }
         }.resume()
     }
-    
 
-    // MARK: - Add File to Vector Store
-
+    // Add File to Vector Store
     func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String) -> Future<String, Error> {
         return Future { promise in
             guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/files") else {
@@ -153,9 +147,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }
     }
 
-
-    // MARK: - Delete File from Vector Store
-
+    // Delete File from Vector Store
     func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
         return Future { [weak self] promise in
             guard let self = self else { return }
@@ -174,8 +166,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }
     }
 
-    // MARK: - Delete Vector Store
-
+    // Delete Vector Store
     func deleteVectorStore(vectorStoreId: String) {
         guard let openAIService = openAIService else {
             handleError(.serviceNotInitialized)
@@ -192,11 +183,10 @@ class VectorStoreManagerViewModel: BaseViewModel {
             }, receiveValue: { _ in
                 print("Vector store deleted successfully.")
             })
-            .store(in: &cancellables)
+            .store(in: &cancellables) // Use the cancellables from the superclass
     }
 
-    // MARK: - Update Vector Store Files
-
+    // Update Vector Store Files
     private func updateVectorStoreFiles(vectorStore: VectorStore, files: [File]) {
         guard let index = vectorStoreIndex(for: vectorStore) else {
             print("VectorStore not found")
@@ -264,17 +254,3 @@ extension ChunkingStrategy {
         return dict
     }
 }
-
-// MARK: - Handle Fetch Completion
-
-private func handleFetchCompletion(_ completion: Subscribers.Completion<Never>) {
-    switch completion {
-    case .finished:
-        print("Fetch completed successfully")
-    case .failure(let error):
-        print("Fetch failed with error: \(error)")
-    }
-}
-
-
-
