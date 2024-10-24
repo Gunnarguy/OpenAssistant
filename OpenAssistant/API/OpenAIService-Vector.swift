@@ -65,16 +65,11 @@ extension OpenAIService {
         }.resume()
     }
     
-    
-    
     // MARK: - Create Vector Store
     
     func createVectorStore(name: String, files: [[String: Any]], completion: @escaping (Result<VectorStore, Error>) -> Void) {
         let endpoint = "vector_stores"
-        let body: [String: Any] = [
-            "name": name,
-            "files": files
-        ]
+        let body: [String: Any] = ["name": name, "files": files]
         
         guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
@@ -151,8 +146,6 @@ extension OpenAIService {
         }
     }
     
-    
-    
     // MARK: - Fetch Files
     
     func fetchFiles(for vectorStoreId: String) -> Future<[File], Error> {
@@ -176,6 +169,7 @@ extension OpenAIService {
     }
     
     // MARK: - Upload Files
+    
     func uploadFiles(fileURLs: [URL], completion: @escaping (Result<[String], Error>) -> Void) {
         var uploadedFileIds: [String] = []
         var cancellables = Set<AnyCancellable>()
@@ -207,28 +201,28 @@ extension OpenAIService {
     }
     
     // MARK: - Batch Upload Files to Vector Store
+    
     func batchUploadFilesToVectorStore(vectorStoreId: String, fileURLs: [URL], completion: @escaping (Result<Void, Error>) -> Void) {
-        uploadFiles(fileURLs: fileURLs) { [self] result in
+        uploadFiles(fileURLs: fileURLs) { result in
             switch result {
             case .success(let fileIds):
-                // Use the batch method to add files to the vector store
-                var request = URLRequest(url: URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/file_batches")!)
-                request.httpMethod = "POST"
-                request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
+                let endpoint = "vector_stores/\(vectorStoreId)/file_batches"
                 let body: [String: Any] = ["file_ids": fileIds]
-                let bodyData = try? JSONSerialization.data(withJSONObject: body)
-                request.httpBody = bodyData
                 
-                let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                    if let error = error {
-                        completion(.failure(error))
-                        return
-                    }
-                    completion(.success(()))
+                guard let request = self.createRequest(endpoint: endpoint, method: "POST", body: body) else {
+                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
+                    return
                 }
-                task.resume()
+
+                
+                self.handleURLSessionDataTask(request: request) { (result: Result<Data, Error>) in
+                    switch result {
+                    case .success:
+                        completion(.success(()))
+                    case .failure(let error):
+                        completion(.failure(error))
+                    }
+                }
                 
             case .failure(let error):
                 completion(.failure(error))
@@ -294,5 +288,164 @@ extension OpenAIService {
             .map { _ in () }  // Ignore the response body
             .mapError { $0 as Error }
             .eraseToAnyPublisher()
+    }
+}
+
+// MARK: - VectorStore
+/// Represents a vector store with associated files and metadata.
+struct VectorStore: Identifiable, Codable {
+    let id: String
+    let name: String?
+    let status: String?
+    let usageBytes: Int?
+    let createdAt: Int
+    let fileCounts: FileCounts
+    let metadata: [String: String]?
+    let expiresAfter: ExpiresAfterType?
+    let expiresAt: Int?
+    let lastActiveAt: Int?
+    var files: [VectorStoreFile]? // Mutable to allow updates
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, status, usageBytes = "bytes", createdAt = "created_at", fileCounts = "file_counts", metadata, expiresAfter = "expires_after", expiresAt = "expires_at", lastActiveAt = "last_active_at", files
+    }
+}
+
+// MARK: - VectorStoreFile
+struct VectorStoreFile: Codable, Identifiable {
+    let id: String
+    let object: String
+    let usageBytes: Int
+    let createdAt: Int
+    let vectorStoreId: String
+    let status: String
+    let lastError: String?
+    let chunkingStrategy: ChunkingStrategy?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, object, usageBytes = "usage_bytes", createdAt = "created_at"
+        case vectorStoreId = "vector_store_id", status, lastError = "last_error"
+        case chunkingStrategy = "chunking_strategy"
+    }
+}
+
+// MARK: - VectorStoreFileBatch
+struct VectorStoreFileBatch: Decodable {
+    let id: String
+    let object: String
+    let createdAt: Int
+    let vectorStoreId: String
+    let status: String
+    let fileCounts: FileCounts
+
+    private enum CodingKeys: String, CodingKey {
+        case id, object, createdAt = "created_at", vectorStoreId = "vector_store_id", status, fileCounts = "file_counts"
+    }
+}
+
+// MARK: - ChunkingStrategy
+struct ChunkingStrategy: Codable {
+    let type: String
+    let staticStrategy: StaticStrategy?
+
+    private enum CodingKeys: String, CodingKey {
+        case type, staticStrategy = "static"
+    }
+}
+
+// MARK: - StaticStrategy
+struct StaticStrategy: Codable {
+    let maxChunkSizeTokens: Int
+    let chunkOverlapTokens: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case maxChunkSizeTokens = "max_chunk_size_tokens"
+        case chunkOverlapTokens = "chunk_overlap_tokens"
+    }
+}
+
+// MARK: - FileCounts
+struct FileCounts: Codable {
+    let inProgress: Int
+    let completed: Int
+    let failed: Int
+    let cancelled: Int
+    let total: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case inProgress = "in_progress", completed, failed, cancelled, total
+    }
+}
+
+// MARK: - VectorStoreResponse
+/// Represents a response containing multiple vector stores.
+struct VectorStoreResponse: Codable {
+    let data: [VectorStore]
+    let firstId: String?
+    let lastId: String?
+    let hasMore: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
+    }
+}
+
+// MARK: - VectorStoreFilesResponse
+/// Represents a response containing files for a vector store.
+struct VectorStoreFilesResponse: Codable {
+    let data: [File]
+    let firstId: String?
+    let lastId: String?
+    let hasMore: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
+    }
+}
+
+// MARK: - File
+struct File: Identifiable, Codable {
+    let id: String
+    let name: String?
+    let status: String
+    let createdAt: Int
+    let bytes: Int?
+    let purpose: String?
+    let mimeType: String?
+    let objectType: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, status, bytes, purpose, mimeType, objectType
+        case createdAt = "created_at"
+    }
+}
+
+// Example JSON decoding
+func decodeFile(from jsonData: Data) -> File? {
+    let decoder = JSONDecoder()
+    do {
+        let file = try decoder.decode(File.self, from: jsonData)
+        return file
+    } catch {
+        print("Failed to decode JSON: \(error.localizedDescription)")
+        return nil
+    }
+}
+
+// MARK: - FileBatch
+struct FileBatch: Codable {
+    let id: String
+}
+
+// MARK: - FileSearch
+struct FileSearch: Codable {
+    let maxNumResults: Int?
+
+    func toFileSearchDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        if let maxNumResults = maxNumResults {
+            dict["max_num_results"] = maxNumResults
+        }
+        return dict
     }
 }

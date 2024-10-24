@@ -26,7 +26,6 @@
 		B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */; };
 		B0BFE4442C9BDC8800EB6D81 /* AssistantFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */; };
 		B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */; };
-		B0C93C012CB7810F0037C5E1 /* Tool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C93C002CB7810F0037C5E1 /* Tool.swift */; };
 		B0DC00802CC895FB0080C096 /* Additional.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC007F2CC895FB0080C096 /* Additional.swift */; };
 		B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */; };
 		B0DD9C5E2C9DFA7000A0D623 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */; };
@@ -52,10 +51,7 @@
 		B0EEE7522C99326A0012F2BA /* AssistantManagerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7222C99326A0012F2BA /* AssistantManagerViewModel.swift */; };
 		B0EEE7532C99326A0012F2BA /* AssistantPickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7252C99326A0012F2BA /* AssistantPickerViewModel.swift */; };
 		B0EEE7542C99326A0012F2BA /* AddFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE72C2C99326A0012F2BA /* AddFileView.swift */; };
-		B0EEE7552C99326A0012F2BA /* Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7332C99326A0012F2BA /* Assistant.swift */; };
 		B0EEE7562C99326A0012F2BA /* VectorStoreDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE72F2C99326A0012F2BA /* VectorStoreDetailView.swift */; };
-		B0EEE7592C99326A0012F2BA /* VectorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7342C99326A0012F2BA /* VectorStore.swift */; };
-		B0EEE75A2C99326A0012F2BA /* MessageRunThread.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7352C99326A0012F2BA /* MessageRunThread.swift */; };
 		B0EEE75B2C99326A0012F2BA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B0EEE73E2C99326A0012F2BA /* PrivacyInfo.xcprivacy */; };
 		B0EEE75C2C99326A0012F2BA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0EEE73D2C99326A0012F2BA /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -80,7 +76,6 @@
 		B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailView.swift; sourceTree = "<group>"; };
 		B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantFormView.swift; sourceTree = "<group>"; };
 		B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
-		B0C93C002CB7810F0037C5E1 /* Tool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tool.swift; sourceTree = "<group>"; };
 		B0DC007F2CC895FB0080C096 /* Additional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Additional.swift; sourceTree = "<group>"; };
 		B0DD9C572C9DE4B800A0D623 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B0DD9C592C9DE90000A0D623 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
@@ -108,9 +103,6 @@
 		B0EEE72E2C99326A0012F2BA /* VectorStoreListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorStoreListView.swift; sourceTree = "<group>"; };
 		B0EEE72F2C99326A0012F2BA /* VectorStoreDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorStoreDetailView.swift; sourceTree = "<group>"; };
 		B0EEE7302C99326A0012F2BA /* VectorStoreManagerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorStoreManagerViewModel.swift; sourceTree = "<group>"; };
-		B0EEE7332C99326A0012F2BA /* Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assistant.swift; sourceTree = "<group>"; };
-		B0EEE7342C99326A0012F2BA /* VectorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorStore.swift; sourceTree = "<group>"; };
-		B0EEE7352C99326A0012F2BA /* MessageRunThread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRunThread.swift; sourceTree = "<group>"; };
 		B0EEE7372C99326A0012F2BA /* ResponseFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseFormat.swift; sourceTree = "<group>"; };
 		B0EEE7382C99326A0012F2BA /* Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
 		B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
@@ -261,10 +253,6 @@
 				B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */,
 				B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */,
 				B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */,
-				B0EEE7332C99326A0012F2BA /* Assistant.swift */,
-				B0EEE7352C99326A0012F2BA /* MessageRunThread.swift */,
-				B0C93C002CB7810F0037C5E1 /* Tool.swift */,
-				B0EEE7342C99326A0012F2BA /* VectorStore.swift */,
 				B0EEE7372C99326A0012F2BA /* ResponseFormat.swift */,
 				B0EEE7382C99326A0012F2BA /* Errors.swift */,
 				B0DC007F2CC895FB0080C096 /* Additional.swift */,
@@ -383,14 +371,10 @@
 				B0EEE7532C99326A0012F2BA /* AssistantPickerViewModel.swift in Sources */,
 				B0B14F782CB6275200778895 /* StepCounterView.swift in Sources */,
 				B0EEE7542C99326A0012F2BA /* AddFileView.swift in Sources */,
-				B0EEE7552C99326A0012F2BA /* Assistant.swift in Sources */,
 				B0EEE7562C99326A0012F2BA /* VectorStoreDetailView.swift in Sources */,
-				B0EEE7592C99326A0012F2BA /* VectorStore.swift in Sources */,
 				B033D41E2CCB0AB000984B82 /* OpenAIService-Threads.swift in Sources */,
 				B0DD9C622C9DFC3A00A0D623 /* OpenAIInitializer.swift in Sources */,
-				B0EEE75A2C99326A0012F2BA /* MessageRunThread.swift in Sources */,
 				B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */,
-				B0C93C012CB7810F0037C5E1 /* Tool.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
