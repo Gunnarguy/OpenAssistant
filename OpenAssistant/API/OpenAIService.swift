@@ -210,10 +210,9 @@ class OpenAIService {
 
 
         // MARK: - Add File to Vector Store
-        func addFileToVectorStore(fileData: Data, fileName: String) -> Future<String, Error> {
+        func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String) -> Future<String, Error> {
             return Future { [weak self] promise in
                 guard let self = self else { return }
-                let vectorStoreId = "vs_8PR9QELAC1BAO5ea5GKSuQLo" // Use the specific vector store ID
                 guard let url = URL(string: "\(self.baseURL)/vector_stores/\(vectorStoreId)/files") else {
                     promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
                     return
@@ -259,6 +258,7 @@ class OpenAIService {
                 }.resume()
             }
         }
+
         
 
 
@@ -324,54 +324,5 @@ class OpenAIService {
     }
 }
 
-// MARK: - Upload File Extension
 
-extension OpenAIService {
-    func uploadFile(fileData: Data, fileName: String) -> Future<String, Error> {
-        return Future { [weak self] promise in
-            guard let self = self else { return }
-            let url = self.baseURL.appendingPathComponent("files")
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
-            let boundary = "Boundary-\(UUID().uuidString)"
-            request.addValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-            
-            var body = Data()
-            body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
-            body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
-            body.append(fileData)
-            body.append("\r\n".data(using: .utf8)!)
-            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-            request.httpBody = body
-            
-            self.session.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    promise(.failure(error))
-                    return
-                }
-                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                    promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-                    return
-                }
-                guard let data = data else {
-                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                    return
-                }
-                do {
-                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                    if let fileId = json?["id"] as? String {
-                        promise(.success(fileId))
-                    } else {
-                        promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response structure"])))
-                    }
-                } catch {
-                    promise(.failure(error))
-                }
-            }.resume()
-        }
-    }
-}
+

@@ -115,7 +115,6 @@ struct AddFileView: View {
         }
         defer { fileURL.stopAccessingSecurityScopedResource() }
 
-        // Add validation for file data
         guard let fileData = try? Data(contentsOf: fileURL), !fileData.isEmpty else {
             showError("File \(fileURL.lastPathComponent) is empty or cannot be read.")
             return nil
@@ -128,8 +127,6 @@ struct AddFileView: View {
         }
 
         let fileName = fileURL.lastPathComponent
-        
-        // Add debug logging
         print("Uploading file: \(fileName) with size: \(fileSize) bytes")
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -147,6 +144,7 @@ struct AddFileView: View {
                 .store(in: &viewModel.cancellables)
         }
     }
+
 
 
     private func createFileBatch(with fileIds: [String]) {
