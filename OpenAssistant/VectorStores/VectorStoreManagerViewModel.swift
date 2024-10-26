@@ -12,14 +12,12 @@ class VectorStoreManagerViewModel: BaseViewModel {
         initializeAndFetch()
     }
 
-    // Initialize and fetch vector stores
     private func initializeAndFetch() {
         fetchVectorStores()
             .sink(receiveCompletion: handleFetchCompletion, receiveValue: { _ in })
-            .store(in: &cancellables) // Use the cancellables from the superclass
+            .store(in: &cancellables)
     }
 
-    // Fetch vector stores from OpenAI API
     func fetchVectorStores() -> AnyPublisher<[VectorStore], Never> {
         guard let openAIService = openAIService else {
             return Just([]).eraseToAnyPublisher()
@@ -37,7 +35,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
             .eraseToAnyPublisher()
     }
 
-    // Fetch Files
     func fetchFiles(for vectorStore: VectorStore) {
         guard let openAIService = openAIService else {
             handleError(.serviceNotInitialized)
@@ -46,16 +43,13 @@ class VectorStoreManagerViewModel: BaseViewModel {
         openAIService.fetchFiles(for: vectorStore.id)
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { [weak self] completion in
-                if case let .failure(error) = completion {
-                    self?.handleError(.fetchFailed(error.localizedDescription))
-                }
+                self?.handleFetchFilesCompletion(completion)
             }, receiveValue: { [weak self] files in
                 self?.updateVectorStoreFiles(vectorStore: vectorStore, files: files)
             })
-            .store(in: &cancellables) // Use the cancellables from the superclass
+            .store(in: &cancellables)
     }
 
-    // Create File Batch with Chunking Strategy
     func createFileBatch(vectorStoreId: String, fileIds: [String], chunkingStrategy: ChunkingStrategy?, completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/file_batches") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -63,11 +57,8 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }
         
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-
+        configureRequest(&request, httpMethod: "POST")
+        
         var body: [String: Any] = ["file_ids": fileIds]
         if let chunkingStrategy = chunkingStrategy {
             body["chunking_strategy"] = chunkingStrategy.toDictionary()
@@ -80,37 +71,23 @@ class VectorStoreManagerViewModel: BaseViewModel {
             return
         }
 
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            guard let data = data else {
-                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                return
-            }
-            do {
-                let response = try JSONDecoder().decode(VectorStoreFileBatch.self, from: data)
-                completion(.success(response))
-            } catch {
-                completion(.failure(error))
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            Task { @MainActor in
+                self?.handleDataTaskResponse(data: data, response: response, error: error, completion: completion)
             }
         }.resume()
     }
 
-    // Add File to Vector Store
     func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String) -> Future<String, Error> {
-        return Future { promise in
+        return Future { [weak self] promise in
+            guard let self = self else { return }
             guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/files") else {
                 promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
                 return
             }
 
             var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+            self.configureRequest(&request, httpMethod: "POST")
 
             let file: [String: Any] = [
                 "file_name": fileName,
@@ -119,35 +96,14 @@ class VectorStoreManagerViewModel: BaseViewModel {
 
             request.httpBody = try? JSONSerialization.data(withJSONObject: file)
 
-            URLSession.shared.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    promise(.failure(error))
-                    return
-                }
-
-                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                    promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-                    return
-                }
-
-                guard let data = data else {
-                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                    return
-                }
-
-                do {
-                    let response = try JSONDecoder().decode(VectorStore.self, from: data)
-                    promise(.success(response.id))
-                } catch {
-                    promise(.failure(error))
+            URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+                Task { @MainActor in
+                    self?.handleDataTaskResponse(data: data, response: response, error: error, promise: promise)
                 }
             }.resume()
         }
     }
 
-    // Delete File from Vector Store
     func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
         return Future { [weak self] promise in
             guard let self = self else { return }
@@ -166,27 +122,20 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }
     }
 
-    // Delete Vector Store
     func deleteVectorStore(vectorStoreId: String) {
         guard let openAIService = openAIService else {
             handleError(.serviceNotInitialized)
             return
         }
         openAIService.deleteVectorStore(vectorStoreId: vectorStoreId)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    self.vectorStores.removeAll { $0.id == vectorStoreId }
-                case .failure(let error):
-                    self.handleError(.fetchFailed(error.localizedDescription))
-                }
+            .sink(receiveCompletion: { [weak self] completion in
+                self?.handleDeleteCompletion(completion, vectorStoreId: vectorStoreId)
             }, receiveValue: { _ in
                 print("Vector store deleted successfully.")
             })
-            .store(in: &cancellables) // Use the cancellables from the superclass
+            .store(in: &cancellables)
     }
 
-    // Update Vector Store Files
     private func updateVectorStoreFiles(vectorStore: VectorStore, files: [File]) {
         guard let index = vectorStoreIndex(for: vectorStore) else {
             print("VectorStore not found")
@@ -218,16 +167,74 @@ class VectorStoreManagerViewModel: BaseViewModel {
     }
 
     private func handleFetchCompletion(_ completion: Subscribers.Completion<Never>) {
-        switch completion {
-        case .finished:
-            print("Fetch completed successfully")
-        case .failure(let error):
+        if case .failure(let error) = completion {
             print("Fetch failed with error: \(error)")
+        } else {
+            print("Fetch completed successfully")
+        }
+    }
+
+    private func handleFetchFilesCompletion(_ completion: Subscribers.Completion<Error>) {
+        if case .failure(let error) = completion {
+            handleError(.fetchFailed(error.localizedDescription))
+        }
+    }
+
+    private func handleDeleteCompletion(_ completion: Subscribers.Completion<Error>, vectorStoreId: String) {
+        if case .failure(let error) = completion {
+            handleError(.fetchFailed(error.localizedDescription))
+        } else {
+            vectorStores.removeAll { $0.id == vectorStoreId }
+        }
+    }
+
+    private func configureRequest(_ request: inout URLRequest, httpMethod: String) {
+        request.httpMethod = httpMethod
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+    }
+
+    private func handleDataTaskResponse<T: Decodable>(data: Data?, response: URLResponse?, error: Error?, completion: @escaping (Result<T, Error>) -> Void) {
+        if let error = error {
+            completion(.failure(error))
+            return
+        }
+        guard let data = data else {
+            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+            return
+        }
+        do {
+            let response = try JSONDecoder().decode(T.self, from: data)
+            completion(.success(response))
+        } catch {
+            completion(.failure(error))
+        }
+    }
+
+    private func handleDataTaskResponse<T: Decodable>(data: Data?, response: URLResponse?, error: Error?, promise: @escaping (Result<T, Error>) -> Void) {
+        if let error = error {
+            promise(.failure(error))
+            return
+        }
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
+            promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
+            return
+        }
+        guard let data = data else {
+            promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+            return
+        }
+        do {
+            let response = try JSONDecoder().decode(T.self, from: data)
+            promise(.success(response))
+        } catch {
+            promise(.failure(error))
         }
     }
 }
-
-// MARK: - Helper Method for Requests
 
 extension OpenAIService {
     func makeRequest(endpoint: String, httpMethod: String) -> URLRequest? {
