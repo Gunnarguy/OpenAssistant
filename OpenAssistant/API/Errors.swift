@@ -38,7 +38,7 @@ struct APIError: Decodable, Equatable {
 
 struct APIErrorDetail: Decodable, Equatable {
     let message: String
-    let type: String
+    let type: String?
     let param: String?
     let code: String?
 }
@@ -103,4 +103,9 @@ class ErrorHandler: ObservableObject {
             self.errorMessage = nil
         }
     }
+}
+
+struct UploadResponse: Decodable {
+    let fileId: String?
+    let error: APIErrorDetail?
 }

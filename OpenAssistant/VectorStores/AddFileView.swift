@@ -115,7 +115,8 @@ struct AddFileView: View {
         }
         defer { fileURL.stopAccessingSecurityScopedResource() }
 
-        guard let fileData = try? Data(contentsOf: fileURL), !fileData.isEmpty else {
+        let fileData = try Data(contentsOf: fileURL)
+        guard !fileData.isEmpty else {
             showError("File \(fileURL.lastPathComponent) is empty or cannot be read.")
             return nil
         }
@@ -144,8 +145,6 @@ struct AddFileView: View {
                 .store(in: &viewModel.cancellables)
         }
     }
-
-
 
     private func createFileBatch(with fileIds: [String]) {
         viewModel.createFileBatch(vectorStoreId: vectorStore.id, fileIds: fileIds, chunkingStrategy: nil) { result in

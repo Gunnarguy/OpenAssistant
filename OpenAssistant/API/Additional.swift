@@ -76,9 +76,4 @@ struct Model: Codable {
     let created: Int
     let ownedBy: String
 
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case created
-        case ownedBy = "owned_by"
-    }
 }

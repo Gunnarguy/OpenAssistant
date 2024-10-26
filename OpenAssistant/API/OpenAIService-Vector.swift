@@ -26,7 +26,7 @@ extension OpenAIService {
         return request
     }
     
-    private func addCommonHeaders(to request: inout URLRequest) {
+    func addCommonHeaders(to request: inout URLRequest) {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

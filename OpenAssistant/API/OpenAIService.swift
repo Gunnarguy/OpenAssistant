@@ -42,14 +42,14 @@ class OpenAIService {
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
             } catch {
-                print("Error serializing JSON body: \(error.localizedDescription)")
+                logError("Error serializing JSON body: \(error.localizedDescription)")
             }
         }
         return request
     }
 
-    // MARK: - HandleResponse
 
+    // MARK: - HandleResponse
     internal func handleResponse<T: Decodable>(_ data: Data?, _ response: URLResponse?, _ error: Error?, completion: @escaping (Result<T, OpenAIServiceError>) -> Void) {
         if let error = error {
             logError("Network error: \(error.localizedDescription)")
@@ -66,28 +66,14 @@ class OpenAIService {
             return
         }
 
-        // Log the status code and response data
         logInfo("HTTP Status Code: \(httpResponse.statusCode)")
         if let data = data {
             logResponseData(data)
         }
 
+        // Handle non-2xx status codes
         if !(200...299).contains(httpResponse.statusCode) {
-            switch httpResponse.statusCode {
-            case 429:
-                let retryAfter = httpResponse.allHeaderFields["Retry-After"] as? Int ?? 1
-                DispatchQueue.main.async {
-                    completion(.failure(.rateLimitExceeded(retryAfter)))
-                }
-            case 500:
-                DispatchQueue.main.async {
-                    completion(.failure(.internalServerError))
-                }
-            default:
-                DispatchQueue.main.async {
-                    completion(.failure(.invalidResponse(httpResponse)))
-                }
-            }
+            handleHTTPError(httpResponse, data: data, completion: completion)
             return
         }
 
@@ -109,6 +95,38 @@ class OpenAIService {
             logError("Response data: \(String(data: data, encoding: .utf8) ?? "N/A")")
             DispatchQueue.main.async {
                 completion(.failure(.decodingError(data, error)))
+            }
+        }
+    }
+    
+    // MARK: - Handle HTTP Errors
+    private func handleHTTPError<T>(_ httpResponse: HTTPURLResponse, data: Data?, completion: @escaping (Result<T, OpenAIServiceError>) -> Void) {
+        switch httpResponse.statusCode {
+        case 429:
+            let retryAfter = httpResponse.allHeaderFields["Retry-After"] as? Int ?? 1
+            DispatchQueue.main.async {
+                completion(.failure(.rateLimitExceeded(retryAfter)))
+            }
+        case 500:
+            DispatchQueue.main.async {
+                completion(.failure(.internalServerError))
+            }
+        default:
+            if let data = data {
+                do {
+                    let apiError = try JSONDecoder().decode(APIError.self, from: data)
+                    DispatchQueue.main.async {
+                        completion(.failure(.custom(apiError.error.message)))
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        completion(.failure(.invalidResponse(httpResponse)))
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    completion(.failure(.invalidResponse(httpResponse)))
+                }
             }
         }
     }
@@ -138,7 +156,6 @@ class OpenAIService {
     }
 
     // MARK: - Logging
-
     internal func logRequestDetails(_ request: URLRequest, body: [String: Any]?) {
         print("Request URL: \(request.url?.absoluteString ?? "No URL")")
         if let body = body {
@@ -154,7 +171,6 @@ class OpenAIService {
         }
     }
 
-
     internal func logError(_ message: String) {
         print("Error: \(message)")
     }
@@ -162,9 +178,6 @@ class OpenAIService {
     internal func logInfo(_ message: String) {
         print("Info: \(message)")
     }
-
-
-    
 
 
     // MARK: - Fetch Vector Store Files
@@ -250,8 +263,13 @@ class OpenAIService {
                         return
                     }
                     do {
-                        let response = try JSONDecoder().decode(VectorStore.self, from: data)
-                        promise(.success(response.id))
+                        // Adjust the decoding logic based on the actual response structure
+                        let response = try JSONDecoder().decode([String: String].self, from: data)
+                        if let fileId = response["file_id"] {
+                            promise(.success(fileId))
+                        } else {
+                            promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing file ID in response"])))
+                        }
                     } catch {
                         promise(.failure(error))
                     }
