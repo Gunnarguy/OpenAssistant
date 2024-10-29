@@ -124,6 +124,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
             })
             .store(in: &cancellables)
     }
+    
 
     func createFileBatch(vectorStoreId: String, fileIds: [String], chunkingStrategy: ChunkingStrategy?, completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
         guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/file_batches") else {
@@ -231,7 +232,8 @@ class VectorStoreManagerViewModel: BaseViewModel {
         return Future { [weak self] promise in
             guard let self = self else { return }
             let endpoint = "vector_stores/\(vectorStoreId)/files/\(fileId)"
-            guard let request = self.openAIService?.makeRequest(endpoint: endpoint, httpMethod: "DELETE") else {
+            // Use the HTTPMethod enum instead of a string
+            guard let request = self.openAIService?.makeRequest(endpoint: endpoint, httpMethod: .delete) else {
                 promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Request"])))
                 return
             }
@@ -374,28 +376,3 @@ class VectorStoreManagerViewModel: BaseViewModel {
     }
 }
 
-extension OpenAIService {
-    func makeRequest(endpoint: String, httpMethod: String) -> URLRequest? {
-        guard let url = URL(string: endpoint, relativeTo: baseURL) else {
-            return nil
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = httpMethod
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-        return request
-    }
-}
-
-extension ChunkingStrategy {
-    func toDictionary() -> [String: Any] {
-        var dict: [String: Any] = ["type": type]
-        if let staticStrategy = staticStrategy {
-            dict["static"] = [
-                "max_chunk_size_tokens": staticStrategy.maxChunkSizeTokens,
-                "chunk_overlap_tokens": staticStrategy.chunkOverlapTokens
-            ]
-        }
-        return dict
-    }
-}

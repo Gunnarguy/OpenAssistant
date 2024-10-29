@@ -3,7 +3,6 @@ import Combine
 import SwiftUI
 
 // MARK: - OpenAIServiceError
-
 enum OpenAIServiceError: Error, Equatable {
     case networkError(Error)
     case apiKeyMissing
@@ -24,19 +23,17 @@ enum OpenAIServiceError: Error, Equatable {
 }
 
 // MARK: - IdentifiableError
-
 struct IdentifiableError: Identifiable {
     let id = UUID()
     let message: String
 }
 
 // MARK: - APIError
-
-struct APIError: Decodable, Equatable {
+struct APIError: Decodable {
     let error: APIErrorDetail
 }
 
-struct APIErrorDetail: Decodable, Equatable {
+struct APIErrorDetail: Decodable {
     let message: String
     let type: String?
     let param: String?
@@ -44,12 +41,11 @@ struct APIErrorDetail: Decodable, Equatable {
 }
 
 // MARK: - VectorStoreError
-
 enum VectorStoreError: LocalizedError {
     case serviceNotInitialized
     case fetchFailed(String)
     case unknownError
-
+    
     var errorDescription: String? {
         switch self {
         case .serviceNotInitialized:
@@ -63,14 +59,13 @@ enum VectorStoreError: LocalizedError {
 }
 
 // MARK: - FileUploadError
-
 enum FileUploadError: LocalizedError {
     case fileSelectionFailed
     case fileReadFailed(String)
     case uploadFailed(String)
     case batchCreationFailed(String)
     case noFilesSelected
-
+    
     var errorDescription: String? {
         switch self {
         case .fileSelectionFailed:
@@ -92,10 +87,9 @@ enum FileUploadError: LocalizedError {
 }
 
 // MARK: - ErrorHandler
-
 class ErrorHandler: ObservableObject {
     @Published var errorMessage: String?
-
+    
     func handleError(_ message: String) {
         errorMessage = message
         print("Error: \(message)")
@@ -105,7 +99,14 @@ class ErrorHandler: ObservableObject {
     }
 }
 
+// MARK: - UploadResponse
 struct UploadResponse: Decodable {
     let fileId: String?
     let error: APIErrorDetail?
+    
+    enum CodingKeys: String, CodingKey {
+        case fileId = "file_id"
+        case error
+    }
 }
+

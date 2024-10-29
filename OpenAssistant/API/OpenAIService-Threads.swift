@@ -6,20 +6,23 @@ extension OpenAIService {
     
     // MARK: - Create Thread
     func createThread(completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
-        guard let request = makeRequest(endpoint: "threads", httpMethod: "POST") else {
-            completion(.failure(.invalidRequest))
+        guard let request = makeRequest(endpoint: "threads", httpMethod: .post) else {
+            completion(.failure(.custom("Failed to create request")))
             return
         }
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
-    
+
     // MARK: - Run Assistant on Thread
     func runAssistantOnThread(threadId: String, assistantId: String, completion: @escaping (Result<Run, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/runs"
         let body: [String: Any] = ["assistant_id": assistantId]
-        let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body)
+        guard let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body) else {
+            completion(.failure(.custom("Failed to create request")))
+            return
+        }
         logRequestDetails(request, body: body)
         session.dataTask(with: request) { data, response, error in
             if let data = data {
@@ -32,7 +35,10 @@ extension OpenAIService {
     // MARK: - Fetch Run Status
     func fetchRunStatus(threadId: String, runId: String, completion: @escaping (Result<Run, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/runs/\(runId)"
-        let request = makeRequest(endpoint: endpoint)
+        guard let request = makeRequest(endpoint: endpoint) else {
+            completion(.failure(.custom("Failed to create request")))
+            return
+        }
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
@@ -41,7 +47,10 @@ extension OpenAIService {
     // MARK: - Fetch Run Messages
     func fetchRunMessages(threadId: String, completion: @escaping (Result<[Message], OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/messages"
-        let request = makeRequest(endpoint: endpoint)
+        guard let request = makeRequest(endpoint: endpoint) else {
+            completion(.failure(.custom("Failed to create request")))
+            return
+        }
         session.dataTask(with: request) { data, response, error in
             if let error = error {
                 self.logError("Network error: \(error.localizedDescription)")
@@ -98,7 +107,10 @@ extension OpenAIService {
             "role": message.role.rawValue,
             "content": message.content.map { $0.toDictionary() }
         ]
-        let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body)
+        guard let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body) else {
+            completion(.failure(.custom("Failed to create request")))
+            return
+        }
         logRequestDetails(request, body: body)
         session.dataTask(with: request) { data, response, error in
             if let error = error {
@@ -133,12 +145,16 @@ extension OpenAIService {
     // MARK: - Fetch Thread Details
     func fetchThreadDetails(threadId: String, completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)"
-        let request = makeRequest(endpoint: endpoint)
+        guard let request = makeRequest(endpoint: endpoint) else {
+            completion(.failure(.custom("Failed to create request")))
+            return
+        }
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
 }
+
 
 // MARK: - Message
 struct Message: Identifiable, Codable, Equatable {

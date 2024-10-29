@@ -8,7 +8,10 @@ extension OpenAIService {
     
     func fetchAssistants(completion: @escaping (Result<[Assistant], OpenAIServiceError>) -> Void) {
         let endpoint = "assistants"
-        let request = makeRequest(endpoint: endpoint)
+        guard let request = makeRequest(endpoint: endpoint) else {
+            completion(.failure(.invalidRequest))
+            return
+        }
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error) { (result: Result<AssistantsResponse, OpenAIServiceError>) in
                 switch result {
@@ -23,7 +26,10 @@ extension OpenAIService {
     
     // MARK: - Fetch Assistant Settings
     func fetchAssistantSettings(assistantId: String, completion: @escaping (Result<AssistantSettings, OpenAIServiceError>) -> Void) {
-        let request = makeRequest(endpoint: "assistants/\(assistantId)/settings")
+        guard let request = makeRequest(endpoint: "assistants/\(assistantId)/settings") else {
+            completion(.failure(.invalidRequest))
+            return
+        }
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
@@ -43,7 +49,10 @@ extension OpenAIService {
         body["top_p"] = topP
         body["response_format"] = responseFormat?.toAny()
         
-        let request = makeRequest(endpoint: "assistants", httpMethod: .post, body: body)
+        guard let request = makeRequest(endpoint: "assistants", httpMethod: .post, body: body) else {
+            completion(.failure(.invalidRequest))
+            return
+        }
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
@@ -64,7 +73,10 @@ extension OpenAIService {
         body["top_p"] = topP
         body["response_format"] = responseFormat?.toAny()
         
-        let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: .post, body: body)
+        guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: .post, body: body) else {
+            completion(.failure(.invalidRequest))
+            return
+        }
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
@@ -73,7 +85,7 @@ extension OpenAIService {
     // MARK: - Delete Assistant
     
     func deleteAssistant(assistantId: String, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
-        guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "DELETE") else {
+        guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: .delete) else {
             completion(.failure(.invalidRequest))
             return
         }

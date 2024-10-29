@@ -79,35 +79,7 @@ struct AddFileView: View {
             }
         }
     }
-
-    private func uploadFilesConcurrently() async throws {
-        isUploading = true
-        defer { isUploading = false }
-
-        let maxSize = 10 * 1024 * 1024 // 10MB limit per file
-        var fileIds: [String] = []
-
-        try await withThrowingTaskGroup(of: String?.self) { group in
-            for fileURL in selectedFiles {
-                group.addTask {
-                    return try await self.uploadFile(fileURL, maxSize: maxSize)
-                }
-            }
-
-            for try await fileId in group {
-                if let fileId = fileId {
-                    fileIds.append(fileId)
-                }
-            }
-        }
-
-        if fileIds.isEmpty {
-            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No files were uploaded successfully."])
-        }
-
-        createFileBatch(with: fileIds)
-    }
-
+    
     private func uploadFile(_ fileURL: URL, maxSize: Int) async throws -> String? {
         guard fileURL.startAccessingSecurityScopedResource() else {
             showError("Failed to access file at \(fileURL).")
@@ -146,15 +118,32 @@ struct AddFileView: View {
         }
     }
 
-    private func createFileBatch(with fileIds: [String]) {
-        viewModel.createFileBatch(vectorStoreId: vectorStore.id, fileIds: fileIds, chunkingStrategy: nil) { result in
-            switch result {
-            case .success:
-                print("File batch created successfully.")
-            case .failure(let error):
-                showError("Failed to create file batch: \(error.localizedDescription)")
+    private func uploadFilesConcurrently() async throws {
+        isUploading = true
+        defer { isUploading = false }
+
+        let maxSize = 10 * 1024 * 1024 // 10MB limit per file
+        var fileIds: [String] = []
+
+        try await withThrowingTaskGroup(of: String?.self) { group in
+            for fileURL in selectedFiles {
+                group.addTask {
+                    return try await self.uploadFile(fileURL, maxSize: maxSize)
+                }
+            }
+
+            for try await fileId in group {
+                if let fileId = fileId {
+                    fileIds.append(fileId)
+                }
             }
         }
+
+        if fileIds.isEmpty {
+            throw OpenAIServiceError.custom("No files were uploaded successfully.")
+        }
+
+        print("All files uploaded successfully with IDs: \(fileIds)")
     }
 
     private func showError(_ message: String) {

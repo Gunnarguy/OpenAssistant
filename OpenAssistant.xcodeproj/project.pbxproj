@@ -142,8 +142,8 @@
 				B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */,
 				B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */,
 				B0EEE71E2C99326A0012F2BA /* UpdateAssistantView.swift */,
-				B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */,
 				B0EEE7212C99326A0012F2BA /* AssistantManagerView.swift */,
+				B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */,
 			);
 			path = AssistantManagerViews;
 			sourceTree = "<group>";
