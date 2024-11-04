@@ -26,7 +26,7 @@ struct CreateAssistantView: View {
                 topP: $topP,
                 enableFileSearch: $enableFileSearch,
                 enableCodeInterpreter: $enableCodeInterpreter,
-                availableModels: viewModel.availableModels,
+                availableModels: filteredModels, // Change this line
                 isEditing: false,
                 onSave: handleSave
             )
@@ -47,7 +47,28 @@ struct CreateAssistantView: View {
             }
             .onAppear {
                 viewModel.fetchAvailableModels()
+                if filteredModels.contains("gpt-4o") {
+                    model = "gpt-4o"
+                } else if let firstModel = filteredModels.first {
+                    model = firstModel
+                }
             }
+            .onChange(of: viewModel.availableModels) { _ in
+                if !filteredModels.contains(model), let firstModel = filteredModels.first {
+                    model = firstModel
+                    print("Model updated to: \(model)")
+                }
+            }
+        }
+    }
+
+    private var filteredModels: [String] {
+        let chatModels = [
+            "gpt-4o-mini",
+            "gpt-4o"
+        ]
+        return viewModel.availableModels.filter { model in
+            chatModels.contains(model)
         }
     }
 

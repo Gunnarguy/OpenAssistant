@@ -1,5 +1,3 @@
-import Foundation
-import Combine
 import SwiftUI
 
 struct UpdateAssistantView: View {
@@ -7,12 +5,12 @@ struct UpdateAssistantView: View {
     @StateObject private var assistantDetailViewModel: AssistantDetailViewModel
     @Environment(\.presentationMode) var presentationMode
     @State private var showAlert = false
-    
+
     init(viewModel: AssistantManagerViewModel, assistant: Assistant) {
         self.viewModel = viewModel
         _assistantDetailViewModel = StateObject(wrappedValue: AssistantDetailViewModel(assistant: assistant))
     }
-    
+
     var body: some View {
         NavigationView {
             Form {
@@ -34,6 +32,31 @@ struct UpdateAssistantView: View {
                 Alert(title: Text("Validation Error"), message: Text("Please fill in all required fields."), dismissButton: .default(Text("OK")))
             }
         }
+        .onAppear {
+            viewModel.fetchAvailableModels()
+            if filteredModels.contains("gpt-4o") {
+                assistantDetailViewModel.assistant.model = "gpt-4o"
+            } else if let firstModel = filteredModels.first {
+                assistantDetailViewModel.assistant.model = firstModel
+            }
+        }
+        .onChange(of: viewModel.availableModels) { _ in
+            if !filteredModels.contains(assistantDetailViewModel.assistant.model),
+               let firstModel = filteredModels.first {
+                assistantDetailViewModel.assistant.model = firstModel
+                print("Model updated to: \(assistantDetailViewModel.assistant.model)")
+            }
+        }
+    }
+    
+    private var filteredModels: [String] {
+        let chatModels = [
+            "gpt-4o-mini",
+            "gpt-4o"
+        ]
+        return viewModel.availableModels.filter { model in
+            chatModels.contains(model)
+        }
     }
     
     private var toolsSection: some View {
@@ -48,7 +71,7 @@ struct UpdateAssistantView: View {
             ))
         }
     }
-    
+
     private func updateToolState(isEnabled: Bool, type: String) {
         if isEnabled {
             if !assistantDetailViewModel.assistant.tools.contains(where: { $0.type == type }) {
@@ -58,7 +81,7 @@ struct UpdateAssistantView: View {
             assistantDetailViewModel.assistant.tools.removeAll(where: { $0.type == type })
         }
     }
-    
+
     private func handleSave() {
         if validateAssistant() {
             viewModel.updateAssistant(assistant: assistantDetailViewModel.assistant)
@@ -67,11 +90,11 @@ struct UpdateAssistantView: View {
             showAlert = true
         }
     }
-    
+
     private func validateAssistant() -> Bool {
         !assistantDetailViewModel.assistant.name.isEmpty && !assistantDetailViewModel.assistant.model.isEmpty
     }
-    
+
     private func dismissView() {
         DispatchQueue.main.async {
             presentationMode.wrappedValue.dismiss()

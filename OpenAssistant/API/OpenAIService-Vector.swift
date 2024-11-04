@@ -5,8 +5,10 @@ extension OpenAIService {
     
     // MARK: - Private Helper Methods
     
-    private func createRequest(endpoint: String, method: String = "GET", body: [String: Any]? = nil) -> URLRequest? {
+    /// Creates a URLRequest with dynamic Content-Type handling for JSON and multipart requests
+    private func createRequest(endpoint: String, method: String = "GET", body: [String: Any]? = nil, contentType: String? = "application/json") -> URLRequest? {
         guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
+            print("Invalid URL for endpoint: \(endpoint)")
             return nil
         }
         
@@ -14,7 +16,13 @@ extension OpenAIService {
         request.httpMethod = method
         addCommonHeaders(to: &request)
         
-        if let body = body {
+        // Set Content-Type if provided
+        if let contentType = contentType {
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        }
+        
+        // Set JSON body if applicable
+        if let body = body, contentType == "application/json" {
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
             } catch {
@@ -26,40 +34,37 @@ extension OpenAIService {
         return request
     }
     
+    /// Adds common headers required for OpenAI requests
     func addCommonHeaders(to request: inout URLRequest) {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     }
     
+    /// Executes a URLSession data task and handles decoding the response
     private func handleURLSessionDataTask<T: Decodable>(request: URLRequest, completion: @escaping (Result<T, Error>) -> Void) {
         session.dataTask(with: request) { data, response, error in
             if let error = error {
+                print("Request error: \(error.localizedDescription)")
                 completion(.failure(error))
                 return
             }
             
-            guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(URLError(.badServerResponse)))
-                return
-            }
-            
-            guard (200...299).contains(httpResponse.statusCode) else {
-                let statusCode = httpResponse.statusCode
-                let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                completion(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-                return
-            }
-            
             guard let data = data else {
+                print("No data received for request to \(request.url?.absoluteString ?? "unknown URL")")
                 completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
                 return
+            }
+            
+            // Debug: Print response data as a string
+            if let responseDataString = String(data: data, encoding: .utf8) {
+                print("Response data: \(responseDataString)")
             }
             
             do {
                 let decodedResponse = try JSONDecoder().decode(T.self, from: data)
                 completion(.success(decodedResponse))
             } catch {
+                print("Decoding error: \(error.localizedDescription)")
                 completion(.failure(error))
             }
         }.resume()
@@ -178,95 +183,180 @@ extension OpenAIService {
         }
     }
     
-    func uploadFile(fileData: Data, fileName: String) -> Future<String, Error> {
-        return Future { [weak self] promise in
-            guard let self = self else {
-                promise(.failure(OpenAIServiceError.custom("Self is nil")))
-                return
-            }
-            
-            let endpoint = "vector_stores/files"
-            guard let request = self.createRequest(endpoint: endpoint, method: "POST", body: ["file": fileData, "fileName": fileName]) else {
-                promise(.failure(OpenAIServiceError.custom("Failed to create request")))
-                return
-            }
-            
-            self.session.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    promise(.failure(error))
-                    return
-                }
-                
-                guard let data = data else {
-                    promise(.failure(OpenAIServiceError.noData))
-                    return
-                }
-                
-                do {
-                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                    if let fileId = json?["id"] as? String {
-                        promise(.success(fileId))
-                    } else {
-                        promise(.failure(OpenAIServiceError.custom("Invalid response structure")))
-                    }
-                } catch {
-                    promise(.failure(error))
-                }
-            }.resume()
-        }
-    }
-    
-    
-    // MARK: - Upload Files
-    
-    func uploadFiles(fileURLs: [URL], completion: @escaping (Result<[String], Error>) -> Void) {
-        var uploadedFileIds: [String] = []
-        var cancellables = Set<AnyCancellable>()
-        let group = DispatchGroup()
-        
-        for fileURL in fileURLs {
-            group.enter()
-            guard let fileData = try? Data(contentsOf: fileURL) else {
-                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to read file data"])))
-                return
-            }
-            
-            uploadFile(fileData: fileData, fileName: fileURL.lastPathComponent)
-                .sink(receiveCompletion: { completionResult in
-                    if case .failure(let error) = completionResult {
-                        completion(.failure(error))
-                    }
-                    group.leave()
-                }, receiveValue: { fileId in
-                    uploadedFileIds.append(fileId)
-                    group.leave()
-                })
-                .store(in: &cancellables)
-        }
-        
-        group.notify(queue: .main) {
-            completion(.success(uploadedFileIds))
-        }
-    }
-    
-    // MARK: - Batch Upload Files to Vector Store
-    
-    func createVectorStoreFileBatch(vectorStoreId: String, fileIds: [String], chunkingStrategy: [String: Any]? = nil, completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
-        let endpoint = "vector_stores/\(vectorStoreId)/file_batches"
-        var body: [String: Any] = ["file_ids": fileIds]
-        
-        if let chunkingStrategy = chunkingStrategy {
-            body["chunking_strategy"] = chunkingStrategy
-        }
-        
-        guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
+    // MARK: - Upload File
+    /// Uploads a file to OpenAI's file endpoint using multipart form-data
+    func uploadFile(fileData: Data, fileName: String, completion: @escaping (Result<String, Error>) -> Void) {
+        let endpoint = "files"
+        guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
+            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
             return
         }
         
-        handleURLSessionDataTask(request: request, completion: completion)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        addCommonHeaders(to: &request)
+        
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
+        body.append(fileData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                return
+            }
+            
+            do {
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                if let fileId = json?["id"] as? String {
+                    completion(.success(fileId))
+                } else {
+                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "File ID not found"])))
+                }
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+
+    func attachFileToVectorStore(vectorStoreId: String, fileId: String, chunkingStrategy: ChunkingStrategy? = nil, completion: @escaping (Result<String, Error>) -> Void) {
+        guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/files") else {
+            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+
+        // Request body
+        var jsonBody: [String: Any] = ["file_id": fileId]
+        
+        if let chunkingStrategy = chunkingStrategy {
+            jsonBody["chunking_strategy"] = chunkingStrategy.toDictionary()
+        }
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: jsonBody, options: [])
+        } catch {
+            completion(.failure(error))
+            return
+        }
+
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            guard let data = data else {
+                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                return
+            }
+
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                   let vectorStoreFileId = json["id"] as? String {
+                    completion(.success(vectorStoreFileId))
+                } else {
+                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response format"])))
+                }
+            } catch {
+                completion(.failure(error))
+            }
+        }
+        task.resume()
     }
 
+    
+    // MARK: - Create File Batch Using file_id
+
+    func createFileBatch(vectorStoreId: String, fileIds: [String], chunkingStrategy: ChunkingStrategy?, completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
+        guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/file_batches") else {
+            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        configureRequest(&request, httpMethod: .post)
+        
+        // Prepare the body including the fileIds
+        var body: [String: Any] = ["file_ids": fileIds]
+        if let chunkingStrategy = chunkingStrategy {
+            body["chunking_strategy"] = chunkingStrategy.toDictionary()
+        }
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+        } catch {
+            completion(.failure(error))
+            return
+        }
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            self.handleDataTaskResponse(data: data, response: response, error: error, completion: completion)
+        }.resume()
+    }
+
+    // MARK: - Retrieve File Batch
+
+    func getFileBatch(vectorStoreId: String, batchId: String) -> AnyPublisher<VectorStoreFileBatch, Error> {
+        guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/file_batches/\(batchId)") else {
+            return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])).eraseToAnyPublisher()
+        }
+        
+        var request = URLRequest(url: url)
+        configureRequest(&request, httpMethod: .get)
+        
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .map(\.data)
+            .decode(type: VectorStoreFileBatch.self, decoder: JSONDecoder())
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+
+    // MARK: - List Files in File Batch
+
+    func listFilesInFileBatch(vectorStoreId: String, batchId: String) -> AnyPublisher<[File], Error> {
+        guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/file_batches/\(batchId)/files") else {
+            return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])).eraseToAnyPublisher()
+        }
+        
+        var request = URLRequest(url: url)
+        configureRequest(&request, httpMethod: .get)
+        
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .map(\.data)
+            .decode(type: [File].self, decoder: JSONDecoder())
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+    
+    // Helper Method to Add Common Headers
+    private func configureRequest(_ request: inout URLRequest, httpMethod: String) {
+        request.httpMethod = httpMethod
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+    }
+
+    
+    // MARK: - MIME Type Helper
+    
+    /// Returns the appropriate MIME type for a given file extension
     func mimeType(for fileExtension: String) -> String {
         switch fileExtension.lowercased() {
         case "c": return "text/x-c"
@@ -292,6 +382,7 @@ extension OpenAIService {
         default: return "application/octet-stream" // Fallback for unknown types
         }
     }
+
 
     
     // MARK: - Update Vector Store
@@ -544,15 +635,13 @@ func handleUploadResponse(data: Data) -> Result<String, Error> {
         if let jsonString = String(data: data, encoding: .utf8) {
             print("Upload Response JSON: \(jsonString)")
         }
-
+        
         let uploadResponse = try JSONDecoder().decode(UploadResponse.self, from: data)
-
         if let error = uploadResponse.error {
             // Log the error message from the response
             print("Upload Error: \(error.message)")
             return .failure(OpenAIServiceError.custom(error.message))
         }
-
         if let fileId = uploadResponse.fileId {
             return .success(fileId)
         } else {

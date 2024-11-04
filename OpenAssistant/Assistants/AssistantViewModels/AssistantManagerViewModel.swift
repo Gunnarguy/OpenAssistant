@@ -36,7 +36,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         }
     }
 
-    // Fetches the available models from the API
+    // AssistantManagerViewModel.swift
     func fetchAvailableModels() {
         performServiceAction { openAIService in
             openAIService.fetchAvailableModels { [weak self] result in
@@ -44,6 +44,27 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
             }
         }
     }
+
+    private func handleModelsResult(_ result: Result<[String], Error>) {
+        switch result {
+        case .success(let models):
+            DispatchQueue.main.async {
+                // Assuming availableModels is a property that needs to be updated
+                self.availableModels = models
+                // Optionally, notify the user or update the UI
+                print("Models fetched successfully: \(models)")
+            }
+        case .failure(let error):
+            DispatchQueue.main.async {
+                // Handle the error appropriately
+                self.handleError(IdentifiableError(message: "Fetch models failed: \(error.localizedDescription)"))
+                // Optionally, log the error
+                print("Error fetching models: \(error.localizedDescription)")
+            }
+        }
+    }
+
+
 
     // Fetches the vector stores from the API
     func fetchVectorStores() {
@@ -81,7 +102,7 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
                 description: description,
                 instructions: instructions,
                 tools: tools.map { $0.toDictionary() },
-                toolResources: toolResources?.toDictionary(),
+                toolResources: toolResources!.toDictionary(),
                 metadata: metadata,
                 temperature: temperature,
                 topP: topP,
@@ -131,29 +152,6 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
                         NotificationCenter.default.post(name: .assistantDeleted, object: assistant)
                     }
                 }
-            }
-        }
-    }
-
-    // MARK: - Private Methods
-
-    // Handles the result of fetching models
-    private func handleModelsResult(_ result: Result<[String], Error>) {
-        switch result {
-        case .success(let models):
-            // Define a set of prefixes for models you want to include
-            let modelPrefixes = ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]
-            let excludedKeywords = ["audio", "realtime"]
-
-            DispatchQueue.main.async {
-                self.availableModels = models.filter { model in
-                    modelPrefixes.contains { prefix in model.hasPrefix(prefix) } &&
-                    !excludedKeywords.contains { keyword in model.contains(keyword) }
-                }
-            }
-        case .failure(let error):
-            DispatchQueue.main.async {
-                self.handleError(IdentifiableError(message: "Fetch models failed: \(error.localizedDescription)"))
             }
         }
     }

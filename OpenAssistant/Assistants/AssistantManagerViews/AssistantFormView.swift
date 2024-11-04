@@ -17,11 +17,22 @@ struct AssistantFormView: View {
     var body: some View {
         Form {
             assistantDetailsSection
-            
+            //toolsSection
             actionButtons
+        }
+        .onAppear {
+            if model.isEmpty, let firstModel = availableModels.first {
+                model = firstModel
+            }
+        }
+        .onChange(of: availableModels) { models in
+            if !models.contains(model), let firstModel = models.first {
+                model = firstModel
+            }
         }
     }
 
+    // Assistant details section with model selection, temperature, and topP settings
     private var assistantDetailsSection: some View {
         Section(header: Text("Assistant Details")) {
             TextField("Name", text: $name)
@@ -33,6 +44,7 @@ struct AssistantFormView: View {
         }
     }
 
+    // Section for enabling additional tools
     private var toolsSection: some View {
         Section(header: Text("Tools")) {
             Toggle("Enable File Search", isOn: $enableFileSearch)
@@ -40,6 +52,7 @@ struct AssistantFormView: View {
         }
     }
 
+    // Model selection picker using a dropdown menu style
     private var modelPicker: some View {
         Picker("Model", selection: $model) {
             ForEach(availableModels, id: \.self) { model in
@@ -49,6 +62,7 @@ struct AssistantFormView: View {
         .pickerStyle(MenuPickerStyle())
     }
 
+    // Action buttons with conditional rendering for Save/Update and Delete
     private var actionButtons: some View {
         HStack {
             Button(isEditing ? "Update" : "Save", action: onSave)
@@ -58,25 +72,28 @@ struct AssistantFormView: View {
                     .foregroundColor(.red)
             }
         }
+        .buttonStyle(BorderlessButtonStyle()) // Keeps buttons styled in form context
     }
 }
 
+// Slider for adjusting temperature with finer control and label
 private struct TemperatureSlider: View {
     @Binding var temperature: Double
 
     var body: some View {
-        VStack {
+        VStack(alignment: .leading) {
             Text("Temperature: \(temperature, specifier: "%.2f")")
             Slider(value: $temperature, in: 0.0...2.0, step: 0.01)
         }
     }
 }
 
+// Slider for adjusting topP with finer control and label
 private struct TopPSlider: View {
     @Binding var topP: Double
 
     var body: some View {
-        VStack {
+        VStack(alignment: .leading) {
             Text("Top P: \(topP, specifier: "%.2f")")
             Slider(value: $topP, in: 0.0...1.0, step: 0.01)
         }

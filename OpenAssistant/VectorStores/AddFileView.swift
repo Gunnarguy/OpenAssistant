@@ -11,7 +11,7 @@ struct AddFileView: View {
     @State private var errorMessage = ""
     @State private var isUploading = false
     @State private var uploadTask: Task<Void, Never>? = nil
-
+    
     var body: some View {
         VStack(spacing: 20) {
             fileSelectionText
@@ -33,31 +33,32 @@ struct AddFileView: View {
             Alert(title: Text("Error"), message: Text(errorMessage), dismissButton: .default(Text("OK"), action: resetErrorState))
         }
     }
-
+    
     private var fileSelectionText: some View {
         Text(selectedFiles.isEmpty ? "No files selected" : "Selected files: \(selectedFiles.map { $0.lastPathComponent }.joined(separator: ", "))")
     }
-
+    
     private var selectFilesButton: some View {
         Button("Select Files") {
             isFilePickerPresented = true
         }
     }
-
+    
     private var uploadFilesButton: some View {
         Button("Upload Files") {
             startUploadTask()
         }
         .disabled(selectedFiles.isEmpty || isUploading)
     }
-
+    
     private var cancelUploadButton: some View {
         Button("Cancel Upload") {
             uploadTask?.cancel()
+            isUploading = false // Reflect cancellation in UI
         }
         .disabled(!isUploading)
     }
-
+    
     private func handleFileSelection(result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
@@ -69,11 +70,13 @@ struct AddFileView: View {
             showError("File selection failed: \(error.localizedDescription)")
         }
     }
-
+    
     private func startUploadTask() {
         uploadTask = Task {
             do {
                 try await uploadFilesConcurrently()
+            } catch is CancellationError {
+                showError("Upload was canceled.")
             } catch {
                 showError("Upload failed: \(error.localizedDescription)")
             }
@@ -86,29 +89,29 @@ struct AddFileView: View {
             return nil
         }
         defer { fileURL.stopAccessingSecurityScopedResource() }
-
+        
+        let fileSize = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard fileSize <= maxSize else {
+            showError("File \(fileURL.lastPathComponent) is too large.")
+            return nil
+        }
+        
         let fileData = try Data(contentsOf: fileURL)
         guard !fileData.isEmpty else {
             showError("File \(fileURL.lastPathComponent) is empty or cannot be read.")
             return nil
         }
-
-        let fileSize = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        if fileSize > maxSize {
-            showError("File \(fileURL.lastPathComponent) is too large.")
-            return nil
-        }
-
+        
         let fileName = fileURL.lastPathComponent
         print("Uploading file: \(fileName) with size: \(fileSize) bytes")
-
+        
         return try await withCheckedThrowingContinuation { continuation in
             viewModel.addFileToVectorStore(vectorStoreId: vectorStore.id, fileData: fileData, fileName: fileName)
                 .sink(receiveCompletion: { completion in
                     if case .failure(let error) = completion {
                         print("Upload failed for \(fileName): \(error)")
                         self.showError("Failed to upload file \(fileName): \(error.localizedDescription)")
-                        continuation.resume(returning: nil)
+                        continuation.resume(throwing: error)
                     }
                 }, receiveValue: { fileId in
                     print("Successfully uploaded \(fileName) with ID: \(fileId)")
@@ -117,45 +120,48 @@ struct AddFileView: View {
                 .store(in: &viewModel.cancellables)
         }
     }
-
+    
     private func uploadFilesConcurrently() async throws {
         isUploading = true
         defer { isUploading = false }
-
+        
         let maxSize = 10 * 1024 * 1024 // 10MB limit per file
         var fileIds: [String] = []
-
+        
         try await withThrowingTaskGroup(of: String?.self) { group in
             for fileURL in selectedFiles {
                 group.addTask {
                     return try await self.uploadFile(fileURL, maxSize: maxSize)
                 }
             }
-
+            
             for try await fileId in group {
                 if let fileId = fileId {
                     fileIds.append(fileId)
+                } else {
+                    print("File upload returned nil fileId for a file")
                 }
             }
         }
-
+        
         if fileIds.isEmpty {
-            throw OpenAIServiceError.custom("No files were uploaded successfully.")
+            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No files were uploaded successfully."])
         }
-
+        
         print("All files uploaded successfully with IDs: \(fileIds)")
     }
-
+    
+    @MainActor
     private func showError(_ message: String) {
         errorMessage = message
         showErrorAlert = true
     }
-
+    
     private func resetErrorState() {
         showErrorAlert = false
         errorMessage = ""
     }
-
+    
     private var allowedContentTypes: [UTType] {
         return [UTType.pdf, UTType.plainText, UTType.image, UTType.json]
     }

@@ -73,7 +73,7 @@ struct ModelResponse: Codable {
 /// A structure representing a model with its associated metadata.
 struct Model: Codable {
     let id: String
+    let object: String
     let created: Int
-    let ownedBy: String
-
+    let owned_by: String
 }

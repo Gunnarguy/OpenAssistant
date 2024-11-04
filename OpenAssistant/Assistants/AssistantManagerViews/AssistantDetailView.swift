@@ -8,6 +8,7 @@ struct AssistantDetailView: View {
     @State private var refreshTrigger = false
     @Environment(\.presentationMode) var presentationMode
 
+    // Custom initializer for injecting the Assistant and ManagerViewModel
     init(assistant: Assistant, managerViewModel: AssistantManagerViewModel) {
         _viewModel = StateObject(wrappedValue: AssistantDetailViewModel(assistant: assistant))
         self.managerViewModel = managerViewModel
@@ -17,6 +18,7 @@ struct AssistantDetailView: View {
         VStack {
             errorMessageView
             assistantDetailsView
+            // Assistant details section with model picker
             AssistantDetailsSection(assistant: $viewModel.assistant, availableModels: managerViewModel.availableModels)
             actionButtonsView
         }
@@ -30,6 +32,7 @@ struct AssistantDetailView: View {
         }
     }
 
+    // Error message view for displaying validation or API errors
     @ViewBuilder
     private var errorMessageView: some View {
         if let errorMessage = viewModel.errorMessage {
@@ -45,12 +48,14 @@ struct AssistantDetailView: View {
         }
     }
 
+    // Assistant details header, displaying the name
     private var assistantDetailsView: some View {
         Text("Details for \(viewModel.assistant.name)")
             .font(.title)
             .padding()
     }
     
+    // Action buttons to update or delete the assistant
     private var actionButtonsView: some View {
         ActionButtonsView(
             refreshTrigger: $refreshTrigger,
@@ -65,10 +70,12 @@ struct AssistantDetailView: View {
         )
     }
 
+    // Toggle refreshTrigger to update the view
     private func triggerRefresh() {
         refreshTrigger.toggle()
     }
 
+    // Handler for assistant update notifications
     private func handleAssistantUpdated(notification: Notification) {
         if let updatedAssistant = notification.object as? Assistant, updatedAssistant.id == viewModel.assistant.id {
             viewModel.assistant = updatedAssistant
@@ -76,6 +83,7 @@ struct AssistantDetailView: View {
         }
     }
 
+    // Handler for assistant deletion notifications
     private func handleAssistantDeleted(notification: Notification) {
         if let deletedAssistant = notification.object as? Assistant, deletedAssistant.id == viewModel.assistant.id {
             presentationMode.wrappedValue.dismiss()
@@ -103,6 +111,8 @@ struct AssistantDetailView_Previews: PreviewProvider {
             file_ids: []
         )
         let managerViewModel = AssistantManagerViewModel()
+        
+        // Initialize the view with the assistant and managerViewModel
         AssistantDetailView(assistant: assistant, managerViewModel: managerViewModel)
     }
 }
