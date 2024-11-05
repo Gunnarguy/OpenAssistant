@@ -3,17 +3,17 @@ import Combine
 import SwiftUI
 
 @MainActor
-    class VectorStoreManagerViewModel: BaseViewModel {
-        @Published var vectorStores: [VectorStore] = []
-        private let baseURL = URL(string: "https://api.openai.com/v1")!
-        private let session: URLSession // Add this line
+class VectorStoreManagerViewModel: BaseViewModel {
+    @Published var vectorStores: [VectorStore] = []
+    private let baseURL = URL(string: "https://api.openai.com/v1")!
+    private let session: URLSession
 
-        override init() {
-            self.session = URLSession.shared // Initialize the session
-            super.init()
-            print("VectorStoreManagerViewModel initialized")
-            initializeAndFetch()
-        }
+    override init() {
+        self.session = URLSession.shared
+        super.init()
+        print("VectorStoreManagerViewModel initialized")
+        initializeAndFetch()
+    }
 
     private func initializeAndFetch() {
         fetchVectorStores()
@@ -120,6 +120,82 @@ import SwiftUI
             })
             .store(in: &cancellables)
     }
+        
+
+    func uploadFile(fileData: Data, fileName: String, apiKey: String) async throws -> String {
+        let url = URL(string: "https://api.openai.com/v1/files")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        var body = Data()
+        let disposition = "Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n"
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append(disposition.data(using: .utf8)!)
+        body.append("Content-Type: application/pdf\r\n\r\n".data(using: .utf8)!) // Adjust content type as needed
+        body.append(fileData)
+        body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"purpose\"\r\n\r\n".data(using: .utf8)!)
+        body.append("assistants\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+        
+        let responseDict = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+        guard let fileId = responseDict?["id"] as? String else {
+            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing file ID in response"])
+        }
+        return fileId
+    }
+    
+
+        func addFileToVectorStoreAsync(vectorStoreId: String, fileData: Data, fileName: String) async throws -> String {
+            guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/files") else {
+                throw URLError(.badURL)
+            }
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+            let boundary = UUID().uuidString
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            
+            var body = Data()
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
+            body.append(fileData)
+            body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+            request.httpBody = body
+            
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw URLError(.badServerResponse)
+            }
+            
+            // Log the response for debugging
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("Raw JSON response: \(jsonString)")
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                throw URLError(.badServerResponse)
+            }
+            
+            let responseDict = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+            guard let fileId = responseDict?["file_id"] as? String else {
+                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing file_id in response"])
+            }
+            return fileId
+        }
     
 
     func createFileBatch(vectorStoreId: String, fileIds: [String], chunkingStrategy: ChunkingStrategy?, completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
@@ -179,71 +255,7 @@ import SwiftUI
     }
 
 
-        func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String) -> Future<String, Error> {
-            return Future<String, Error> { [weak self] promise in
-                guard let self = self else { return }
-                guard let url = URL(string: "\(self.baseURL)/vector_stores/\(vectorStoreId)/files") else {
-                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
-                    return
-                }
 
-                var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
-                request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-
-                let boundary = UUID().uuidString
-                request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-
-                // Build multipart form-data body
-                var body = Data()
-                body.append("--\(boundary)\r\n".data(using: .utf8)!)
-                body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
-                body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
-                body.append(fileData)
-                body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-                request.httpBody = body
-
-                // Log the request details for debugging
-                print("Request URL: \(url)")
-                print("Request Headers: \(request.allHTTPHeaderFields ?? [:])")
-                print("Request Body Size: \(body.count) bytes")
-
-                self.session.dataTask(with: request) { data, response, error in
-                    if let error = error {
-                        promise(.failure(error))
-                        return
-                    }
-                    guard let data = data else {
-                        promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                        return
-                    }
-                    
-                    // Log the response for debugging
-                    if let jsonString = String(data: data, encoding: .utf8) {
-                        print("Raw JSON response: \(jsonString)")
-                    }
-                    
-                    do {
-                        // Check for any error in the response
-                        if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-                            promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: errorResponse.error.message])))
-                            return
-                        }
-
-                        // Decode the expected response
-                        let response = try JSONDecoder().decode([String: String].self, from: data)
-                        if let fileId = response["file_id"] {
-                            promise(.success(fileId))
-                        } else {
-                            promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing file_id in response"])))
-                        }
-                    } catch {
-                        promise(.failure(error))
-                    }
-                }.resume()
-            }
-        }
 
     func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
         return Future { [weak self] promise in

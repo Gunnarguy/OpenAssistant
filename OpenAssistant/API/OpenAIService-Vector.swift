@@ -232,56 +232,70 @@ extension OpenAIService {
     }
     
 
-    func attachFileToVectorStore(vectorStoreId: String, fileId: String, chunkingStrategy: ChunkingStrategy? = nil, completion: @escaping (Result<String, Error>) -> Void) {
-        guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/files") else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
-            return
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-
-        // Request body
-        var jsonBody: [String: Any] = ["file_id": fileId]
-        
-        if let chunkingStrategy = chunkingStrategy {
-            jsonBody["chunking_strategy"] = chunkingStrategy.toDictionary()
-        }
-
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: jsonBody, options: [])
-        } catch {
-            completion(.failure(error))
-            return
-        }
-
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                completion(.failure(error))
+    func addFileToVectorStore(vectorStoreId: String, fileData: Data, fileName: String, apiKey: String, baseURL: String) -> Future<String, Error> {
+        return Future<String, Error> { promise in
+            guard let url = URL(string: "\(baseURL)/v1/vector_stores/\(vectorStoreId)/files") else {
+                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
                 return
             }
-            guard let data = data else {
-                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                return
-            }
-
-            do {
-                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                   let vectorStoreFileId = json["id"] as? String {
-                    completion(.success(vectorStoreFileId))
-                } else {
-                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response format"])))
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+            
+            let boundary = UUID().uuidString
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            
+            // Build multipart form-data body
+            var body = Data()
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
+            body.append(fileData)
+            body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+            request.httpBody = body
+            
+            // Log the request details for debugging
+            print("Request URL: \(url)")
+            print("Request Headers: \(request.allHTTPHeaderFields ?? [:])")
+            print("Request Body Size: \(body.count) bytes")
+            
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    promise(.failure(error))
+                    return
                 }
-            } catch {
-                completion(.failure(error))
-            }
+                guard let data = data else {
+                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                    return
+                }
+                
+                // Log the response for debugging
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Raw JSON response: \(jsonString)")
+                }
+                
+                do {
+                    // Check for any error in the response
+                    if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                        promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: errorResponse.error.message])))
+                        return
+                    }
+                    
+                    // Decode the expected response
+                    let response = try JSONDecoder().decode([String: String].self, from: data)
+                    if let fileId = response["file_id"] {
+                        promise(.success(fileId))
+                    } else {
+                        promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing file_id in response"])))
+                    }
+                } catch {
+                    promise(.failure(error))
+                }
+            }.resume()
         }
-        task.resume()
     }
-
     
     // MARK: - Create File Batch Using file_id
 

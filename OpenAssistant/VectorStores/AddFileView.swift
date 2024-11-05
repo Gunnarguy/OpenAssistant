@@ -11,13 +11,12 @@ struct AddFileView: View {
     @State private var errorMessage = ""
     @State private var isUploading = false
     @State private var uploadTask: Task<Void, Never>? = nil
-    
+
     var body: some View {
         VStack(spacing: 20) {
             fileSelectionText
             selectFilesButton
             uploadFilesButton
-            cancelUploadButton
             if isUploading {
                 ProgressView("Uploading files...")
             }
@@ -29,97 +28,92 @@ struct AddFileView: View {
             allowsMultipleSelection: true,
             onCompletion: handleFileSelection
         )
-        .alert(isPresented: $showErrorAlert) {
-            Alert(title: Text("Error"), message: Text(errorMessage), dismissButton: .default(Text("OK"), action: resetErrorState))
+        .alert("Error", isPresented: $showErrorAlert) {
+            Button("OK") { resetErrorState() }
+        } message: {
+            Text(errorMessage)
         }
     }
-    
+
     private var fileSelectionText: some View {
-        Text(selectedFiles.isEmpty ? "No files selected" : "Selected files: \(selectedFiles.map { $0.lastPathComponent }.joined(separator: ", "))")
+        Text(selectedFiles.isEmpty ? "No files selected" : "Selected \(selectedFiles.count) file(s)")
     }
-    
+
     private var selectFilesButton: some View {
-        Button("Select Files") {
-            isFilePickerPresented = true
-        }
+        Button("Select Files") { isFilePickerPresented = true }
     }
-    
+
     private var uploadFilesButton: some View {
-        Button("Upload Files") {
-            startUploadTask()
-        }
-        .disabled(selectedFiles.isEmpty || isUploading)
+        Button("Upload Files") { startUploadTask() }
+            .disabled(selectedFiles.isEmpty || isUploading)
     }
-    
-    private var cancelUploadButton: some View {
-        Button("Cancel Upload") {
-            uploadTask?.cancel()
-            isUploading = false // Reflect cancellation in UI
-        }
-        .disabled(!isUploading)
-    }
-    
+
     private func handleFileSelection(result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
             selectedFiles = urls
             if urls.isEmpty {
-                showError("No files were selected.")
+                Task { @MainActor in
+                    await showError("No files selected.")
+                }
             }
         case .failure(let error):
-            showError("File selection failed: \(error.localizedDescription)")
+            Task { @MainActor in
+                await showError("File selection failed: \(error.localizedDescription)")
+            }
         }
     }
-    
+
+    @MainActor
     private func startUploadTask() {
         uploadTask = Task {
             do {
                 try await uploadFilesConcurrently()
             } catch is CancellationError {
-                showError("Upload was canceled.")
+                await showError("Upload was canceled.")
             } catch {
-                showError("Upload failed: \(error.localizedDescription)")
+                await showError("Upload failed: \(error.localizedDescription)")
             }
         }
     }
     
     private func uploadFile(_ fileURL: URL, maxSize: Int) async throws -> String? {
         guard fileURL.startAccessingSecurityScopedResource() else {
-            showError("Failed to access file at \(fileURL).")
+            await showError("Failed to access file at \(fileURL).")
             return nil
         }
         defer { fileURL.stopAccessingSecurityScopedResource() }
         
         let fileSize = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
         guard fileSize <= maxSize else {
-            showError("File \(fileURL.lastPathComponent) is too large.")
+            await showError("File \(fileURL.lastPathComponent) is too large.")
             return nil
         }
         
         let fileData = try Data(contentsOf: fileURL)
         guard !fileData.isEmpty else {
-            showError("File \(fileURL.lastPathComponent) is empty or cannot be read.")
+            await showError("File \(fileURL.lastPathComponent) is empty or cannot be read.")
             return nil
         }
         
         let fileName = fileURL.lastPathComponent
         print("Uploading file: \(fileName) with size: \(fileSize) bytes")
         
-        return try await withCheckedThrowingContinuation { continuation in
-            viewModel.addFileToVectorStore(vectorStoreId: vectorStore.id, fileData: fileData, fileName: fileName)
-                .sink(receiveCompletion: { completion in
-                    if case .failure(let error) = completion {
-                        print("Upload failed for \(fileName): \(error)")
-                        self.showError("Failed to upload file \(fileName): \(error.localizedDescription)")
-                        continuation.resume(throwing: error)
-                    }
-                }, receiveValue: { fileId in
-                    print("Successfully uploaded \(fileName) with ID: \(fileId)")
-                    continuation.resume(returning: fileId)
-                })
-                .store(in: &viewModel.cancellables)
+        do {
+            let fileId = try await viewModel.addFileToVectorStoreAsync(
+                vectorStoreId: vectorStore.id,
+                fileData: fileData,
+                fileName: fileName
+            )
+            print("Successfully uploaded \(fileName) with ID: \(fileId)")
+            return fileId
+        } catch {
+            print("Upload failed for \(fileName): \(error)")
+            await showError("Failed to upload file \(fileName): \(error.localizedDescription)")
+            throw error
         }
     }
+
     
     private func uploadFilesConcurrently() async throws {
         isUploading = true
@@ -152,7 +146,7 @@ struct AddFileView: View {
     }
     
     @MainActor
-    private func showError(_ message: String) {
+    private func showError(_ message: String) async {
         errorMessage = message
         showErrorAlert = true
     }
