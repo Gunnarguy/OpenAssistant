@@ -90,39 +90,30 @@ enum VectorStoreError: LocalizedError {
 
 // MARK: - FileUploadError
 enum FileUploadError: LocalizedError {
-    case fileSelectionFailed
-    case fileReadFailed(String)
-    case uploadFailed(String)
-    case batchCreationFailed(String)
+    case fileAccessFailed(URL)
+    case fileTooLarge(URL, Int)
+    case fileEmpty(URL)
+    case uploadFailed(URL, String)
     case noFilesSelected
+    case fileSelectionFailed(Error)
+    case uploadCancelled
 
     var errorDescription: String? {
         switch self {
-        case .fileSelectionFailed:
-            return "Failed to select files. Please try again."
-        case .fileReadFailed(let fileName):
-            return "Failed to read the file: \(fileName). Please check the file and try again."
-        case .uploadFailed(let reason):
-            return "File upload failed: \(reason)"
-        case .batchCreationFailed(let reason):
-            return "Failed to create file batch: \(reason)"
+        case .fileAccessFailed(let url):
+            return "Failed to access file at \(url)."
+        case .fileTooLarge(let url, let maxSize):
+            return "File \(url.lastPathComponent) is too large. Maximum allowed size is \(maxSize / (1024 * 1024)) MB."
+        case .fileEmpty(let url):
+            return "File \(url.lastPathComponent) is empty or cannot be read."
+        case .uploadFailed(let url, let reason):
+            return "Failed to upload file \(url.lastPathComponent): \(reason)"
         case .noFilesSelected:
-            return "No files were selected. Please select files to upload."
-        }
-    }
-
-    func logError() {
-        switch self {
-        case .fileSelectionFailed:
-            print("File selection failed.")
-        case .fileReadFailed(let fileName):
-            print("Failed to read file: \(fileName)")
-        case .uploadFailed(let reason):
-            print("Upload failed with reason: \(reason)")
-        case .batchCreationFailed(let reason):
-            print("Batch creation failed with reason: \(reason)")
-        case .noFilesSelected:
-            print("No files selected for upload.")
+            return "No files selected."
+        case .fileSelectionFailed(let error):
+            return "File selection failed: \(error.localizedDescription)"
+        case .uploadCancelled:
+            return "Upload was canceled."
         }
     }
 }

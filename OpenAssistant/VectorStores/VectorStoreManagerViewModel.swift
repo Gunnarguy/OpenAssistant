@@ -15,6 +15,13 @@ class VectorStoreManagerViewModel: BaseViewModel {
         initializeAndFetch()
     }
 
+    private func configureRequest(_ request: inout URLRequest, httpMethod: String) {
+        request.httpMethod = httpMethod
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+    }    
+    
     private func initializeAndFetch() {
         fetchVectorStores()
             .sink(receiveCompletion: handleFetchCompletion, receiveValue: { _ in })
@@ -122,80 +129,77 @@ class VectorStoreManagerViewModel: BaseViewModel {
     }
         
 
+
     func uploadFile(fileData: Data, fileName: String, apiKey: String) async throws -> String {
         let url = URL(string: "https://api.openai.com/v1/files")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        // Encode the file data in base64
+        let base64FileData = fileData.base64EncodedString()
         
-        var body = Data()
-        let disposition = "Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n"
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append(disposition.data(using: .utf8)!)
-        body.append("Content-Type: application/pdf\r\n\r\n".data(using: .utf8)!) // Adjust content type as needed
-        body.append(fileData)
-        body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"purpose\"\r\n\r\n".data(using: .utf8)!)
-        body.append("assistants\r\n".data(using: .utf8)!)
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        // Create the JSON payload
+        let jsonPayload: [String: Any] = [
+            "file": base64FileData,
+            "filename": fileName,
+            "purpose": "assistants"
+        ]
         
-        request.httpBody = body
-        
+        request.httpBody = try JSONSerialization.data(withJSONObject: jsonPayload, options: [])
+
+        // Perform the request
         let (data, response) = try await URLSession.shared.data(for: request)
+        
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.badServerResponse)
         }
         
+        // Parse the response
         let responseDict = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         guard let fileId = responseDict?["id"] as? String else {
             throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing file ID in response"])
         }
+        
         return fileId
     }
     
 
-        func addFileToVectorStoreAsync(vectorStoreId: String, fileData: Data, fileName: String) async throws -> String {
-            guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/files") else {
-                throw URLError(.badURL)
-            }
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-            request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-            let boundary = UUID().uuidString
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-            
-            var body = Data()
-            body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
-            body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
-            body.append(fileData)
-            body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-            request.httpBody = body
-            
-            let (data, response) = try await session.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw URLError(.badServerResponse)
-            }
-            
-            // Log the response for debugging
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("Raw JSON response: \(jsonString)")
-            }
-            
-            guard (200...299).contains(httpResponse.statusCode) else {
-                throw URLError(.badServerResponse)
-            }
-            
-            let responseDict = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-            guard let fileId = responseDict?["file_id"] as? String else {
-                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing file_id in response"])
-            }
-            return fileId
+    func addFileToVectorStoreAsync(vectorStoreId: String, fileData: Data, fileName: String) async throws -> String {
+        let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/files")!
+        var request = URLRequest(url: url)
+        configureRequest(&request, httpMethod: "POST")
+        
+        // Encode fileData in base64 format
+        let base64FileData = fileData.base64EncodedString()
+        
+        // JSON payload for the file upload
+        let jsonPayload: [String: Any] = [
+            "file": base64FileData,
+            "filename": fileName,
+            "purpose": "assistants"
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: jsonPayload, options: [])
+
+        // Perform the request
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
         }
+
+        // Parse the response JSON
+        let responseDict = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+        guard let fileId = responseDict?["file_id"] as? String else {
+            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing file_id in response"])
+        }
+        
+        return fileId
+    }
+
+
     
 
     func createFileBatch(vectorStoreId: String, fileIds: [String], chunkingStrategy: ChunkingStrategy?, completion: @escaping (Result<VectorStoreFileBatch, Error>) -> Void) {
@@ -355,13 +359,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
         } else {
             vectorStores.removeAll { $0.id == vectorStoreId }
         }
-    }
-
-    private func configureRequest(_ request: inout URLRequest, httpMethod: String) {
-        request.httpMethod = httpMethod
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
     }
 
     private func handleDataTaskResponse<T: Decodable>(data: Data?, response: URLResponse?, error: Error?, completion: @escaping (Result<T, Error>) -> Void) {

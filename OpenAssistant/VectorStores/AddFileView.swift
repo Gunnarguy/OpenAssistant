@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 import Combine
 import UniformTypeIdentifiers
 
@@ -11,6 +12,7 @@ struct AddFileView: View {
     @State private var errorMessage = ""
     @State private var isUploading = false
     @State private var uploadTask: Task<Void, Never>? = nil
+    @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
 
     var body: some View {
         VStack(spacing: 20) {
@@ -114,7 +116,6 @@ struct AddFileView: View {
         }
     }
 
-    
     private func uploadFilesConcurrently() async throws {
         isUploading = true
         defer { isUploading = false }
