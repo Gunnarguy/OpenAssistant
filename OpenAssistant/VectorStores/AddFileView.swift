@@ -78,7 +78,7 @@ struct AddFileView: View {
             }
         }
     }
-    
+
     private func uploadFile(_ fileURL: URL, maxSize: Int) async throws -> String? {
         guard fileURL.startAccessingSecurityScopedResource() else {
             await showError("Failed to access file at \(fileURL).")
@@ -102,17 +102,13 @@ struct AddFileView: View {
         print("Uploading file: \(fileName) with size: \(fileSize) bytes")
         
         do {
-            let fileId = try await viewModel.addFileToVectorStoreAsync(
-                vectorStoreId: vectorStore.id,
-                fileData: fileData,
-                fileName: fileName
-            )
+            let fileId = try await viewModel.uploadFile(fileData: fileData, fileName: fileName, vectorStoreId: vectorStore.id)
             print("Successfully uploaded \(fileName) with ID: \(fileId)")
             return fileId
         } catch {
             print("Upload failed for \(fileName): \(error)")
             await showError("Failed to upload file \(fileName): \(error.localizedDescription)")
-            throw error
+            return nil
         }
     }
 
