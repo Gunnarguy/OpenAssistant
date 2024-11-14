@@ -31,14 +31,18 @@ class VectorStoreManagerViewModel: BaseViewModel {
         fetchVectorStores()
     }
 
-    func uploadFile(fileData: Data, fileName: String, vectorStoreId: String) async throws -> String {
+    func uploadFile(fileData: Data, fileName: String) async throws -> String {
         let fileUploadService = FileUploadService(apiKey: apiKey)
-        return try await fileUploadService.uploadFile(
-            fileData: fileData,
-            fileName: fileName,
-            purpose: "assistants"
-        )
+        do {
+            let fileId = try await fileUploadService.uploadFile(fileData: fileData, fileName: fileName)
+            print("Successfully uploaded \(fileName) with ID: \(fileId)")
+            return fileId
+        } catch {
+            print("Upload failed for \(fileName): \(error.localizedDescription)")
+            throw error
+        }
     }
+
 
     func createVectorStore(parameters: [String: Any]) async throws -> VectorStore {
         guard let url = URL(string: "\(baseURL)/vector_stores") else {

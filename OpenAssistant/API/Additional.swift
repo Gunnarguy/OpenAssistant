@@ -77,3 +77,12 @@ struct Model: Codable {
     let created: Int
     let owned_by: String
 }
+
+struct UploadedFile: Codable {
+    let id: String
+    let object: String
+    let bytes: Int
+    let createdAt: Int
+    let filename: String
+    let purpose: String
+}

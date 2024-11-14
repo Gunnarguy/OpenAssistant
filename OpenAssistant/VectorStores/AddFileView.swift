@@ -3,6 +3,7 @@ import Foundation
 import Combine
 import UniformTypeIdentifiers
 
+// SwiftUI View for file selection and upload
 struct AddFileView: View {
     @ObservedObject var viewModel: VectorStoreManagerViewModel
     let vectorStore: VectorStore
@@ -102,7 +103,8 @@ struct AddFileView: View {
         print("Uploading file: \(fileName) with size: \(fileSize) bytes")
         
         do {
-            let fileId = try await viewModel.uploadFile(fileData: fileData, fileName: fileName, vectorStoreId: vectorStore.id)
+            let fileId = try await viewModel.uploadFile(fileData: fileData, fileName: fileName)
+
             print("Successfully uploaded \(fileName) with ID: \(fileId)")
             return fileId
         } catch {
