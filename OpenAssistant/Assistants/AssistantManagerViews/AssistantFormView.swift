@@ -5,7 +5,7 @@ struct AssistantFormView: View {
     @Binding var instructions: String
     @Binding var model: String
     @Binding var description: String
-    @Binding var temperature: Double
+    @Binding var temperature: Double 
     @Binding var topP: Double
     @Binding var enableFileSearch: Bool
     @Binding var enableCodeInterpreter: Bool

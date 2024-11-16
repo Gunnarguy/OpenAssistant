@@ -3,6 +3,7 @@ import SwiftUI
 struct AssistantDetailsSection: View {
     @Binding var assistant: Assistant
     var availableModels: [String]
+    @Binding var showVectorStoreDetail: Bool // Binding to trigger navigation
 
     var body: some View {
         Section(header: Text("Assistant Details")) {
@@ -24,7 +25,6 @@ private struct NameField: View {
     var body: some View {
         TextField("Name", text: $name)
             .textFieldStyle(RoundedBorderTextFieldStyle())
-            .padding(.vertical, 4)
     }
 }
 
@@ -34,7 +34,6 @@ private struct InstructionsField: View {
     var body: some View {
         TextField("Instructions", text: $instructions)
             .textFieldStyle(RoundedBorderTextFieldStyle())
-            .padding(.vertical, 4)
     }
 }
 
@@ -44,7 +43,6 @@ private struct DescriptionField: View {
     var body: some View {
         TextField("Description", text: $description)
             .textFieldStyle(RoundedBorderTextFieldStyle())
-            .padding(.vertical, 4)
     }
 }
 
@@ -59,7 +57,6 @@ struct ModelPicker: View {
             }
         }
         .pickerStyle(MenuPickerStyle())
-        .padding(.vertical, 4)
     }
 }
 
@@ -71,7 +68,6 @@ private struct TemperatureSlider: View {
             Text("Temperature: \(temperature, specifier: "%.2f")")
             Slider(value: $temperature, in: 0.0...2.0, step: 0.01)
         }
-        .padding(.vertical, 4)
     }
 }
 
@@ -83,7 +79,6 @@ private struct TopPSlider: View {
             Text("Top P: \(topP, specifier: "%.2f")")
             Slider(value: $topP, in: 0.0...1.0, step: 0.01)
         }
-        .padding(.vertical, 4)
     }
 }
 

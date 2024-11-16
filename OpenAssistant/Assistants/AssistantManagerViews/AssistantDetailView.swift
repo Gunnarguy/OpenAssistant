@@ -4,115 +4,143 @@ import Combine
 
 struct AssistantDetailView: View {
     @StateObject private var viewModel: AssistantDetailViewModel
-    @ObservedObject var managerViewModel: AssistantManagerViewModel
-    @State private var refreshTrigger = false
+    @StateObject private var vectorStoreManagerViewModel = VectorStoreManagerViewModel()
     @Environment(\.presentationMode) var presentationMode
-
+    @State private var vectorStore: VectorStore?
+    @State private var cancellables = Set<AnyCancellable>()
+    @State private var showAlert = false
+    @State private var alertMessage = ""
+    @State private var showVectorStoreDetail = false
+    @ObservedObject var managerViewModel: AssistantManagerViewModel
+    @State private var isAddingFile = false
+    @State private var didDeleteFile = false
+    
     // Custom initializer for injecting the Assistant and ManagerViewModel
     init(assistant: Assistant, managerViewModel: AssistantManagerViewModel) {
         _viewModel = StateObject(wrappedValue: AssistantDetailViewModel(assistant: assistant))
         self.managerViewModel = managerViewModel
     }
-
+    
     var body: some View {
-        VStack {
-            errorMessageView
-            assistantDetailsView
-            // Assistant details section with model picker
-            AssistantDetailsSection(assistant: $viewModel.assistant, availableModels: managerViewModel.availableModels)
-            actionButtonsView
-        }
-        .padding()
-        .id(refreshTrigger)
-        .onReceive(NotificationCenter.default.publisher(for: .assistantUpdated)) { notification in
-            handleAssistantUpdated(notification: notification)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .assistantDeleted)) { notification in
-            handleAssistantDeleted(notification: notification)
-        }
-    }
-
-    // Error message view for displaying validation or API errors
-    @ViewBuilder
-    private var errorMessageView: some View {
-        if let errorMessage = viewModel.errorMessage {
-            Text(errorMessage.message)
-                .foregroundColor(.red)
-                .padding()
-                .multilineTextAlignment(.center)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        viewModel.errorMessage = nil
+        NavigationView {
+            Form {
+                AssistantDetailsSection(
+                    assistant: $viewModel.assistant,
+                    availableModels: managerViewModel.availableModels,
+                    showVectorStoreDetail: $showVectorStoreDetail
+                )
+                AssistantToolsSection(assistant: $viewModel.assistant)
+                
+            }
+            .navigationTitle("Update Assistant")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismissView()
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        handleSave()
+                    }
+                }
+            }
+            .alert(isPresented: $showAlert) {
+                Alert(
+                    title: Text("Error"),
+                    message: Text(alertMessage),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
+            .onAppear {
+                managerViewModel.fetchAvailableModels()
+                initializeModel()
+            }
+            .onDisappear {
+                if isAddingFile || didDeleteFile {
+                }
+            }
+            .sheet(isPresented: $showVectorStoreDetail) {
+                if let vectorStore = vectorStore {
+                    VectorStoreDetailView(
+                        viewModel: vectorStoreManagerViewModel,
+                        vectorStore: vectorStore,
+                        isAddingFile: $isAddingFile,
+                        didDeleteFile: $didDeleteFile
+                    )
+                }
+            }
         }
-    }
-
-    // Assistant details header, displaying the name
-    private var assistantDetailsView: some View {
-        Text("Details for \(viewModel.assistant.name)")
-            .font(.title)
-            .padding()
     }
     
-    // Action buttons to update or delete the assistant
-    private var actionButtonsView: some View {
-        ActionButtonsView(
-            refreshTrigger: $refreshTrigger,
-            updateAction: {
-                viewModel.updateAssistant()
-                triggerRefresh()
-            },
-            deleteAction: {
-                viewModel.deleteAssistant()
-                triggerRefresh()
+    private var filteredModels: [String] {
+        let chatModels = ["gpt-4o-mini", "gpt-4o"]
+        return managerViewModel.availableModels.filter { chatModels.contains($0) }
+    }
+    
+    private func handleSave() {
+        if validateAssistant() {
+            managerViewModel.updateAssistant(assistant: viewModel.assistant)
+            dismissView()
+        } else {
+            alertMessage = "Please fill in all required fields."
+            showAlert = true
+        }
+    }
+    
+    private func validateAssistant() -> Bool {
+        let isValidName = !viewModel.assistant.name.trimmingCharacters(in: .whitespaces).isEmpty
+        let isValidModel = filteredModels.contains(viewModel.assistant.model)
+        return isValidName && isValidModel
+    }
+    
+    private func dismissView() {
+        presentationMode.wrappedValue.dismiss()
+    }
+    
+    private func initializeModel() {
+        if !filteredModels.contains(viewModel.assistant.model) {
+            if filteredModels.contains("gpt-4o") {
+                viewModel.assistant.model = "gpt-4o"
+            } else if let firstModel = filteredModels.first {
+                viewModel.assistant.model = firstModel
             }
-        )
-    }
-
-    // Toggle refreshTrigger to update the view
-    private func triggerRefresh() {
-        refreshTrigger.toggle()
-    }
-
-    // Handler for assistant update notifications
-    private func handleAssistantUpdated(notification: Notification) {
-        if let updatedAssistant = notification.object as? Assistant, updatedAssistant.id == viewModel.assistant.id {
-            viewModel.assistant = updatedAssistant
-            triggerRefresh()
         }
     }
-
-    // Handler for assistant deletion notifications
-    private func handleAssistantDeleted(notification: Notification) {
-        if let deletedAssistant = notification.object as? Assistant, deletedAssistant.id == viewModel.assistant.id {
-            presentationMode.wrappedValue.dismiss()
-        }
-    }
-}
-
-struct AssistantDetailView_Previews: PreviewProvider {
-    static var previews: some View {
-        let assistant = Assistant(
-            id: "1",
-            object: "assistant",
-            created_at: Int(Date().timeIntervalSince1970),
-            name: "Test Assistant",
-            description: "This is a test assistant.",
-            model: "test-model",
-            instructions: nil,
-            threads: nil,
-            tools: [],
-            top_p: 1.0,
-            temperature: 0.7,
-            tool_resources: nil,
-            metadata: nil,
-            response_format: nil,
-            file_ids: []
-        )
-        let managerViewModel = AssistantManagerViewModel()
+    
+    
+    struct AssistantToolsSection: View {
+        @Binding var assistant: Assistant
         
-        // Initialize the view with the assistant and managerViewModel
-        AssistantDetailView(assistant: assistant, managerViewModel: managerViewModel)
+        var body: some View {
+            Section(header: Text("Tools")) {
+                Toggle("Enable File Search", isOn: Binding(
+                    get: {
+                        assistant.tools.contains { $0.type == "file_search" }
+                    },
+                    set: { isEnabled in
+                        updateToolState(isEnabled: isEnabled, type: "file_search")
+                    }
+                ))
+                Toggle("Enable Code Interpreter", isOn: Binding(
+                    get: {
+                        assistant.tools.contains { $0.type == "code_interpreter" }
+                    },
+                    set: { isEnabled in
+                        updateToolState(isEnabled: isEnabled, type: "code_interpreter")
+                    }
+                ))
+            }
+        }
+        
+        private func updateToolState(isEnabled: Bool, type: String) {
+            if isEnabled {
+                if !assistant.tools.contains(where: { $0.type == type }) {
+                    assistant.tools.append(Tool(type: type))
+                }
+            } else {
+                assistant.tools.removeAll { $0.type == type }
+            }
+        }
     }
 }

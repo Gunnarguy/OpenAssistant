@@ -110,9 +110,8 @@ struct AddFileView: View {
             return fileId
         } catch {
             print("Upload failed for \(fileName): \(error.localizedDescription)")
-            if let nsError = error as? NSError {
-                print("Error Code: \(nsError.code), Domain: \(nsError.domain)")
-            }
+            let nsError = error as NSError
+            print("Error Code: \(nsError.code), Domain: \(nsError.domain)")
             await showError("Failed to upload file \(fileName): \(error.localizedDescription)")
             return nil
         }

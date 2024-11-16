@@ -5,11 +5,12 @@ import SwiftUI
 struct VectorStoreDetailView: View {
     @ObservedObject var viewModel: VectorStoreManagerViewModel
     let vectorStore: VectorStore
-    
+    @Binding var isAddingFile: Bool
+    @Binding var didDeleteFile: Bool
+
     @State private var files: [VectorStoreFile] = []
     @State private var cancellables = Set<AnyCancellable>()
     @State private var alert: AlertData?
-    @State private var isAddingFile = false
     @State private var isLoading = false
     
     var body: some View {
@@ -53,6 +54,7 @@ struct VectorStoreDetailView: View {
                     switch completion {
                     case .finished:
                         DispatchQueue.main.async { self.files.remove(at: index) }
+                        didDeleteFile = true // Update the binding to indicate a file was deleted
                     case .failure(let error):
                         showAlert(title: "Error", message: "Failed to delete file: \(error.localizedDescription)")
                     }
@@ -60,7 +62,7 @@ struct VectorStoreDetailView: View {
                 .store(in: &cancellables)
         }
     }
-    
+
     private func showAlert(title: String, message: String) {
         alert = AlertData(title: title, message: message)
     }

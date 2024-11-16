@@ -8,19 +8,32 @@ struct VectorStoreListView: View {
     @State private var isShowingCreateAlert = false
     @State private var newVectorStoreName = ""
     @State private var newVectorStoreFiles: [File] = []
+    @State private var isAddingFile = false
+    @State private var didDeleteFile = false
 
     var body: some View {
         NavigationView {
             List {
                 ForEach(viewModel.vectorStores) { vectorStore in
-                    NavigationLink(destination: VectorStoreDetailView(viewModel: viewModel, vectorStore: vectorStore)) {
+                    NavigationLink(
+                        destination: VectorStoreDetailView(
+                            viewModel: viewModel,
+                            vectorStore: vectorStore,
+                            isAddingFile: $isAddingFile,
+                            didDeleteFile: $didDeleteFile
+                        )
+                    ) {
                         VectorStoreRow(vectorStore: vectorStore)
                     }
                 }
                 .onDelete(perform: deleteVectorStore)
             }
             .navigationTitle("Vector Stores")
-            
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    addButton
+                }
+            }
             .alert("Create New Vector Store", isPresented: $isShowingCreateAlert, actions: {
                 createAlertActions
             }, message: {

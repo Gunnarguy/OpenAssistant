@@ -108,6 +108,7 @@ extension OpenAIService {
         body["top_p"] = topP
         body["response_format"] = responseFormat?.toAny()
         
+        
         guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: .post, body: body) else {
             completion(.failure(.invalidRequest))
             return

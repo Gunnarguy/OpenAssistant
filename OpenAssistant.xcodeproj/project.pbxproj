@@ -41,7 +41,6 @@
 		B0EEE7472C99326A0012F2BA /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7292C99326A0012F2BA /* ChatViewModel.swift */; };
 		B0EEE7482C99326A0012F2BA /* AssistantPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7242C99326A0012F2BA /* AssistantPickerView.swift */; };
 		B0EEE7492C99326A0012F2BA /* ResponseFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7372C99326A0012F2BA /* ResponseFormat.swift */; };
-		B0EEE74A2C99326A0012F2BA /* UpdateAssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE71E2C99326A0012F2BA /* UpdateAssistantView.swift */; };
 		B0EEE74B2C99326A0012F2BA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE71C2C99326A0012F2BA /* ContentView.swift */; };
 		B0EEE74C2C99326A0012F2BA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE73C2C99326A0012F2BA /* SettingsView.swift */; };
 		B0EEE74D2C99326A0012F2BA /* AssistantManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EEE7212C99326A0012F2BA /* AssistantManagerView.swift */; };
@@ -91,7 +90,6 @@
 		B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAssistantApp.swift; sourceTree = "<group>"; };
 		B0EEE71C2C99326A0012F2BA /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B0EEE71D2C99326A0012F2BA /* CreateAssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAssistantView.swift; sourceTree = "<group>"; };
-		B0EEE71E2C99326A0012F2BA /* UpdateAssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateAssistantView.swift; sourceTree = "<group>"; };
 		B0EEE71F2C99326A0012F2BA /* AssistantDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailViewModel.swift; sourceTree = "<group>"; };
 		B0EEE7212C99326A0012F2BA /* AssistantManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantManagerView.swift; sourceTree = "<group>"; };
 		B0EEE7222C99326A0012F2BA /* AssistantManagerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantManagerViewModel.swift; sourceTree = "<group>"; };
@@ -143,7 +141,6 @@
 				B0EEE71D2C99326A0012F2BA /* CreateAssistantView.swift */,
 				B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */,
 				B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */,
-				B0EEE71E2C99326A0012F2BA /* UpdateAssistantView.swift */,
 				B0EEE7212C99326A0012F2BA /* AssistantManagerView.swift */,
 				B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */,
 			);
@@ -354,7 +351,6 @@
 				B0067AFB2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift in Sources */,
 				B0EEE7492C99326A0012F2BA /* ResponseFormat.swift in Sources */,
 				B0BFE4442C9BDC8800EB6D81 /* AssistantFormView.swift in Sources */,
-				B0EEE74A2C99326A0012F2BA /* UpdateAssistantView.swift in Sources */,
 				B0EEE74B2C99326A0012F2BA /* ContentView.swift in Sources */,
 				B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */,
 				B0B14F762CB6273B00778895 /* SendButton.swift in Sources */,

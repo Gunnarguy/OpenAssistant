@@ -74,59 +74,16 @@ extension OpenAIService {
         }.resume()
     }
     
-    // MARK: - Create Vector Store
-    
-    func createVectorStore(parameters: [String: Any], completion: @escaping (Result<VectorStore, Error>) -> Void) {
-        guard let url = URL(string: "\(baseURL)/vector_stores") else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
-            return
-        }
 
-        var request = URLRequest(url: url)
-        configureRequest(&request, httpMethod: .post)
 
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: parameters, options: [])
-        } catch {
-            completion(.failure(error))
-            return
-        }
-
-        session.dataTask(with: request) { data, response, error in
-            self.handleDataTaskResponse(data: data, response: response, error: error, completion: completion)
-        }.resume()
+    // MARK: - Request Configuration
+    private func configureRequest(_ request: inout URLRequest, httpMethod: String) {
+        request.httpMethod = httpMethod
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     }
 
     
-    // MARK: - Create Vector Store with Files
-    
-    func createVectorStoreWithFiles(fileIds: [String], completion: @escaping (Result<String, Error>) -> Void) {
-        let endpoint = "vector_stores"
-        let body: [String: Any] = [
-            "name": "New Vector Store",
-            "description": "A vector store with files",
-            "file_ids": fileIds
-        ]
-        
-        guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
-            return
-        }
-        
-        session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            guard let data = data,
-                  let jsonResponse = try? JSONSerialization.jsonObject(with: data, options: []),
-                  let vectorStoreId = (jsonResponse as? [String: Any])?["id"] as? String else {
-                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create vector store."])))
-                return
-            }
-            completion(.success(vectorStoreId))
-        }.resume()
-    }
     
     // MARK: - Fetch Vector Stores
     
@@ -222,13 +179,7 @@ extension OpenAIService {
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
-    
-    // Helper Method to Add Common Headers
-    private func configureRequest(_ request: inout URLRequest, httpMethod: String) {
-        request.httpMethod = httpMethod
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-    }
+
 
     
     // MARK: - MIME Type Helper
@@ -337,6 +288,7 @@ extension OpenAIService {
 struct VectorStore: Identifiable, Codable {
     let id: String
     let name: String?
+    let description: String?
     let status: String?
     let usageBytes: Int?
     let createdAt: Int
@@ -348,9 +300,10 @@ struct VectorStore: Identifiable, Codable {
     var files: [VectorStoreFile]? // Mutable to allow updates
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, status, usageBytes = "bytes", createdAt = "created_at", fileCounts = "file_counts", metadata, expiresAfter = "expires_after", expiresAt = "expires_at", lastActiveAt = "last_active_at", files
+        case id, name, description, status, usageBytes = "bytes", createdAt = "created_at", fileCounts = "file_counts", metadata, expiresAfter = "expires_after", expiresAt = "expires_at", lastActiveAt = "last_active_at", files
     }
 }
+
 
 // MARK: - VectorStoreFile
 struct VectorStoreFile: Codable, Identifiable {
