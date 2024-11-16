@@ -11,26 +11,30 @@ extension OpenAIService {
             print("Invalid URL for endpoint: \(endpoint)")
             return nil
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = method
         addCommonHeaders(to: &request)
-        
-        // Set Content-Type if provided
+
         if let contentType = contentType {
             request.setValue(contentType, forHTTPHeaderField: "Content-Type")
         }
-        
-        // Set JSON body if applicable
+
         if let body = body, contentType == "application/json" {
             do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+                let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
+                request.httpBody = jsonData
+                if let jsonString = String(data: jsonData, encoding: .utf8) {
+                    print("Request Body JSON: \(jsonString)")
+                }
             } catch {
                 print("Error serializing JSON: \(error)")
                 return nil
             }
         }
-        
+
+        print("Request Headers: \(request.allHTTPHeaderFields ?? [:])")
+        print("Request URL: \(request.url?.absoluteString ?? "Unknown URL")")
         return request
     }
     
@@ -458,6 +462,7 @@ struct VectorStoreFilesResponse: Codable {
 // MARK: - File
 struct File: Identifiable, Codable {
     let id: String
+    let object: String? // Add this line
     let name: String?
     let status: String
     let createdAt: Int
@@ -465,9 +470,9 @@ struct File: Identifiable, Codable {
     let purpose: String?
     let mimeType: String?
     let objectType: String?
-
+    
     private enum CodingKeys: String, CodingKey {
-        case id, name, status, bytes, purpose, mimeType, objectType
+        case id, name, status, bytes, purpose, mimeType, objectType, object
         case createdAt = "created_at"
     }
 }
@@ -504,31 +509,27 @@ struct FileSearch: Codable {
 }
 func handleUploadResponse(data: Data) -> Result<String, Error> {
     do {
-        // Log the raw response data for debugging
         if let jsonString = String(data: data, encoding: .utf8) {
             print("Upload Response JSON: \(jsonString)")
         }
-        
+
         let uploadResponse = try JSONDecoder().decode(UploadResponse.self, from: data)
         if let error = uploadResponse.error {
-            // Log the error message from the response
             print("Upload Error: \(error.message)")
             return .failure(OpenAIServiceError.custom(error.message))
         }
+
         if let fileId = uploadResponse.fileId {
             return .success(fileId)
         } else {
-            // Log a specific error message if the file ID is not found
             let errorMessage = "File ID not found in the response."
             print(errorMessage)
             return .failure(OpenAIServiceError.custom(errorMessage))
         }
     } catch {
-        // Log the decoding error
         print("Decoding Error: \(error.localizedDescription)")
         return .failure(error)
     }
 }
-
 
 

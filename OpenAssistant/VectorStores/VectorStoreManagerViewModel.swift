@@ -7,6 +7,8 @@ class VectorStoreManagerViewModel: BaseViewModel {
     @Published var vectorStores: [VectorStore] = []
     private let baseURL = URL(string: "https://api.openai.com/v1")!
     private let session: URLSession
+    var cancellables = Set<AnyCancellable>() // Change access level to internal
+
     
     override init() {
         self.session = URLSession.shared
@@ -30,8 +32,29 @@ class VectorStoreManagerViewModel: BaseViewModel {
     private func initializeAndFetch() {
         fetchVectorStores()
     }
+    
+    private func createRequest(endpoint: String, method: String, body: [String: Any]? = nil) -> URLRequest? {
+        guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
+            print("Invalid URL for endpoint: \(endpoint)")
+            return nil
+        }
 
-    func uploadFile(fileData: Data, fileName: String) async throws -> String {
+        var request = URLRequest(url: url)
+        configureRequest(&request, httpMethod: method)
+
+        if let body = body {
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+            } catch {
+                print("Failed to serialize request body: \(error.localizedDescription)")
+                return nil
+            }
+        }
+
+        return request
+    }
+
+    func uploadFile(fileData: Data, fileName: String, vectorStoreId: String) async throws -> String {
         let fileUploadService = FileUploadService(apiKey: apiKey)
         do {
             let fileId = try await fileUploadService.uploadFile(fileData: fileData, fileName: fileName)
@@ -43,7 +66,20 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }
     }
 
-
+    func addFileToVectorStore(vectorStoreId: String, fileId: String) async throws {
+        let endpoint = "vector_stores/\(vectorStoreId)/file_batches"
+        let body: [String: Any] = ["file_ids": [fileId]]
+        
+        guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
+            throw URLError(.badURL)
+        }
+        
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+    
     func createVectorStore(parameters: [String: Any]) async throws -> VectorStore {
         guard let url = URL(string: "\(baseURL)/vector_stores") else {
             throw URLError(.badURL)
@@ -129,19 +165,38 @@ class VectorStoreManagerViewModel: BaseViewModel {
             .eraseToAnyPublisher()
     }
 
-    func fetchFiles(for vectorStore: VectorStore) {
+    func fetchFiles(for vectorStore: VectorStore) -> AnyPublisher<[VectorStoreFile], Error> {
         guard let openAIService = openAIService else {
             handleError(.serviceNotInitialized)
-            return
+            return Fail(error: VectorStoreError.serviceNotInitialized).eraseToAnyPublisher()
+            
         }
-        openAIService.fetchFiles(for: vectorStore.id)
+        
+        return openAIService.fetchFiles(for: vectorStore.id)
+            .map { files -> [VectorStoreFile] in
+                files.map { file in
+                    VectorStoreFile(
+                        id: file.id,
+                        object: file.object ?? "file",
+                        usageBytes: file.bytes ?? 0,
+                        createdAt: file.createdAt,
+                        vectorStoreId: vectorStore.id,
+                        status: file.status,
+                        lastError: nil,
+                        chunkingStrategy: nil
+                    )
+                }
+            }
             .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { [weak self] completion in
-                self?.handleFetchFilesCompletion(completion)
-            }, receiveValue: { [weak self] files in
-                self?.updateVectorStoreFiles(vectorStore: vectorStore, files: files)
-            })
-            .store(in: &cancellables)
+            .handleEvents(
+                receiveOutput: { [weak self] files in
+                    self?.updateVectorStoreFiles(vectorStore: vectorStore, files: files)
+                },
+                receiveCompletion: { [weak self] completion in
+                    self?.handleFetchFilesCompletion(completion)
+                }
+            )
+            .eraseToAnyPublisher()
     }
     
     
@@ -211,11 +266,13 @@ class VectorStoreManagerViewModel: BaseViewModel {
             .store(in: &cancellables)
     }
 
-    private func updateVectorStoreFiles(vectorStore: VectorStore, files: [File]) {
-        guard let index = vectorStoreIndex(for: vectorStore) else {
+    private func updateVectorStoreFiles(vectorStore: VectorStore, files: [VectorStoreFile]) {
+        guard let index = vectorStores.firstIndex(where: { $0.id == vectorStore.id }) else {
             print("VectorStore not found")
             return
         }
+        vectorStores[index].files = files
+    
         let vectorStoreFiles = files.map { file in
             VectorStoreFile(
                 id: file.id,
