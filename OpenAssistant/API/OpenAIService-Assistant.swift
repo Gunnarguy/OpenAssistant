@@ -71,6 +71,44 @@ extension OpenAIService {
         }.resume()
     }
 
+    // MARK: - Update Assistant
+    func updateAssistant(
+        assistantId: String,
+        model: String? = nil,
+        name: String? = nil,
+        description: String? = nil,
+        instructions: String? = nil,
+        tools: [[String: Any]]? = nil,
+        toolResources: [String: Any]? = nil,
+        metadata: [String: String]? = nil,
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        responseFormat: ResponseFormat? = nil,
+        completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
+    ) {
+        var body: [String: Any] = [:]
+
+        if let model = model { body["model"] = model }
+        if let name = name { body["name"] = name }
+        if let description = description { body["description"] = description }
+        if let instructions = instructions { body["instructions"] = instructions }
+        if let tools = tools { body["tools"] = tools }
+        if let toolResources = toolResources { body["tool_resources"] = toolResources }
+        if let metadata = metadata { body["metadata"] = metadata }
+        if let temperature = temperature { body["temperature"] = temperature }
+        if let topP = topP { body["top_p"] = topP }
+        if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
+
+        guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "POST", body: body) else {
+            completion(.failure(.invalidRequest))
+            return
+        }
+
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
+    }
+
     private func makeRequest(endpoint: String, httpMethod: String, body: [String: Any]) -> URLRequest? {
         guard let url = URL(string: "https://api.openai.com/v1/\(endpoint)") else {
             return nil
@@ -89,33 +127,6 @@ extension OpenAIService {
         }
 
         return request
-    }
-
-
-    
-    // MARK: - Update Assistant
-    func updateAssistant(assistantId: String, model: String? = nil, name: String? = nil, description: String? = nil, instructions: String? = nil, tools: [[String: Any]]? = nil, toolResources: [String: Any]? = nil, metadata: [String: String]? = nil, temperature: Double? = nil, topP: Double? = nil, responseFormat: ResponseFormat? = nil, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void) {
-        var body: [String: Any] = [:]
-        
-        body["model"] = model
-        body["name"] = name
-        body["description"] = description
-        body["instructions"] = instructions
-        body["tools"] = tools
-        body["tool_resources"] = toolResources
-        body["metadata"] = metadata
-        body["temperature"] = temperature
-        body["top_p"] = topP
-        body["response_format"] = responseFormat?.toAny()
-        
-        
-        guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: .post, body: body) else {
-            completion(.failure(.invalidRequest))
-            return
-        }
-        session.dataTask(with: request) { data, response, error in
-            self.handleResponse(data, response, error, completion: completion)
-        }.resume()
     }
     
     // MARK: - Delete Assistant

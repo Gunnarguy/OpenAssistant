@@ -80,8 +80,15 @@ struct AssistantDetailView: View {
     
     private func handleSave() {
         if validateAssistant() {
-            managerViewModel.updateAssistant(assistant: viewModel.assistant)
-            dismissView()
+            managerViewModel.updateAssistant(assistant: viewModel.assistant) { result in
+                switch result {
+                case .success:
+                    dismissView()
+                case .failure(let error):
+                    alertMessage = "Failed to update assistant: \(error.localizedDescription)"
+                    showAlert = true
+                }
+            }
         } else {
             alertMessage = "Please fill in all required fields."
             showAlert = true

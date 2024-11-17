@@ -4,16 +4,36 @@ import SwiftUI
 
 // MARK: - OpenAIServiceError
 extension OpenAIServiceError {
-    init(apiError: APIErrorDetail) {
-        switch apiError.code {
-        case "rate_limit_exceeded":
-            self = .rateLimitExceeded(429)
-        case "authentication_error":
-            self = .authenticationError(apiError.message)
-        case "invalid_request_error":
-            self = .invalidRequestError(apiError.message)
+    static func == (lhs: OpenAIServiceError, rhs: OpenAIServiceError) -> Bool {
+        switch (lhs, rhs) {
+        case (.networkError(let lhsError), .networkError(let rhsError)):
+            return lhsError.localizedDescription == rhsError.localizedDescription
+        case (.apiKeyMissing, .apiKeyMissing):
+            return true
+        case (.invalidResponse(let lhsResponse), .invalidResponse(let rhsResponse)):
+            return lhsResponse == rhsResponse
+        case (.noData, .noData):
+            return true
+        case (.responseError(let lhsMessage), .responseError(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.decodingError(let lhsData, let lhsError), .decodingError(let rhsData, let rhsError)):
+            return lhsData == rhsData && lhsError.localizedDescription == rhsError.localizedDescription
+        case (.rateLimitExceeded(let lhsLimit), .rateLimitExceeded(let rhsLimit)):
+            return lhsLimit == rhsLimit
+        case (.internalServerError, .internalServerError):
+            return true
+        case (.unknownError, .unknownError):
+            return true
+        case (.invalidRequest, .invalidRequest):
+            return true
+        case (.custom(let lhsMessage), .custom(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.authenticationError(let lhsMessage), .authenticationError(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.invalidRequestError(let lhsMessage), .invalidRequestError(let rhsMessage)):
+            return lhsMessage == rhsMessage
         default:
-            self = .custom(apiError.message)
+            return false
         }
     }
 }
@@ -33,16 +53,57 @@ enum OpenAIServiceError: Error, Equatable {
     case authenticationError(String?)
     case invalidRequestError(String?)
     
-    static func ==(lhs: OpenAIServiceError, rhs: OpenAIServiceError) -> Bool {
-        return lhs.localizedDescription == rhs.localizedDescription
+    var localizedDescription: String {
+        switch self {
+        case .networkError(let error):
+            return "Network error: \(error.localizedDescription)"
+        case .apiKeyMissing:
+            return "API key is missing. Please provide a valid key."
+        case .invalidResponse(let response):
+            return "Invalid response received: \(response)"
+        case .noData:
+            return "No data was returned from the server."
+        case .responseError(let message):
+            return "Response error: \(message)"
+        case .decodingError(_, let error):
+            return "Failed to decode the response: \(error.localizedDescription)"
+        case .rateLimitExceeded(let limit):
+            return "Rate limit exceeded. Wait and retry after some time (HTTP \(limit))."
+        case .internalServerError:
+            return "The server encountered an internal error. Please try again later."
+        case .unknownError:
+            return "An unknown error occurred."
+        case .invalidRequest:
+            return "Invalid request. Please check the request parameters."
+        case .custom(let message):
+            return message
+        case .authenticationError(let message):
+            return "Authentication error: \(message ?? "Unknown issue with authentication.")"
+        case .invalidRequestError(let message):
+            return "Invalid request error: \(message ?? "Invalid parameters provided.")"
+        }
     }
 }
 
+// MARK: - NetworkError
 enum NetworkError: Error {
     case invalidURL
     case invalidResponse
     case noData
     case decodingError(Error)
+    
+    var localizedDescription: String {
+        switch self {
+        case .invalidURL:
+            return "The provided URL is invalid."
+        case .invalidResponse:
+            return "The response from the server was invalid."
+        case .noData:
+            return "No data received from the server."
+        case .decodingError(let error):
+            return "Decoding error: \(error.localizedDescription)"
+        }
+    }
 }
 
 // MARK: - IdentifiableError
@@ -79,11 +140,11 @@ enum VectorStoreError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .serviceNotInitialized:
-            return "The service is not initialized."
+            return "The vector store service is not initialized."
         case .fetchFailed(let message):
             return "Fetch failed: \(message)"
         case .unknownError:
-            return "An unknown error occurred."
+            return "An unknown error occurred with the vector store."
         }
     }
 }
@@ -129,6 +190,8 @@ class ErrorHandler: ObservableObject {
             errorMessage = error.localizedDescription
         }
         print("[\(Date())] Error: \(errorMessage ?? "Unknown error")")
+        
+        // Automatically clears the error message after 3 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             self.errorMessage = nil
         }
@@ -174,29 +237,11 @@ enum APIErrorWrapper: Decodable {
 // MARK: - ErrorResponse
 struct ErrorResponse: Decodable {
     let error: ErrorDetail
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        error = try container.decode(ErrorDetail.self, forKey: .error)
-    }
-    
-    private enum CodingKeys: String, CodingKey {
-        case error
-    }
 }
 
 // MARK: - ErrorDetail
 struct ErrorDetail: Decodable {
     let message: String
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        message = try container.decode(String.self, forKey: .message)
-    }
-    
-    private enum CodingKeys: String, CodingKey {
-        case message
-    }
 }
 
 // MARK: - UploadResponse
