@@ -83,7 +83,49 @@ extension OpenAIService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     }
 
-    
+    func createVectorStore(name: String) -> AnyPublisher<String, Error> {
+        guard let url = URL(string: "https://api.openai.com/v1/vector_stores") else {
+            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
+        
+        let body: [String: Any] = ["name": name]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+        } catch {
+            return Fail(error: error).eraseToAnyPublisher()
+        }
+        
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap { data, response -> String in
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("HTTP Status Code: \(httpResponse.statusCode)")
+                    print("HTTP Headers: \(httpResponse.allHeaderFields)")
+                }
+                
+                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                    throw URLError(.badServerResponse)
+                }
+                
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("Response Body: \(responseString)")
+                }
+                
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                guard let vectorStoreId = json?["id"] as? String else {
+                    throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Vector Store ID not found in response"])
+                }
+                return vectorStoreId
+            }
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
     
     // MARK: - Fetch Vector Stores
     

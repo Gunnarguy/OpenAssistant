@@ -16,21 +16,18 @@ class FileUploadService {
         request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
     }
     
-    // Step 1: Upload the file to OpenAI API and retrieve file_id
+    // Uploads a file to OpenAI and returns the file ID
     func uploadFile(fileData: Data, fileName: String) async throws -> String {
-        // Endpoint for file uploads
         let url = URL(string: "\(baseURL)/files")!
-        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         addCommonHeaders(to: &request)
         
-        // Prepare file upload as multipart form data
         let boundary = UUID().uuidString
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         
         var body = Data()
-        let mimeType = "application/octet-stream"  // Adjust MIME type if necessary
+        let mimeType = "application/octet-stream"
         
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"purpose\"\r\n\r\n".data(using: .utf8)!)
@@ -44,7 +41,6 @@ class FileUploadService {
         
         request.httpBody = body
         
-        // Execute request
         let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
@@ -59,15 +55,15 @@ class FileUploadService {
         return fileId
     }
     
-    // Step 2: Associate the file with a vector store
-    func createFileBatch(vectorStoreId: String, fileIds: [String]) async throws -> FileBatch {
-        let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/file_batches")!
+    // Creates a vector store and returns its ID
+    func createVectorStore(name: String) async throws -> String {
+        let url = URL(string: "\(baseURL)/vector_stores")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         addCommonHeaders(to: &request)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let body = ["file_ids": fileIds]
+        let body = ["name": name]
         request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
         
         let (data, response) = try await session.data(for: request)
@@ -76,18 +72,29 @@ class FileUploadService {
             throw URLError(.badServerResponse)
         }
         
-        let fileBatch = try JSONDecoder().decode(FileBatch.self, from: data)
-        return fileBatch
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let vectorStoreId = json?["id"] as? String else {
+            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Vector Store ID not found in response"])
+        }
+        
+        return vectorStoreId
     }
-}
-
-
-
-// Helper Extension for Appending Multipart Data
-extension Data {
-    mutating func append(_ string: String) {
-        if let data = string.data(using: .utf8) {
-            append(data)
+    
+    // Associates a file with a vector store
+    func addFileToVectorStore(vectorStoreId: String, fileId: String) async throws {
+        let url = URL(string: baseURL)!.appendingPathComponent("vector_stores/\(vectorStoreId)/files")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        addCommonHeaders(to: &request)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body = ["file_id": fileId]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+        
+        let (_, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
         }
     }
 }

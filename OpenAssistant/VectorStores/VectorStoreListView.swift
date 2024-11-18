@@ -89,7 +89,27 @@ struct VectorStoreListView: View {
     }
 
     private func createVectorStore() {
-        // Implement the logic to create a new vector store
+        guard !newVectorStoreName.isEmpty else {
+            print("Vector store name cannot be empty.")
+            return
+        }
+
+        viewModel.createVectorStore(name: newVectorStoreName)
+            .sink(receiveCompletion: { completion in
+                switch completion {
+                case .finished:
+                    print("Successfully created vector store.")
+                    isShowingCreateAlert = false
+                    newVectorStoreName = ""
+                    loadVectorStores()
+                case .failure(let error):
+                    print("Error creating vector store: \(error.localizedDescription)")
+                    viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
+                }
+            }, receiveValue: { vectorStoreId in
+                print("Vector Store Created with ID: \(vectorStoreId)")
+            })
+            .store(in: &viewModel.cancellables)
     }
 }
 

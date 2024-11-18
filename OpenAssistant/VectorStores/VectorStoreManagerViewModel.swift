@@ -55,6 +55,40 @@ class VectorStoreManagerViewModel: BaseViewModel {
         return request
     }
 
+    func createVectorStore(name: String) -> AnyPublisher<String, Error> {
+        guard let openAIService = openAIService else {
+            return Fail(error: VectorStoreError.serviceNotInitialized).eraseToAnyPublisher()
+        }
+        return openAIService.createVectorStore(name: name)
+            .eraseToAnyPublisher()
+    }
+    func fetchAssistants(for vectorStore: VectorStore) -> AnyPublisher<[Assistant], Error> {
+        let url = baseURL.appendingPathComponent("vector_stores/\(vectorStore.id)/assistants")
+        var request = URLRequest(url: url)
+        configureRequest(&request, httpMethod: "GET")
+        
+        return session.dataTaskPublisher(for: request)
+            .tryMap { data, response -> [Assistant] in
+                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                    throw URLError(.badServerResponse)
+                }
+                return try JSONDecoder().decode([Assistant].self, from: data)
+            }
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+    func attachVectorStoreToAssistant(assistantId: String, vectorStoreId: String) async throws {
+        let url = baseURL.appendingPathComponent("assistants/\(assistantId)/vector_stores")
+        var request = URLRequest(url: url)
+        configureRequest(&request, httpMethod: "POST")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["vector_store_id": vectorStoreId])
+        
+        let (_, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+    
     func fetchVectorStore(by id: String) -> AnyPublisher<VectorStore, Error> {
         guard let url = URL(string: "\(baseURL)/vector_stores/\(id)") else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
