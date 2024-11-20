@@ -89,7 +89,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }
     }
     
-    func fetchVectorStore(by id: String) -> AnyPublisher<VectorStore, Error> {
+    func fetchVectorStore(id: String) -> AnyPublisher<VectorStore, Error> {
         guard let url = URL(string: "\(baseURL)/vector_stores/\(id)") else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
@@ -383,8 +383,8 @@ class VectorStoreManagerViewModel: BaseViewModel {
             return
         }
         do {
-            let response = try JSONDecoder().decode(T.self, from: data)
-            completion(.success(response))
+            let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+            completion(.success(decodedResponse))
         } catch {
             completion(.failure(error))
         }

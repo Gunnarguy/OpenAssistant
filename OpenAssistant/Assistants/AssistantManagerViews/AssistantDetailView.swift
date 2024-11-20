@@ -4,7 +4,7 @@ import Combine
 
 struct AssistantDetailView: View {
     @StateObject private var viewModel: AssistantDetailViewModel
-    @StateObject private var vectorStoreManagerViewModel = VectorStoreManagerViewModel()
+    @ObservedObject private var vectorStoreManagerViewModel = VectorStoreManagerViewModel()
     @Environment(\.presentationMode) var presentationMode
     @State private var vectorStore: VectorStore?
     @State private var cancellables = Set<AnyCancellable>()
@@ -14,23 +14,23 @@ struct AssistantDetailView: View {
     @ObservedObject var managerViewModel: AssistantManagerViewModel
     @State private var isAddingFile = false
     @State private var didDeleteFile = false
-    
+
     // Custom initializer for injecting the Assistant and ManagerViewModel
     init(assistant: Assistant, managerViewModel: AssistantManagerViewModel) {
         _viewModel = StateObject(wrappedValue: AssistantDetailViewModel(assistant: assistant))
         self.managerViewModel = managerViewModel
     }
-    
+
     var body: some View {
         NavigationView {
             Form {
                 AssistantDetailsSection(
                     assistant: $viewModel.assistant,
                     availableModels: managerViewModel.availableModels,
-                    showVectorStoreDetail: $showVectorStoreDetail
+                    showVectorStoreDetail: $showVectorStoreDetail,
+                    vectorStoreManagerViewModel: vectorStoreManagerViewModel
                 )
                 AssistantToolsSection(assistant: $viewModel.assistant)
-                
             }
             .navigationTitle("Update Assistant")
             .toolbar {
@@ -55,9 +55,11 @@ struct AssistantDetailView: View {
             .onAppear {
                 managerViewModel.fetchAvailableModels()
                 initializeModel()
+                fetchAssociatedVectorStore()
             }
             .onDisappear {
                 if isAddingFile || didDeleteFile {
+                    // Handle any necessary actions on disappear
                 }
             }
             .sheet(isPresented: $showVectorStoreDetail) {
@@ -115,6 +117,22 @@ struct AssistantDetailView: View {
         }
     }
     
+    private func fetchAssociatedVectorStore() {
+        vectorStoreManagerViewModel
+            .fetchVectorStores() // Fetch all vector stores
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                    print("Failed to fetch vector store: \(error.localizedDescription)")
+                }
+            }, receiveValue: { vectorStores in
+                // Match the vector store by the assistant's name or ID
+                self.vectorStore = vectorStores.first(where: { $0.name?.contains(self.viewModel.assistant.name) == true })
+                if self.vectorStore == nil {
+                    print("No matching vector store found for assistant: \(self.viewModel.assistant.name)")
+                }
+            })
+            .store(in: &cancellables)
+    }
     
     struct AssistantToolsSection: View {
         @Binding var assistant: Assistant

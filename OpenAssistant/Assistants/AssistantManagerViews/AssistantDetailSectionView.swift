@@ -1,19 +1,103 @@
 import SwiftUI
+import Combine
 
 struct AssistantDetailsSection: View {
     @Binding var assistant: Assistant
     var availableModels: [String]
-    @Binding var showVectorStoreDetail: Bool // Binding to trigger navigation
+    @Binding var showVectorStoreDetail: Bool
+    @ObservedObject var vectorStoreManagerViewModel: VectorStoreManagerViewModel
+
+    @State private var vectorStore: VectorStore? // Changed to @State
+    @State private var alertMessage = ""
+    @State private var showAlert = false
+    @State private var cancellables = Set<AnyCancellable>()
 
     var body: some View {
-        Section(header: Text("Assistant Details")) {
-            NameField(name: $assistant.name)
-            InstructionsField(instructions: Binding($assistant.instructions, default: ""))
-            ModelPicker(model: $assistant.model, availableModels: availableModels)
-            DescriptionField(description: Binding($assistant.description, default: ""))
-            TemperatureSlider(temperature: $assistant.temperature)
-            TopPSlider(topP: $assistant.top_p)
+        VStack {
+            Section(header: Text("Assistant Details")) {
+                NameField(name: $assistant.name)
+                InstructionsField(instructions: Binding($assistant.instructions, default: ""))
+                ModelPicker(model: $assistant.model, availableModels: availableModels)
+                DescriptionField(description: Binding($assistant.description, default: ""))
+                TemperatureSlider(temperature: $assistant.temperature)
+                TopPSlider(topP: $assistant.top_p)
+            }
+
+            Group {
+                if let vectorStore = vectorStore {
+                    Section(header: Text("Vector Store")) {
+                        Text("Name: \(vectorStore.name ?? "Unnamed")")
+                        Text("ID: \(vectorStore.id)")
+                        Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
+                        Button("View Details") {
+                            showVectorStoreDetail = true
+                        }
+                    }
+                } else {
+                    Section(header: Text("Vector Store")) {
+                        VStack {
+                            Text("No associated vector store found.")
+                                .foregroundColor(.gray)
+                            Button("Create and Attach Vector Store") {
+                                createAndAttachVectorStore()
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+                }
+            }
         }
+        .alert(isPresented: $showAlert) {
+            Alert(
+                title: Text("Error"),
+                message: Text(alertMessage),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+    }
+
+    private func createAndAttachVectorStore() {
+        let vectorStoreName = "Vector store for \(assistant.name)"
+
+        vectorStoreManagerViewModel
+            .createVectorStore(name: vectorStoreName)
+            .flatMap { vectorStoreId -> AnyPublisher<VectorStore, Error> in
+                // Fetch the newly created VectorStore
+                return self.vectorStoreManagerViewModel.fetchVectorStore(id: vectorStoreId)
+            }
+            .flatMap { fetchedVectorStore -> AnyPublisher<Void, Error> in
+                self.vectorStore = fetchedVectorStore // Assign the value
+                return Future<Void, Error> { promise in
+                    Task {
+                        do {
+                            try await self.vectorStoreManagerViewModel.attachVectorStoreToAssistant(
+                                assistantId: self.assistant.id,
+                                vectorStoreId: fetchedVectorStore.id
+                            )
+                            promise(.success(()))
+                        } catch {
+                            promise(.failure(error))
+                        }
+                    }
+                }.eraseToAnyPublisher()
+            }
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                    alertMessage = "Failed to create and attach vector store: \(error.localizedDescription)"
+                    showAlert = true
+                }
+            }, receiveValue: { _ in
+                // Handle success if needed
+            })
+            .store(in: &cancellables)
+    }
+
+    private func formattedDate(from timestamp: Int) -> String {
+        let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
 
