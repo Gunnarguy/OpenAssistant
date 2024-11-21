@@ -44,10 +44,12 @@ struct AddFileView: View {
 
     private var selectFilesButton: some View {
         Button("Select Files") { isFilePickerPresented = true }
+            .buttonStyle(.borderedProminent)
     }
 
     private var uploadFilesButton: some View {
         Button("Upload Files") { startUploadTask() }
+            .buttonStyle(.borderedProminent)
             .disabled(selectedFiles.isEmpty || isUploading)
     }
 
@@ -175,21 +177,6 @@ struct AddFileView: View {
         if !successfulFileIds.isEmpty {
             let successDetails = successfulFileIds.map { "\($0.fileName): ID \($0.fileId)" }.joined(separator: "\n")
             print("Successfully uploaded and associated files:\n\(successDetails)")
-        }
-
-        if !failedFiles.isEmpty {
-            let failureDetails = failedFiles.map { "\($0.fileName): \($0.error.localizedDescription)" }.joined(separator: "\n")
-            await showError("Some files failed to upload:\n\(failureDetails)")
-        }
-
-        if successfulFileIds.isEmpty {
-            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No files were uploaded successfully."])
-        }
-    
-
-        // Display a summary of the upload results
-        if !successfulFileIds.isEmpty {
-            print("Successfully uploaded files: \(successfulFileIds)")
         }
 
         if !failedFiles.isEmpty {

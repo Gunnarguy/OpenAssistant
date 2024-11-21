@@ -28,7 +28,8 @@ struct AssistantDetailView: View {
                     assistant: $viewModel.assistant,
                     availableModels: managerViewModel.availableModels,
                     showVectorStoreDetail: $showVectorStoreDetail,
-                    vectorStoreManagerViewModel: vectorStoreManagerViewModel
+                    vectorStoreManagerViewModel: vectorStoreManagerViewModel,
+                    vectorStore: vectorStore // Pass the vector store
                 )
                 AssistantToolsSection(assistant: $viewModel.assistant)
             }
@@ -119,53 +120,54 @@ struct AssistantDetailView: View {
     
     private func fetchAssociatedVectorStore() {
         vectorStoreManagerViewModel
-            .fetchVectorStores() // Fetch all vector stores
+            .fetchVectorStores()
             .sink(receiveCompletion: { completion in
                 if case let .failure(error) = completion {
                     print("Failed to fetch vector store: \(error.localizedDescription)")
                 }
             }, receiveValue: { vectorStores in
-                // Match the vector store by the assistant's name or ID
-                self.vectorStore = vectorStores.first(where: { $0.name?.contains(self.viewModel.assistant.name) == true })
+                self.vectorStore = vectorStores.first(where: {
+                    $0.name?.contains(self.viewModel.assistant.name) == true
+                })
                 if self.vectorStore == nil {
                     print("No matching vector store found for assistant: \(self.viewModel.assistant.name)")
                 }
             })
             .store(in: &cancellables)
     }
+}
+
+struct AssistantToolsSection: View {
+    @Binding var assistant: Assistant
     
-    struct AssistantToolsSection: View {
-        @Binding var assistant: Assistant
-        
-        var body: some View {
-            Section(header: Text("Tools")) {
-                Toggle("Enable File Search", isOn: Binding(
-                    get: {
-                        assistant.tools.contains { $0.type == "file_search" }
-                    },
-                    set: { isEnabled in
-                        updateToolState(isEnabled: isEnabled, type: "file_search")
-                    }
-                ))
-                Toggle("Enable Code Interpreter", isOn: Binding(
-                    get: {
-                        assistant.tools.contains { $0.type == "code_interpreter" }
-                    },
-                    set: { isEnabled in
-                        updateToolState(isEnabled: isEnabled, type: "code_interpreter")
-                    }
-                ))
-            }
-        }
-        
-        private func updateToolState(isEnabled: Bool, type: String) {
-            if isEnabled {
-                if !assistant.tools.contains(where: { $0.type == type }) {
-                    assistant.tools.append(Tool(type: type))
+    var body: some View {
+        Section(header: Text("Tools")) {
+            Toggle("Enable File Search", isOn: Binding(
+                get: {
+                    assistant.tools.contains { $0.type == "file_search" }
+                },
+                set: { isEnabled in
+                    updateToolState(isEnabled: isEnabled, type: "file_search")
                 }
-            } else {
-                assistant.tools.removeAll { $0.type == type }
+            ))
+            Toggle("Enable Code Interpreter", isOn: Binding(
+                get: {
+                    assistant.tools.contains { $0.type == "code_interpreter" }
+                },
+                set: { isEnabled in
+                    updateToolState(isEnabled: isEnabled, type: "code_interpreter")
+                }
+            ))
+        }
+    }
+    
+    private func updateToolState(isEnabled: Bool, type: String) {
+        if isEnabled {
+            if !assistant.tools.contains(where: { $0.type == type }) {
+                assistant.tools.append(Tool(type: type))
             }
+        } else {
+            assistant.tools.removeAll { $0.type == type }
         }
     }
 }

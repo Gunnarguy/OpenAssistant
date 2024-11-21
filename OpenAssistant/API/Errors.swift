@@ -136,7 +136,8 @@ enum VectorStoreError: LocalizedError {
     case serviceNotInitialized
     case fetchFailed(String)
     case unknownError
-    
+    case assistantNotSet // Add this case
+
     var errorDescription: String? {
         switch self {
         case .serviceNotInitialized:
@@ -145,6 +146,8 @@ enum VectorStoreError: LocalizedError {
             return "Fetch failed: \(message)"
         case .unknownError:
             return "An unknown error occurred with the vector store."
+        case .assistantNotSet: // Add this case
+            return "The assistant is not set."
         }
     }
 }

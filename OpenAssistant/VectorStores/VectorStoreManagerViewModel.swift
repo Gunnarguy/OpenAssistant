@@ -5,15 +5,25 @@ import SwiftUI
 @MainActor
 class VectorStoreManagerViewModel: BaseViewModel {
     @Published var vectorStores: [VectorStore] = []
+    @Published var alertMessage: String = ""
+    @Published var showAlert: Bool = false
+    var assistant: Assistant? // Define assistant variable
+    var vectorStore: VectorStore? // Define vectorStore variable
     private let baseURL = URL(string: "https://api.openai.com/v1")!
     private let session: URLSession
-    var cancellables = Set<AnyCancellable>() // Change access level to internal
+    var cancellables = Set<AnyCancellable>()
 
     override init() {
         self.session = URLSession.shared
         super.init()
         print("VectorStoreManagerViewModel initialized")
         initializeAndFetch()
+    }
+
+    private func initializeAndFetch() {
+        fetchVectorStores()
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .store(in: &cancellables)
     }
 
     private func configureRequest(_ request: inout URLRequest, httpMethod: String) {
@@ -28,21 +38,15 @@ class VectorStoreManagerViewModel: BaseViewModel {
         request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
     }
 
-    private func initializeAndFetch() {
-        fetchVectorStores()
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &cancellables)
-    }
+
 
     private func createRequest(endpoint: String, method: String, body: [String: Any]? = nil) -> URLRequest? {
         guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
             print("Invalid URL for endpoint: \(endpoint)")
             return nil
         }
-
         var request = URLRequest(url: url)
         configureRequest(&request, httpMethod: method)
-
         if let body = body {
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
@@ -51,7 +55,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 return nil
             }
         }
-
         return request
     }
 
@@ -60,6 +63,35 @@ class VectorStoreManagerViewModel: BaseViewModel {
             return Fail(error: VectorStoreError.serviceNotInitialized).eraseToAnyPublisher()
         }
         return openAIService.createVectorStore(name: name)
+            .eraseToAnyPublisher()
+    }
+
+    func createAndAttachVectorStore() -> AnyPublisher<Void, Error> {
+        guard let assistant = assistant else {
+            return Fail(error: VectorStoreError.assistantNotSet).eraseToAnyPublisher()
+        }
+
+        let vectorStoreName = "Vector store for \(assistant.name)"
+        return createVectorStore(name: vectorStoreName)
+            .flatMap { vectorStoreId -> AnyPublisher<VectorStore, Error> in
+                self.fetchVectorStore(id: vectorStoreId)
+            }
+            .flatMap { fetchedVectorStore -> AnyPublisher<Void, Error> in
+                self.vectorStore = fetchedVectorStore
+                return Future<Void, Error> { promise in
+                    Task {
+                        do {
+                            try await self.attachVectorStoreToAssistant(
+                                assistantId: assistant.id,
+                                vectorStoreId: fetchedVectorStore.id
+                            )
+                            promise(.success(()))
+                        } catch {
+                            promise(.failure(error))
+                        }
+                    }
+                }.eraseToAnyPublisher()
+            }
             .eraseToAnyPublisher()
     }
     func fetchAssistants(for vectorStore: VectorStore) -> AnyPublisher<[Assistant], Error> {

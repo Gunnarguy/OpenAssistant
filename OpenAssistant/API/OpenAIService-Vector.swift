@@ -127,6 +127,8 @@ extension OpenAIService {
             .eraseToAnyPublisher()
     }
     
+    
+    
     // MARK: - Fetch Vector Stores
     
     func fetchVectorStores() -> Future<[VectorStore], Error> {
