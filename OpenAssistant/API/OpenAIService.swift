@@ -186,6 +186,25 @@ class OpenAIService {
     }
     
     
+    func fetchAssistant(assistantId: String) -> AnyPublisher<Assistant, Error> {
+        guard let url = URL(string: "\(baseURL)/assistants/\(assistantId)") else {
+            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
+        }
+
+        var request = URLRequest(url: url)
+        configureRequest(&request, httpMethod: .get)
+
+        return session.dataTaskPublisher(for: request)
+            .tryMap { data, response -> Assistant in
+                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                    throw URLError(.badServerResponse)
+                }
+                return try JSONDecoder().decode(Assistant.self, from: data)
+            }
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+    
     // MARK: - Fetch Vector Store Files
     func fetchVectorStoreFiles(vectorStoreId: String) -> Future<[File], Error> {
         return Future { promise in

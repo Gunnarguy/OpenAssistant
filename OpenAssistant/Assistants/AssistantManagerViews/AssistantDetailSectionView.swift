@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 import Combine
 
 struct AssistantDetailsSection: View {
@@ -46,7 +47,7 @@ struct AssistantDetailsSection: View {
 
     private var vectorStoreSection: some View {
         Group {
-            if let vectorStore = vectorStore {
+            if let vectorStore = vectorStoreManagerViewModel.vectorStore {
                 vectorStoreDetailsSection(vectorStore: vectorStore)
             } else {
                 noVectorStoreSection
@@ -70,25 +71,59 @@ struct AssistantDetailsSection: View {
             VStack {
                 Text("No associated vector store found.")
                     .foregroundColor(.gray)
-                Button("Create and Attach Vector Store") {
-                    createAndAttachVectorStore()
-                        .sink(receiveCompletion: { completion in
-                            if case let .failure(error) = completion {
-                                alertMessage = "Failed to create and attach vector store: \(error.localizedDescription)"
-                                showAlert = true
+                if vectorStoreManagerViewModel.assistant != nil {
+                    Button("Create and Attach Vector Store") {
+                        Task {
+                            do {
+                                try await createAndAttachVectorStore()
+                                alertMessage = "Vector store successfully created and attached."
+                            } catch {
+                                alertMessage = "Error: \(error.localizedDescription)"
                             }
-                        }, receiveValue: { _ in
-                            // Handle success if needed
-                        })
-                        .store(in: &cancellables)
+                            showAlert = true
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                } else {
+                    Text("Cannot create a vector store without an assistant.")
+                        .foregroundColor(.red)
                 }
-                .buttonStyle(.borderedProminent)
             }
         }
     }
+    private func addFileToVectorStore(vectorStoreId: String, fileId: String) async throws {
+        guard let request = createRequest(endpoint: "vector_stores/\(vectorStoreId)/files", method: "POST", body: [
+            "file_ids": [fileId]
+        ]) else {
+            throw URLError(.badURL)
+        }
 
-    func createAndAttachVectorStore() -> AnyPublisher<Void, Error> {
-        vectorStoreManagerViewModel.createAndAttachVectorStore()
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    private func createRequest(endpoint: String, method: String, body: [String: Any]) -> URLRequest? {
+        guard let url = URL(string: "https://api.openai.com/v1/\(endpoint)") else {
+            return nil
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("Bearer YOUR_API_KEY", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+        } catch {
+            return nil
+        }
+
+        return request
+    }
+    func createAndAttachVectorStore() async throws {
+        try await vectorStoreManagerViewModel.createAndAttachVectorStore()
     }
 
     private func formattedDate(from timestamp: Int) -> String {

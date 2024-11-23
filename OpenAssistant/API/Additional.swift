@@ -34,32 +34,20 @@ struct ExpiresAfter: Codable {
 }
 
 // MARK: - ExpiresAfterType
-enum ExpiresAfterType: Codable {
-    case int(Int)
-    case dict(ExpiresAfter)
-    case none
+struct ExpiresAfterType: Codable {
+    let type: String
+    let staticStrategy: StaticStrategy?
 
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let intVal = try? container.decode(Int.self) {
-            self = .int(intVal)
-        } else if let dictVal = try? container.decode(ExpiresAfter.self) {
-            self = .dict(dictVal)
-        } else {
-            self = .none
-        }
+    private enum CodingKeys: String, CodingKey {
+        case type, staticStrategy = "static"
     }
 
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        switch self {
-        case .int(let value):
-            try container.encode(value)
-        case .dict(let value):
-            try container.encode(value)
-        case .none:
-            try container.encodeNil()
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = ["type": type]
+        if let staticStrategy = staticStrategy {
+            dict["static"] = staticStrategy.toDictionary()
         }
+        return dict
     }
 }
 

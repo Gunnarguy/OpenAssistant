@@ -104,17 +104,8 @@ extension OpenAIService {
         
         return URLSession.shared.dataTaskPublisher(for: request)
             .tryMap { data, response -> String in
-                if let httpResponse = response as? HTTPURLResponse {
-                    print("HTTP Status Code: \(httpResponse.statusCode)")
-                    print("HTTP Headers: \(httpResponse.allHeaderFields)")
-                }
-                
                 guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
                     throw URLError(.badServerResponse)
-                }
-                
-                if let responseString = String(data: data, encoding: .utf8) {
-                    print("Response Body: \(responseString)")
                 }
                 
                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -328,7 +319,6 @@ extension OpenAIService {
 }
 
 // MARK: - VectorStore
-/// Represents a vector store with associated files and metadata.
 struct VectorStore: Identifiable, Codable {
     let id: String
     let name: String?
@@ -345,6 +335,26 @@ struct VectorStore: Identifiable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case id, name, description, status, usageBytes = "bytes", createdAt = "created_at", fileCounts = "file_counts", metadata, expiresAfter = "expires_after", expiresAt = "expires_at", lastActiveAt = "last_active_at", files
+    }
+
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [
+            "id": id,
+            "name": name ?? "",
+            "description": description ?? "",
+            "status": status ?? "",
+            "usageBytes": usageBytes ?? 0,
+            "createdAt": createdAt,
+            "fileCounts": fileCounts.toDictionary(),
+            "metadata": metadata ?? [:],
+            "expiresAfter": expiresAfter?.toDictionary() ?? [:],
+            "expiresAt": expiresAt ?? 0,
+            "lastActiveAt": lastActiveAt ?? 0
+        ]
+        if let files = files {
+            dict["files"] = files.map { $0.toDictionary() }
+        }
+        return dict
     }
 }
 
@@ -364,6 +374,20 @@ struct VectorStoreFile: Codable, Identifiable {
         case id, object, usageBytes = "usage_bytes", createdAt = "created_at"
         case vectorStoreId = "vector_store_id", status, lastError = "last_error"
         case chunkingStrategy = "chunking_strategy"
+    }
+
+    func toDictionary() -> [String: Any] {
+        let dict: [String: Any] = [
+            "id": id,
+            "object": object,
+            "usageBytes": usageBytes,
+            "createdAt": createdAt,
+            "vectorStoreId": vectorStoreId,
+            "status": status,
+            "lastError": lastError ?? "",
+            "chunkingStrategy": chunkingStrategy?.toDictionary() ?? [:]
+        ]
+        return dict
     }
 }
 
@@ -424,109 +448,108 @@ struct FileCounts: Codable {
     let failed: Int
     let cancelled: Int
     let total: Int
-
+    
     private enum CodingKeys: String, CodingKey {
         case inProgress = "in_progress", completed, failed, cancelled, total
     }
-}
-
-// MARK: - VectorStoreResponse
-/// Represents a response containing multiple vector stores.
-struct VectorStoreResponse: Codable {
-    let data: [VectorStore]
-    let firstId: String?
-    let lastId: String?
-    let hasMore: Bool
-
-    private enum CodingKeys: String, CodingKey {
-        case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
-    }
-}
-
-// MARK: - VectorStoreFilesResponse
-/// Represents a response containing files for a vector store.
-struct VectorStoreFilesResponse: Codable {
-    let data: [File]
-    let firstId: String?
-    let lastId: String?
-    let hasMore: Bool
-
-    private enum CodingKeys: String, CodingKey {
-        case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
-    }
-}
-
-// MARK: - File
-struct File: Identifiable, Codable {
-    let id: String
-    let object: String? // Add this line
-    let name: String?
-    let status: String
-    let createdAt: Int
-    let bytes: Int?
-    let purpose: String?
-    let mimeType: String?
-    let objectType: String?
     
-    private enum CodingKeys: String, CodingKey {
-        case id, name, status, bytes, purpose, mimeType, objectType, object
-        case createdAt = "created_at"
+    func toDictionary() -> [String: Any] {
+        return [
+            "in_progress": inProgress,
+            "completed": completed,
+            "failed": failed,
+            "cancelled": cancelled,
+            "total": total
+        ]
     }
-}
+    
+    // MARK: - VectorStoreResponse
+    /// Represents a response containing multiple vector stores.
+    struct VectorStoreResponse: Codable {
+        let data: [VectorStore]
+        let firstId: String?
+        let lastId: String?
+        let hasMore: Bool
 
-// Example JSON decoding
-func decodeFile(from jsonData: Data) -> File? {
-    let decoder = JSONDecoder()
-    do {
-        let file = try decoder.decode(File.self, from: jsonData)
-        return file
-    } catch {
-        print("Failed to decode JSON: \(error.localizedDescription)")
-        return nil
+        private enum CodingKeys: String, CodingKey {
+            case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
+        }
     }
-}
+    
 
-// MARK: - FileBatch
-struct FileBatch: Codable {
-    let id: String
-}
+    
+    // MARK: - File
+    struct File: Codable, Identifiable {
+        let id: String
+        let object: String?
+        let name: String?
+        let status: String
+        let createdAt: Int
+        let bytes: Int?
+        let purpose: String?
+        let mimeType: String?
+        let objectType: String?
 
-// MARK: - FileSearch
-struct FileSearch: Codable {
-    let maxNumResults: Int?
-
-    func toFileSearchDictionary() -> [String: Any] {
-        var dict: [String: Any] = [:]
-        if let maxNumResults = maxNumResults {
-            dict["max_num_results"] = maxNumResults
+        private enum CodingKeys: String, CodingKey {
+            case id, name, status, bytes, purpose, mimeType, objectType, object
+            case createdAt = "created_at"
         }
-        return dict
     }
-
-}
-func handleUploadResponse(data: Data) -> Result<String, Error> {
-    do {
-        if let jsonString = String(data: data, encoding: .utf8) {
-            print("Upload Response JSON: \(jsonString)")
+    
+    // Example JSON decoding
+    func decodeFile(from jsonData: Data) -> File? {
+        let decoder = JSONDecoder()
+        do {
+            let file = try decoder.decode(File.self, from: jsonData)
+            return file
+        } catch {
+            print("Failed to decode JSON: \(error.localizedDescription)")
+            return nil
         }
-
-        let uploadResponse = try JSONDecoder().decode(UploadResponse.self, from: data)
-        if let error = uploadResponse.error {
-            print("Upload Error: \(error.message)")
-            return .failure(OpenAIServiceError.custom(error.message))
-        }
-
-        if let fileId = uploadResponse.fileId {
-            return .success(fileId)
-        } else {
-            let errorMessage = "File ID not found in the response."
-            print(errorMessage)
-            return .failure(OpenAIServiceError.custom(errorMessage))
-        }
-    } catch {
-        print("Decoding Error: \(error.localizedDescription)")
-        return .failure(error)
     }
+    
+    // MARK: - FileBatch
+    struct FileBatch: Codable {
+        let id: String
+    }
+    
+    // MARK: - FileSearch
+    struct FileSearch: Codable {
+        let maxNumResults: Int?
+        
+        func toFileSearchDictionary() -> [String: Any] {
+            var dict: [String: Any] = [:]
+            if let maxNumResults = maxNumResults {
+                dict["max_num_results"] = maxNumResults
+            }
+            return dict
+        }
+        
+    }
+    func handleUploadResponse(data: Data) -> Result<String, Error> {
+        do {
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("Upload Response JSON: \(jsonString)")
+            }
+            
+            let uploadResponse = try JSONDecoder().decode(UploadResponse.self, from: data)
+            if let error = uploadResponse.error {
+                print("Upload Error: \(error.message)")
+                return .failure(OpenAIServiceError.custom(error.message))
+            }
+            
+            if let fileId = uploadResponse.fileId {
+                return .success(fileId)
+            } else {
+                let errorMessage = "File ID not found in the response."
+                print(errorMessage)
+                return .failure(OpenAIServiceError.custom(errorMessage))
+            }
+        } catch {
+            print("Decoding Error: \(error.localizedDescription)")
+            return .failure(error)
+        }
+    }
+    
+    
 }
-
-

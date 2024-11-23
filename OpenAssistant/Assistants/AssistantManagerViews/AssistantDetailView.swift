@@ -15,10 +15,12 @@ struct AssistantDetailView: View {
     @State private var isAddingFile = false
     @State private var didDeleteFile = false
 
-    // Custom initializer for injecting the Assistant and ManagerViewModel
     init(assistant: Assistant, managerViewModel: AssistantManagerViewModel) {
         _viewModel = StateObject(wrappedValue: AssistantDetailViewModel(assistant: assistant))
         self.managerViewModel = managerViewModel
+
+        // Pass the assistant to vectorStoreManagerViewModel
+        vectorStoreManagerViewModel.assistant = assistant
     }
 
     var body: some View {
@@ -28,8 +30,7 @@ struct AssistantDetailView: View {
                     assistant: $viewModel.assistant,
                     availableModels: managerViewModel.availableModels,
                     showVectorStoreDetail: $showVectorStoreDetail,
-                    vectorStoreManagerViewModel: vectorStoreManagerViewModel,
-                    vectorStore: vectorStore // Pass the vector store
+                    vectorStoreManagerViewModel: vectorStoreManagerViewModel
                 )
                 AssistantToolsSection(assistant: $viewModel.assistant)
             }
@@ -118,7 +119,7 @@ struct AssistantDetailView: View {
         }
     }
     
-    private func fetchAssociatedVectorStore() {
+    func fetchAssociatedVectorStore() {
         vectorStoreManagerViewModel
             .fetchVectorStores()
             .sink(receiveCompletion: { completion in
@@ -126,48 +127,50 @@ struct AssistantDetailView: View {
                     print("Failed to fetch vector store: \(error.localizedDescription)")
                 }
             }, receiveValue: { vectorStores in
-                self.vectorStore = vectorStores.first(where: {
-                    $0.name?.contains(self.viewModel.assistant.name) == true
-                })
-                if self.vectorStore == nil {
+                // Check if a matching vector store exists
+                if let matchedStore = vectorStores.first(where: { $0.id == self.viewModel.assistant.id }) {
+                    self.vectorStoreManagerViewModel.vectorStore = matchedStore
+                    self.vectorStore = matchedStore // Update the local state
+                    print("Vector store found and set: \(matchedStore.name ?? "Unnamed")")
+                } else {
                     print("No matching vector store found for assistant: \(self.viewModel.assistant.name)")
                 }
             })
             .store(in: &cancellables)
     }
-}
-
-struct AssistantToolsSection: View {
-    @Binding var assistant: Assistant
     
-    var body: some View {
-        Section(header: Text("Tools")) {
-            Toggle("Enable File Search", isOn: Binding(
-                get: {
-                    assistant.tools.contains { $0.type == "file_search" }
-                },
-                set: { isEnabled in
-                    updateToolState(isEnabled: isEnabled, type: "file_search")
-                }
-            ))
-            Toggle("Enable Code Interpreter", isOn: Binding(
-                get: {
-                    assistant.tools.contains { $0.type == "code_interpreter" }
-                },
-                set: { isEnabled in
-                    updateToolState(isEnabled: isEnabled, type: "code_interpreter")
-                }
-            ))
-        }
-    }
-    
-    private func updateToolState(isEnabled: Bool, type: String) {
-        if isEnabled {
-            if !assistant.tools.contains(where: { $0.type == type }) {
-                assistant.tools.append(Tool(type: type))
+    struct AssistantToolsSection: View {
+        @Binding var assistant: Assistant
+        
+        var body: some View {
+            Section(header: Text("Tools")) {
+                Toggle("Enable File Search", isOn: Binding(
+                    get: {
+                        assistant.tools.contains { $0.type == "file_search" }
+                    },
+                    set: { isEnabled in
+                        updateToolState(isEnabled: isEnabled, type: "file_search")
+                    }
+                ))
+                Toggle("Enable Code Interpreter", isOn: Binding(
+                    get: {
+                        assistant.tools.contains { $0.type == "code_interpreter" }
+                    },
+                    set: { isEnabled in
+                        updateToolState(isEnabled: isEnabled, type: "code_interpreter")
+                    }
+                ))
             }
-        } else {
-            assistant.tools.removeAll { $0.type == type }
+        }
+        
+        private func updateToolState(isEnabled: Bool, type: String) {
+            if isEnabled {
+                if !assistant.tools.contains(where: { $0.type == type }) {
+                    assistant.tools.append(Tool(type: type))
+                }
+            } else {
+                assistant.tools.removeAll { $0.type == type }
+            }
         }
     }
 }
