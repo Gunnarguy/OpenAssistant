@@ -23,7 +23,6 @@ extension OpenAIService {
             }
         }.resume()
     }
-
     
     // MARK: - Fetch Assistant Settings
     func fetchAssistantSettings(assistantId: String, completion: @escaping (Result<AssistantSettings, OpenAIServiceError>) -> Void) {
@@ -161,14 +160,13 @@ struct Assistant: Identifiable, Codable, Equatable {
     var metadata: [String: String]?
     var response_format: ResponseFormat?
     var file_ids: [String]?
-    var vectorStore: VectorStore? // Add this line
 
     static func ==(lhs: Assistant, rhs: Assistant) -> Bool {
         return lhs.id == rhs.id
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, object, created_at, name, description, model, instructions, tools, top_p, temperature, tool_resources, metadata, response_format, file_ids, vectorStore
+        case id, object, created_at, name, description, model, instructions, tools, top_p, temperature, tool_resources, metadata, response_format, file_ids
     }
 
     func toAssistantDictionary() -> [String: Any] {
@@ -189,9 +187,6 @@ struct Assistant: Identifiable, Codable, Equatable {
         }
         if let fileIds = file_ids {
             dict["file_ids"] = fileIds
-        }
-        if let vectorStore = vectorStore {
-            dict["vectorStore"] = vectorStore.toDictionary()
         }
         return dict
     }

@@ -1,5 +1,4 @@
 import SwiftUI
-import Foundation
 import Combine
 
 struct AssistantDetailsSection: View {
@@ -7,15 +6,46 @@ struct AssistantDetailsSection: View {
     var availableModels: [String]
     @Binding var showVectorStoreDetail: Bool
     @ObservedObject var vectorStoreManagerViewModel: VectorStoreManagerViewModel
-    var vectorStore: VectorStore?
+
+    @State private var vectorStore: VectorStore? // Changed to @State
     @State private var alertMessage = ""
     @State private var showAlert = false
     @State private var cancellables = Set<AnyCancellable>()
 
     var body: some View {
         VStack {
-            assistantDetailsSection
-            vectorStoreSection
+            Section(header: Text("Assistant Details")) {
+                NameField(name: $assistant.name)
+                InstructionsField(instructions: Binding($assistant.instructions, default: ""))
+                ModelPicker(model: $assistant.model, availableModels: availableModels)
+                DescriptionField(description: Binding($assistant.description, default: ""))
+                TemperatureSlider(temperature: $assistant.temperature)
+                TopPSlider(topP: $assistant.top_p)
+            }
+
+            Group {
+                if let vectorStore = vectorStore {
+                    Section(header: Text("Vector Store")) {
+                        Text("Name: \(vectorStore.name ?? "Unnamed")")
+                        Text("ID: \(vectorStore.id)")
+                        Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
+                        Button("View Details") {
+                            showVectorStoreDetail = true
+                        }
+                    }
+                } else {
+                    Section(header: Text("Vector Store")) {
+                        VStack {
+                            Text("No associated vector store found.")
+                                .foregroundColor(.gray)
+                            Button("Create and Attach Vector Store") {
+                                createAndAttachVectorStore()
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+                }
+            }
         }
         .alert(isPresented: $showAlert) {
             Alert(
@@ -26,104 +56,40 @@ struct AssistantDetailsSection: View {
         }
     }
 
-    private var assistantDetailsSection: some View {
-        Section(header: Text("Assistant Details")) {
-            NameField(name: $assistant.name)
-            InstructionsField(instructions: Binding(
-                get: { assistant.instructions ?? "" },
-                set: { assistant.instructions = $0.isEmpty ? nil : $0 }
-            ))
-            ModelPicker(model: $assistant.model, availableModels: availableModels)
-            if let description = assistant.description {
-                DescriptionField(description: Binding(
-                    get: { description },
-                    set: { assistant.description = $0.isEmpty ? nil : $0 }
-                ))
-            }
-            TemperatureSlider(temperature: $assistant.temperature)
-            TopPSlider(topP: $assistant.top_p)
-        }
-    }
+    private func createAndAttachVectorStore() {
+        let vectorStoreName = "Vector store for \(assistant.name)"
 
-    private var vectorStoreSection: some View {
-        Group {
-            if let vectorStore = vectorStoreManagerViewModel.vectorStore {
-                vectorStoreDetailsSection(vectorStore: vectorStore)
-            } else {
-                noVectorStoreSection
+        vectorStoreManagerViewModel
+            .createVectorStore(name: vectorStoreName)
+            .flatMap { vectorStoreId -> AnyPublisher<VectorStore, Error> in
+                // Fetch the newly created VectorStore
+                return self.vectorStoreManagerViewModel.fetchVectorStore(id: vectorStoreId)
             }
-        }
-    }
-
-    private func vectorStoreDetailsSection(vectorStore: VectorStore) -> some View {
-        Section(header: Text("Vector Store")) {
-            Text("Name: \(vectorStore.name ?? "Unnamed")")
-            Text("ID: \(vectorStore.id)")
-            Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
-            Button("View Details") {
-                showVectorStoreDetail = true
-            }
-        }
-    }
-
-    private var noVectorStoreSection: some View {
-        Section(header: Text("Vector Store")) {
-            VStack {
-                Text("No associated vector store found.")
-                    .foregroundColor(.gray)
-                if vectorStoreManagerViewModel.assistant != nil {
-                    Button("Create and Attach Vector Store") {
-                        Task {
-                            do {
-                                try await createAndAttachVectorStore()
-                                alertMessage = "Vector store successfully created and attached."
-                            } catch {
-                                alertMessage = "Error: \(error.localizedDescription)"
-                            }
-                            showAlert = true
+            .flatMap { fetchedVectorStore -> AnyPublisher<Void, Error> in
+                self.vectorStore = fetchedVectorStore // Assign the value
+                return Future<Void, Error> { promise in
+                    Task {
+                        do {
+                            try await self.vectorStoreManagerViewModel.attachVectorStoreToAssistant(
+                                assistantId: self.assistant.id,
+                                vectorStoreId: fetchedVectorStore.id
+                            )
+                            promise(.success(()))
+                        } catch {
+                            promise(.failure(error))
                         }
                     }
-                    .buttonStyle(.borderedProminent)
-                } else {
-                    Text("Cannot create a vector store without an assistant.")
-                        .foregroundColor(.red)
-                }
+                }.eraseToAnyPublisher()
             }
-        }
-    }
-    private func addFileToVectorStore(vectorStoreId: String, fileId: String) async throws {
-        guard let request = createRequest(endpoint: "vector_stores/\(vectorStoreId)/files", method: "POST", body: [
-            "file_ids": [fileId]
-        ]) else {
-            throw URLError(.badURL)
-        }
-
-        let (_, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
-    }
-
-    private func createRequest(endpoint: String, method: String, body: [String: Any]) -> URLRequest? {
-        guard let url = URL(string: "https://api.openai.com/v1/\(endpoint)") else {
-            return nil
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.setValue("Bearer YOUR_API_KEY", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
-        } catch {
-            return nil
-        }
-
-        return request
-    }
-    func createAndAttachVectorStore() async throws {
-        try await vectorStoreManagerViewModel.createAndAttachVectorStore()
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                    alertMessage = "Failed to create and attach vector store: \(error.localizedDescription)"
+                    showAlert = true
+                }
+            }, receiveValue: { _ in
+                // Handle success if needed
+            })
+            .store(in: &cancellables)
     }
 
     private func formattedDate(from timestamp: Int) -> String {
@@ -136,8 +102,10 @@ struct AssistantDetailsSection: View {
 }
 
 // MARK: - Subviews
+
 private struct NameField: View {
     @Binding var name: String
+
     var body: some View {
         TextField("Name", text: $name)
             .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -146,15 +114,26 @@ private struct NameField: View {
 
 private struct InstructionsField: View {
     @Binding var instructions: String
+
     var body: some View {
         TextField("Instructions", text: $instructions)
             .textFieldStyle(RoundedBorderTextFieldStyle())
     }
 }
 
-private struct ModelPicker: View {
+private struct DescriptionField: View {
+    @Binding var description: String
+
+    var body: some View {
+        TextField("Description", text: $description)
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+    }
+}
+
+struct ModelPicker: View {
     @Binding var model: String
     var availableModels: [String]
+
     var body: some View {
         Picker("Model", selection: $model) {
             ForEach(availableModels, id: \.self) { model in
@@ -165,30 +144,35 @@ private struct ModelPicker: View {
     }
 }
 
-private struct DescriptionField: View {
-    @Binding var description: String
-    var body: some View {
-        TextField("Description", text: $description)
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-    }
-}
-
 private struct TemperatureSlider: View {
     @Binding var temperature: Double
+
     var body: some View {
         VStack {
             Text("Temperature: \(temperature, specifier: "%.2f")")
-            Slider(value: $temperature, in: 0...1)
+            Slider(value: $temperature, in: 0.0...2.0, step: 0.01)
         }
     }
 }
 
 private struct TopPSlider: View {
     @Binding var topP: Double
+
     var body: some View {
         VStack {
             Text("Top P: \(topP, specifier: "%.2f")")
-            Slider(value: $topP, in: 0...1)
+            Slider(value: $topP, in: 0.0...1.0, step: 0.01)
         }
+    }
+}
+
+// MARK: - Extensions
+
+private extension Binding where Value == String {
+    init(_ source: Binding<String?>, default defaultValue: String) {
+        self.init(
+            get: { source.wrappedValue ?? defaultValue },
+            set: { source.wrappedValue = $0 }
+        )
     }
 }

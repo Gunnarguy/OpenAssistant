@@ -15,12 +15,10 @@ struct AssistantDetailView: View {
     @State private var isAddingFile = false
     @State private var didDeleteFile = false
 
+    // Custom initializer for injecting the Assistant and ManagerViewModel
     init(assistant: Assistant, managerViewModel: AssistantManagerViewModel) {
         _viewModel = StateObject(wrappedValue: AssistantDetailViewModel(assistant: assistant))
         self.managerViewModel = managerViewModel
-
-        // Pass the assistant to vectorStoreManagerViewModel
-        vectorStoreManagerViewModel.assistant = assistant
     }
 
     var body: some View {
@@ -119,20 +117,17 @@ struct AssistantDetailView: View {
         }
     }
     
-    func fetchAssociatedVectorStore() {
+    private func fetchAssociatedVectorStore() {
         vectorStoreManagerViewModel
-            .fetchVectorStores()
+            .fetchVectorStores() // Fetch all vector stores
             .sink(receiveCompletion: { completion in
                 if case let .failure(error) = completion {
                     print("Failed to fetch vector store: \(error.localizedDescription)")
                 }
             }, receiveValue: { vectorStores in
-                // Check if a matching vector store exists
-                if let matchedStore = vectorStores.first(where: { $0.id == self.viewModel.assistant.id }) {
-                    self.vectorStoreManagerViewModel.vectorStore = matchedStore
-                    self.vectorStore = matchedStore // Update the local state
-                    print("Vector store found and set: \(matchedStore.name ?? "Unnamed")")
-                } else {
+                // Match the vector store by the assistant's name or ID
+                self.vectorStore = vectorStores.first(where: { $0.name?.contains(self.viewModel.assistant.name) == true })
+                if self.vectorStore == nil {
                     print("No matching vector store found for assistant: \(self.viewModel.assistant.name)")
                 }
             })
