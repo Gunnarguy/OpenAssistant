@@ -87,7 +87,6 @@ extension OpenAIService {
         completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
         var body: [String: Any] = [:]
-
         if let model = model { body["model"] = model }
         if let name = name { body["name"] = name }
         if let description = description { body["description"] = description }
@@ -98,12 +97,10 @@ extension OpenAIService {
         if let temperature = temperature { body["temperature"] = temperature }
         if let topP = topP { body["top_p"] = topP }
         if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
-
         guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "POST", body: body) else {
             completion(.failure(.invalidRequest))
             return
         }
-
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()

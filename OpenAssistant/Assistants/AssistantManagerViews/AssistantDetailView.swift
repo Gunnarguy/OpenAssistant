@@ -55,7 +55,7 @@ struct AssistantDetailView: View {
             .onAppear {
                 managerViewModel.fetchAvailableModels()
                 initializeModel()
-                fetchAssociatedVectorStore()
+                fetchAssociatedVectorStore(for: viewModel.assistant)
             }
             .onDisappear {
                 if isAddingFile || didDeleteFile {
@@ -117,18 +117,21 @@ struct AssistantDetailView: View {
         }
     }
     
-    private func fetchAssociatedVectorStore() {
+    private func fetchAssociatedVectorStore(for assistant: Assistant) {
+        guard let vectorStoreId = assistant.tool_resources?.fileSearch?.vectorStoreIds?.first else {
+            print("No vector store associated with this assistant.")
+            return
+        }
+
         vectorStoreManagerViewModel
-            .fetchVectorStores() // Fetch all vector stores
+            .fetchVectorStore(id: vectorStoreId)
             .sink(receiveCompletion: { completion in
                 if case let .failure(error) = completion {
                     print("Failed to fetch vector store: \(error.localizedDescription)")
                 }
-            }, receiveValue: { vectorStores in
-                // Match the vector store by the assistant's name or ID
-                self.vectorStore = vectorStores.first(where: { $0.name?.contains(self.viewModel.assistant.name) == true })
-                if self.vectorStore == nil {
-                    print("No matching vector store found for assistant: \(self.viewModel.assistant.name)")
+            }, receiveValue: { fetchedVectorStore in
+                DispatchQueue.main.async {
+                    self.vectorStore = fetchedVectorStore
                 }
             })
             .store(in: &cancellables)

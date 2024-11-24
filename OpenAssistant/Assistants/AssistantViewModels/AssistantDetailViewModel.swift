@@ -12,6 +12,7 @@ class AssistantDetailViewModel: BaseViewModel {
     }
 
     // Function to update an assistant
+
     func updateAssistant() {
         performServiceAction { openAIService in
             openAIService.updateAssistant(
@@ -26,22 +27,21 @@ class AssistantDetailViewModel: BaseViewModel {
                 temperature: assistant.temperature,
                 topP: assistant.top_p
             ) { [weak self] result in
-                self?.handleResult(result, successHandler: { updatedAssistant in
+                self?.handleResult(result) { updatedAssistant in
                     self?.assistant = updatedAssistant
                     NotificationCenter.default.post(name: .assistantUpdated, object: updatedAssistant)
-                })
+                }
             }
         }
     }
 
-    // Function to delete an assistant
     func deleteAssistant() {
         performServiceAction { openAIService in
             openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
-                self?.handleResult(result, successHandler: {
+                self?.handleResult(result) {
                     NotificationCenter.default.post(name: .assistantDeleted, object: self?.assistant)
                     self?.handleError(IdentifiableError(message: "Assistant deleted successfully"))
-                })
+                }
             }
         }
     }
