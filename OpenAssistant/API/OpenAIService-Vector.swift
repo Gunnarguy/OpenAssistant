@@ -6,7 +6,7 @@ extension OpenAIService {
     // MARK: - Private Helper Methods
     
     /// Creates a URLRequest with dynamic Content-Type handling for JSON and multipart requests
-    private func createRequest(endpoint: String, method: String = "GET", body: [String: Any]? = nil, contentType: String? = "application/json") -> URLRequest? {
+    func createRequest(endpoint: String, method: String = "GET", body: [String: Any]? = nil, contentType: String? = "application/json") -> URLRequest? {
         guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
             print("Invalid URL for endpoint: \(endpoint)")
             return nil
@@ -45,7 +45,7 @@ extension OpenAIService {
     }
     
     /// Executes a URLSession data task and handles decoding the response
-    private func handleURLSessionDataTask<T: Decodable>(request: URLRequest, completion: @escaping (Result<T, Error>) -> Void) {
+    func handleURLSessionDataTask<T: Decodable>(request: URLRequest, completion: @escaping (Result<T, Error>) -> Void) {
         session.dataTask(with: request) { data, response, error in
             if let error = error {
                 print("Request error: \(error.localizedDescription)")
@@ -77,7 +77,7 @@ extension OpenAIService {
 
 
     // MARK: - Request Configuration
-    private func configureRequest(_ request: inout URLRequest, httpMethod: String) {
+    func configureRequest(_ request: inout URLRequest, httpMethod: String) {
         request.httpMethod = httpMethod
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

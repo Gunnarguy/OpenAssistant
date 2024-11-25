@@ -4,6 +4,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @Binding var selectedAssistant: Assistant?
+    @ObservedObject var viewModel: VectorStoreManagerViewModel
     @ObservedObject var messageStore: MessageStore
     
     var body: some View {

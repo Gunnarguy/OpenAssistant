@@ -54,40 +54,50 @@ struct AssistantDetailsSection: View {
                 dismissButton: .default(Text("OK"))
             )
         }
+        .onAppear {
+            fetchAssociatedVectorStore(for: assistant)
+            fetchAllVectorStores()
+        }
     }
 
     private func createAndAttachVectorStore() {
-        let vectorStoreName = "Vector store for \(assistant.name)"
+        vectorStoreManagerViewModel.createAndAttachVectorStore(
+            assistantId: assistant.id,
+            assistantName: assistant.name
+        )
+    }
+
+    func fetchAssociatedVectorStore(for assistant: Assistant) {
+        guard let vectorStoreId = assistant.tool_resources?.fileSearch?.vectorStoreIds?.first else {
+            print("No vector store associated with this assistant.")
+            return
+        }
 
         vectorStoreManagerViewModel
-            .createVectorStore(name: vectorStoreName)
-            .flatMap { vectorStoreId -> AnyPublisher<VectorStore, Error> in
-                // Fetch the newly created VectorStore
-                return self.vectorStoreManagerViewModel.fetchVectorStore(id: vectorStoreId)
-            }
-            .flatMap { fetchedVectorStore -> AnyPublisher<Void, Error> in
-                self.vectorStore = fetchedVectorStore // Assign the value
-                return Future<Void, Error> { promise in
-                    Task {
-                        do {
-                            try await self.vectorStoreManagerViewModel.attachVectorStoreToAssistant(
-                                assistantId: self.assistant.id,
-                                vectorStoreId: fetchedVectorStore.id
-                            )
-                            promise(.success(()))
-                        } catch {
-                            promise(.failure(error))
-                        }
-                    }
-                }.eraseToAnyPublisher()
-            }
+            .fetchVectorStore(id: vectorStoreId)
             .sink(receiveCompletion: { completion in
                 if case let .failure(error) = completion {
-                    alertMessage = "Failed to create and attach vector store: \(error.localizedDescription)"
-                    showAlert = true
+                    print("Failed to fetch vector store: \(error.localizedDescription)")
                 }
-            }, receiveValue: { _ in
-                // Handle success if needed
+            }, receiveValue: { fetchedVectorStore in
+                DispatchQueue.main.async {
+                    self.vectorStore = fetchedVectorStore
+                    print("Fetched Vector Store: \(fetchedVectorStore)") // Debugging
+                }
+            })
+            .store(in: &cancellables)
+    }
+
+    private func fetchAllVectorStores() {
+        vectorStoreManagerViewModel
+            .fetchVectorStores()
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                    self.alertMessage = "Failed to fetch vector stores: \(error.localizedDescription)"
+                    self.showAlert = true
+                }
+            }, receiveValue: { vectorStores in
+                print("Fetched Vector Stores: \(vectorStores)") // Debugging
             })
             .store(in: &cancellables)
     }

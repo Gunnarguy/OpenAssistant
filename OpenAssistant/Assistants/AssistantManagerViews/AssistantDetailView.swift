@@ -44,6 +44,11 @@ struct AssistantDetailView: View {
                         handleSave()
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Delete") {
+                        handleDelete()
+                    }
+                }
             }
             .alert(isPresented: $showAlert) {
                 Alert(
@@ -55,7 +60,6 @@ struct AssistantDetailView: View {
             .onAppear {
                 managerViewModel.fetchAvailableModels()
                 initializeModel()
-                fetchAssociatedVectorStore(for: viewModel.assistant)
             }
             .onDisappear {
                 if isAddingFile || didDeleteFile {
@@ -75,12 +79,12 @@ struct AssistantDetailView: View {
         }
     }
     
-    private var filteredModels: [String] {
-        let chatModels = ["gpt-4o-mini", "gpt-4o"]
+    var filteredModels: [String] {
+        let chatModels = ["gpt-4o"]
         return managerViewModel.availableModels.filter { chatModels.contains($0) }
     }
     
-    private func handleSave() {
+    func handleSave() {
         if validateAssistant() {
             managerViewModel.updateAssistant(assistant: viewModel.assistant) { result in
                 switch result {
@@ -97,44 +101,29 @@ struct AssistantDetailView: View {
         }
     }
     
-    private func validateAssistant() -> Bool {
+    func handleDelete() {
+        managerViewModel.deleteAssistant(assistant: viewModel.assistant)
+        dismissView()
+    }
+    
+    func validateAssistant() -> Bool {
         let isValidName = !viewModel.assistant.name.trimmingCharacters(in: .whitespaces).isEmpty
         let isValidModel = filteredModels.contains(viewModel.assistant.model)
         return isValidName && isValidModel
     }
     
-    private func dismissView() {
+    func dismissView() {
         presentationMode.wrappedValue.dismiss()
     }
     
-    private func initializeModel() {
+    func initializeModel() {
         if !filteredModels.contains(viewModel.assistant.model) {
-            if filteredModels.contains("gpt-4o") {
-                viewModel.assistant.model = "gpt-4o"
+            if filteredModels.contains("gpt-4, gpt-3.5") {
+                viewModel.assistant.model = "gpt-4, gpt-3.5"
             } else if let firstModel = filteredModels.first {
                 viewModel.assistant.model = firstModel
             }
         }
-    }
-    
-    private func fetchAssociatedVectorStore(for assistant: Assistant) {
-        guard let vectorStoreId = assistant.tool_resources?.fileSearch?.vectorStoreIds?.first else {
-            print("No vector store associated with this assistant.")
-            return
-        }
-
-        vectorStoreManagerViewModel
-            .fetchVectorStore(id: vectorStoreId)
-            .sink(receiveCompletion: { completion in
-                if case let .failure(error) = completion {
-                    print("Failed to fetch vector store: \(error.localizedDescription)")
-                }
-            }, receiveValue: { fetchedVectorStore in
-                DispatchQueue.main.async {
-                    self.vectorStore = fetchedVectorStore
-                }
-            })
-            .store(in: &cancellables)
     }
     
     struct AssistantToolsSection: View {
@@ -161,7 +150,7 @@ struct AssistantDetailView: View {
             }
         }
         
-        private func updateToolState(isEnabled: Bool, type: String) {
+        func updateToolState(isEnabled: Bool, type: String) {
             if isEnabled {
                 if !assistant.tools.contains(where: { $0.type == type }) {
                     assistant.tools.append(Tool(type: type))

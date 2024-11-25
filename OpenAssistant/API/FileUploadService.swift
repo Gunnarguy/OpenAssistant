@@ -1,9 +1,9 @@
 import Foundation
 
 class FileUploadService {
-    private let baseURL: String
-    private let apiKey: String
-    private let session: URLSession
+    let baseURL: String
+    let apiKey: String
+    let session: URLSession
     
     init(baseURL: String = "https://api.openai.com/v1", apiKey: String, session: URLSession = .shared) {
         self.baseURL = baseURL
@@ -11,7 +11,7 @@ class FileUploadService {
         self.session = session
     }
     
-    private func addCommonHeaders(to request: inout URLRequest) {
+    func addCommonHeaders(to request: inout URLRequest) {
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
     }

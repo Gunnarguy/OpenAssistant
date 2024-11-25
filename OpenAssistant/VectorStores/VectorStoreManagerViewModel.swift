@@ -8,6 +8,8 @@ class VectorStoreManagerViewModel: BaseViewModel {
     private let baseURL = URL(string: "https://api.openai.com/v1")!
     private let session: URLSession
     var cancellables = Set<AnyCancellable>() // Change access level to internal
+    @Published var alertMessage: String?
+    @Published var showAlert: Bool = false
 
     override init() {
         self.session = URLSession.shared
@@ -81,8 +83,10 @@ class VectorStoreManagerViewModel: BaseViewModel {
         let url = baseURL.appendingPathComponent("assistants/\(assistantId)/vector_stores")
         var request = URLRequest(url: url)
         configureRequest(&request, httpMethod: "POST")
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["vector_store_id": vectorStoreId])
-        
+
+        let json: [String: Any] = ["vector_store_id": vectorStoreId]
+        request.httpBody = try JSONSerialization.data(withJSONObject: json)
+
         let (_, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.badServerResponse)
@@ -193,6 +197,56 @@ class VectorStoreManagerViewModel: BaseViewModel {
             .eraseToAnyPublisher()
     }
 
+
+    func createAndAttachVectorStore(assistantId: String, assistantName: String) {
+        let vectorStoreName = "Vector store for \(assistantName)"
+        let url = baseURL.appendingPathComponent("vector_stores")
+        var request = URLRequest(url: url)
+        configureRequest(&request, httpMethod: "POST")
+        
+        let json: [String: Any] = ["name": vectorStoreName]
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: json) else {
+            alertMessage = "Failed to serialize JSON data."
+            showAlert = true
+            return
+        }
+
+        request.httpBody = jsonData
+
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.alertMessage = "Failed to create vector store: \(error.localizedDescription)"
+                    self.showAlert = true
+                }
+                return
+            }
+
+            guard let data = data,
+                  let responseJSON = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                  let vectorStoreId = responseJSON["id"] as? String else {
+                DispatchQueue.main.async {
+                    self.alertMessage = "Failed to parse vector store ID from response."
+                    self.showAlert = true
+                }
+                return
+            }
+
+            Task { @MainActor in
+                do {
+                    try await self.attachVectorStoreToAssistant(assistantId: assistantId, vectorStoreId: vectorStoreId)
+                } catch {
+                    self.alertMessage = "Failed to attach vector store: \(error.localizedDescription)"
+                    self.showAlert = true
+                }
+            }
+        }
+
+        task.resume()
+    }
+
+
+    
     func getVectorStore(vectorStoreId: String) -> AnyPublisher<VectorStore, Error> {
         guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)") else {
             return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])).eraseToAnyPublisher()
