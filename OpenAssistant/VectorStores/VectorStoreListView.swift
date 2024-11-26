@@ -70,16 +70,20 @@ struct VectorStoreListView: View {
 
     private func loadVectorStores() {
         viewModel.fetchVectorStores()
-            .receive(on: DispatchQueue.main) // Ensure updates happen on the main thread
-            .sink(receiveCompletion: { completion in
-                if case let .failure(error) = completion {
-                    print("Failed to fetch vector stores: \(error)")
-                    viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
-                }
-            }, receiveValue: { vectorStores in
-                viewModel.vectorStores = vectorStores
-            })
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: handleFetchCompletion, receiveValue: handleFetchValue)
             .store(in: &viewModel.cancellables)
+    }
+
+    private func handleFetchCompletion(_ completion: Subscribers.Completion<Error>) {
+        if case let .failure(error) = completion {
+            print("Failed to fetch vector stores: \(error)")
+            viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
+        }
+    }
+
+    private func handleFetchValue(_ vectorStores: [VectorStore]) {
+        viewModel.vectorStores = vectorStores
     }
 
     private func deleteVectorStore(at offsets: IndexSet) {
@@ -96,21 +100,25 @@ struct VectorStoreListView: View {
         }
 
         viewModel.createVectorStore(name: newVectorStoreName)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    print("Successfully created vector store.")
-                    isShowingCreateAlert = false
-                    newVectorStoreName = ""
-                    loadVectorStores()
-                case .failure(let error):
-                    print("Error creating vector store: \(error.localizedDescription)")
-                    viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
-                }
-            }, receiveValue: { vectorStoreId in
-                print("Vector Store Created with ID: \(vectorStoreId)")
-            })
+            .sink(receiveCompletion: handleCreateCompletion, receiveValue: handleCreateValue)
             .store(in: &viewModel.cancellables)
+    }
+
+    private func handleCreateCompletion(_ completion: Subscribers.Completion<Error>) {
+        switch completion {
+        case .finished:
+            print("Successfully created vector store.")
+            isShowingCreateAlert = false
+            newVectorStoreName = ""
+            loadVectorStores()
+        case .failure(let error):
+            print("Error creating vector store: \(error.localizedDescription)")
+            viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
+        }
+    }
+
+    private func handleCreateValue(_ vectorStoreId: String) {
+        print("Vector Store Created with ID: \(vectorStoreId)")
     }
 }
 
