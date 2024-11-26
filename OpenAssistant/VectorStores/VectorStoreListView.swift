@@ -70,6 +70,7 @@ struct VectorStoreListView: View {
 
     private func loadVectorStores() {
         viewModel.fetchVectorStores()
+            .receive(on: DispatchQueue.main) // Ensure updates happen on the main thread
             .sink(receiveCompletion: { completion in
                 if case let .failure(error) = completion {
                     print("Failed to fetch vector stores: \(error)")

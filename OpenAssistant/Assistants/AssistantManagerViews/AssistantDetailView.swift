@@ -30,24 +30,21 @@ struct AssistantDetailView: View {
                     showVectorStoreDetail: $showVectorStoreDetail,
                     vectorStoreManagerViewModel: vectorStoreManagerViewModel
                 )
+                .onChange(of: vectorStoreManagerViewModel.vectorStores) { updatedStores in
+                    updateVectorStore(with: updatedStores)
+                }
                 AssistantToolsSection(assistant: $viewModel.assistant)
             }
             .navigationTitle("Update Assistant")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismissView()
-                    }
+                    Button("Cancel", action: dismissView)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        handleSave()
-                    }
+                    Button("Save", action: handleSave)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Delete") {
-                        handleDelete()
-                    }
+                    Button("Delete", action: handleDelete)
                 }
             }
             .alert(isPresented: $showAlert) {
@@ -57,15 +54,8 @@ struct AssistantDetailView: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
-            .onAppear {
-                managerViewModel.fetchAvailableModels()
-                initializeModel()
-            }
-            .onDisappear {
-                if isAddingFile || didDeleteFile {
-                    // Handle any necessary actions on disappear
-                }
-            }
+            .onAppear(perform: onAppear)
+            .onDisappear(perform: onDisappear)
             .sheet(isPresented: $showVectorStoreDetail) {
                 if let vectorStore = vectorStore {
                     VectorStoreDetailView(
@@ -74,49 +64,49 @@ struct AssistantDetailView: View {
                         isAddingFile: $isAddingFile,
                         didDeleteFile: $didDeleteFile
                     )
+                } else {
+                    Text("No vector store found.")
                 }
             }
         }
     }
-    
-    var filteredModels: [String] {
+
+    private var filteredModels: [String] {
         let chatModels = ["gpt-4o"]
         return managerViewModel.availableModels.filter { chatModels.contains($0) }
     }
-    
-    func handleSave() {
+
+    private func handleSave() {
         if validateAssistant() {
             managerViewModel.updateAssistant(assistant: viewModel.assistant) { result in
                 switch result {
                 case .success:
                     dismissView()
                 case .failure(let error):
-                    alertMessage = "Failed to update assistant: \(error.localizedDescription)"
-                    showAlert = true
+                    showAlert(message: "Failed to update assistant: \(error.localizedDescription)")
                 }
             }
         } else {
-            alertMessage = "Please fill in all required fields."
-            showAlert = true
+            showAlert(message: "Please fill in all required fields.")
         }
     }
-    
-    func handleDelete() {
+
+    private func handleDelete() {
         managerViewModel.deleteAssistant(assistant: viewModel.assistant)
         dismissView()
     }
-    
-    func validateAssistant() -> Bool {
+
+    private func validateAssistant() -> Bool {
         let isValidName = !viewModel.assistant.name.trimmingCharacters(in: .whitespaces).isEmpty
         let isValidModel = filteredModels.contains(viewModel.assistant.model)
         return isValidName && isValidModel
     }
-    
-    func dismissView() {
+
+    private func dismissView() {
         presentationMode.wrappedValue.dismiss()
     }
-    
-    func initializeModel() {
+
+    private func initializeModel() {
         if !filteredModels.contains(viewModel.assistant.model) {
             if filteredModels.contains("gpt-4, gpt-3.5") {
                 viewModel.assistant.model = "gpt-4, gpt-3.5"
@@ -125,32 +115,51 @@ struct AssistantDetailView: View {
             }
         }
     }
-    
+
+    private func updateVectorStore(with updatedStores: [VectorStore]) {
+        if let store = updatedStores.first(where: { $0.id == viewModel.assistant.tool_resources?.fileSearch?.vectorStoreIds?.first }) {
+            vectorStore = store
+        }
+    }
+
+    private func showAlert(message: String) {
+        alertMessage = message
+        showAlert = true
+    }
+
+    private func onAppear() {
+        managerViewModel.fetchAvailableModels()
+        initializeModel()
+    }
+
+    private func onDisappear() {
+        if isAddingFile || didDeleteFile {
+            // Handle any necessary actions on disappear
+        }
+    }
+
     struct AssistantToolsSection: View {
         @Binding var assistant: Assistant
-        
+
         var body: some View {
             Section(header: Text("Tools")) {
-                Toggle("Enable File Search", isOn: Binding(
-                    get: {
-                        assistant.tools.contains { $0.type == "file_search" }
-                    },
-                    set: { isEnabled in
-                        updateToolState(isEnabled: isEnabled, type: "file_search")
-                    }
-                ))
-                Toggle("Enable Code Interpreter", isOn: Binding(
-                    get: {
-                        assistant.tools.contains { $0.type == "code_interpreter" }
-                    },
-                    set: { isEnabled in
-                        updateToolState(isEnabled: isEnabled, type: "code_interpreter")
-                    }
-                ))
+                Toggle("Enable File Search", isOn: toolBinding(for: "file_search"))
+                Toggle("Enable Code Interpreter", isOn: toolBinding(for: "code_interpreter"))
             }
         }
-        
-        func updateToolState(isEnabled: Bool, type: String) {
+
+        private func toolBinding(for type: String) -> Binding<Bool> {
+            Binding(
+                get: {
+                    assistant.tools.contains { $0.type == type }
+                },
+                set: { isEnabled in
+                    updateToolState(isEnabled: isEnabled, type: type)
+                }
+            )
+        }
+
+        private func updateToolState(isEnabled: Bool, type: String) {
             if isEnabled {
                 if !assistant.tools.contains(where: { $0.type == type }) {
                     assistant.tools.append(Tool(type: type))

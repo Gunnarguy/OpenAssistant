@@ -11,8 +11,7 @@ class AssistantDetailViewModel: BaseViewModel {
         super.init()
     }
 
-    // Function to update an assistant
-
+    // Update the assistant details
     func updateAssistant() {
         performServiceAction { openAIService in
             openAIService.updateAssistant(
@@ -35,6 +34,7 @@ class AssistantDetailViewModel: BaseViewModel {
         }
     }
 
+    // Delete the assistant
     func deleteAssistant() {
         performServiceAction { openAIService in
             openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
@@ -55,6 +55,7 @@ class AssistantDetailViewModel: BaseViewModel {
         action(openAIService)
     }
 
+    // Handle result and errors
     private func handleResult<T>(_ result: Result<T, OpenAIServiceError>, successHandler: @escaping (T) -> Void) {
         DispatchQueue.main.async {
             switch result {

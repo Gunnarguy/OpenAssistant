@@ -329,7 +329,7 @@ extension OpenAIService {
 
 // MARK: - VectorStore
 /// Represents a vector store with associated files and metadata.
-struct VectorStore: Identifiable, Codable {
+struct VectorStore: Identifiable, Codable, Equatable {
     let id: String
     let name: String?
     let description: String?
@@ -346,8 +346,11 @@ struct VectorStore: Identifiable, Codable {
     private enum CodingKeys: String, CodingKey {
         case id, name, description, status, usageBytes = "bytes", createdAt = "created_at", fileCounts = "file_counts", metadata, expiresAfter = "expires_after", expiresAt = "expires_at", lastActiveAt = "last_active_at", files
     }
-}
 
+    static func == (lhs: VectorStore, rhs: VectorStore) -> Bool {
+        return lhs.id == rhs.id
+    }
+}
 
 // MARK: - VectorStoreFile
 struct VectorStoreFile: Codable, Identifiable {
@@ -431,7 +434,7 @@ struct FileCounts: Codable {
 }
 
 // MARK: - VectorStoreResponse
-/// Represents a response containing multiple vector stores.
+// VectorStoreResponse.swift
 struct VectorStoreResponse: Codable {
     let data: [VectorStore]
     let firstId: String?
@@ -439,7 +442,10 @@ struct VectorStoreResponse: Codable {
     let hasMore: Bool
 
     private enum CodingKeys: String, CodingKey {
-        case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
+        case data
+        case firstId = "first_id"
+        case lastId = "last_id"
+        case hasMore = "has_more"
     }
 }
 

@@ -7,45 +7,16 @@ struct AssistantDetailsSection: View {
     @Binding var showVectorStoreDetail: Bool
     @ObservedObject var vectorStoreManagerViewModel: VectorStoreManagerViewModel
 
-    @State private var vectorStore: VectorStore? // Changed to @State
+    @State private var vectorStore: VectorStore?
+    @State private var allVectorStores: [VectorStore] = []
     @State private var alertMessage = ""
     @State private var showAlert = false
     @State private var cancellables = Set<AnyCancellable>()
 
     var body: some View {
         VStack {
-            Section(header: Text("Assistant Details")) {
-                NameField(name: $assistant.name)
-                InstructionsField(instructions: Binding($assistant.instructions, default: ""))
-                ModelPicker(model: $assistant.model, availableModels: availableModels)
-                DescriptionField(description: Binding($assistant.description, default: ""))
-                TemperatureSlider(temperature: $assistant.temperature)
-                TopPSlider(topP: $assistant.top_p)
-            }
-
-            Group {
-                if let vectorStore = vectorStore {
-                    Section(header: Text("Vector Store")) {
-                        Text("Name: \(vectorStore.name ?? "Unnamed")")
-                        Text("ID: \(vectorStore.id)")
-                        Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
-                        Button("View Details") {
-                            showVectorStoreDetail = true
-                        }
-                    }
-                } else {
-                    Section(header: Text("Vector Store")) {
-                        VStack {
-                            Text("No associated vector store found.")
-                                .foregroundColor(.gray)
-                            Button("Create and Attach Vector Store") {
-                                createAndAttachVectorStore()
-                            }
-                            .buttonStyle(.borderedProminent)
-                        }
-                    }
-                }
-            }
+            assistantDetailsSection
+            vectorStoreSection
         }
         .alert(isPresented: $showAlert) {
             Alert(
@@ -60,44 +31,89 @@ struct AssistantDetailsSection: View {
         }
     }
 
+    private var assistantDetailsSection: some View {
+        Section(header: Text("Assistant Details")) {
+            NameField(name: $assistant.name)
+            InstructionsField(instructions: Binding($assistant.instructions, default: ""))
+            ModelPicker(model: $assistant.model, availableModels: availableModels)
+            DescriptionField(description: Binding($assistant.description, default: ""))
+            TemperatureSlider(temperature: $assistant.temperature)
+            TopPSlider(topP: $assistant.top_p)
+        }
+    }
+
+    private var vectorStoreSection: some View {
+        Group {
+            if let vectorStore = vectorStore {
+                Section(header: Text("Vector Store")) {
+                    Text("Name: \(vectorStore.name ?? "Unnamed")")
+                    Text("ID: \(vectorStore.id)")
+                    Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
+                    Button("View Details") {
+                        showVectorStoreDetail = true
+                    }
+                }
+            } else {
+                Section(header: Text("Vector Store")) {
+                    VStack {
+                        Text("No associated vector store found.")
+                            .foregroundColor(.gray)
+                        Button("Create and Attach Vector Store") {
+                            createAndAttachVectorStore()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+            }
+        }
+    }
+
     private func createAndAttachVectorStore() {
         vectorStoreManagerViewModel.createAndAttachVectorStore(
             assistantId: assistant.id,
             assistantName: assistant.name
         )
+        .sink(receiveCompletion: { completion in
+            if case let .failure(error) = completion {
+                alertMessage = "Failed to attach vector store: \(error.localizedDescription)"
+                showAlert = true
+            }
+        }, receiveValue: { newVectorStoreId in
+            fetchVectorStore(by: newVectorStoreId)
+        })
+        .store(in: &cancellables)
     }
 
-    func fetchAssociatedVectorStore(for assistant: Assistant) {
-        guard let vectorStoreId = assistant.tool_resources?.fileSearch?.vectorStoreIds?.first else {
-            print("No vector store associated with this assistant.")
-            return
-        }
-
-        vectorStoreManagerViewModel
-            .fetchVectorStore(id: vectorStoreId)
-            .sink(receiveCompletion: { completion in
-                if case let .failure(error) = completion {
-                    print("Failed to fetch vector store: \(error.localizedDescription)")
-                }
-            }, receiveValue: { fetchedVectorStore in
+    private func fetchVectorStore(by id: String) {
+        vectorStoreManagerViewModel.fetchVectorStore(id: id)
+            .sink(receiveCompletion: { _ in }, receiveValue: { fetchedVectorStore in
                 DispatchQueue.main.async {
                     self.vectorStore = fetchedVectorStore
-                    print("Fetched Vector Store: \(fetchedVectorStore)") // Debugging
                 }
             })
             .store(in: &cancellables)
     }
 
+    private func fetchAssociatedVectorStore(for assistant: Assistant) {
+        guard let vectorStoreId = assistant.tool_resources?.fileSearch?.vectorStoreIds?.first else {
+            print("No vector store associated with this assistant.")
+            return
+        }
+
+        fetchVectorStore(by: vectorStoreId)
+    }
+
     private func fetchAllVectorStores() {
-        vectorStoreManagerViewModel
-            .fetchVectorStores()
+        vectorStoreManagerViewModel.fetchVectorStores()
             .sink(receiveCompletion: { completion in
                 if case let .failure(error) = completion {
-                    self.alertMessage = "Failed to fetch vector stores: \(error.localizedDescription)"
-                    self.showAlert = true
+                    alertMessage = "Failed to fetch vector stores: \(error.localizedDescription)"
+                    showAlert = true
                 }
             }, receiveValue: { vectorStores in
-                print("Fetched Vector Stores: \(vectorStores)") // Debugging
+                DispatchQueue.main.async {
+                    self.allVectorStores = vectorStores
+                }
             })
             .store(in: &cancellables)
     }
