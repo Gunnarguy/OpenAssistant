@@ -65,9 +65,6 @@ struct SettingsView: View {
             // Notify other views to refresh data after API key is saved
             NotificationCenter.default.post(name: .settingsUpdated, object: nil)
 
-            // Update the API key in the assistant manager view model
-            assistantManagerViewModel.updateApiKey(newApiKey: apiKey)
-
             // Dismiss the settings view if presented modally
             presentationMode.wrappedValue.dismiss()
         } else {
