@@ -110,7 +110,7 @@ class OpenAIService {
     }
     
     // MARK: - Handle HTTP Errors
-    private func handleHTTPError<T>(_ httpResponse: HTTPURLResponse, data: Data?, completion: @escaping (Result<T, OpenAIServiceError>) -> Void) {
+    func handleHTTPError<T>(_ httpResponse: HTTPURLResponse, data: Data?, completion: @escaping (Result<T, OpenAIServiceError>) -> Void) {
         switch httpResponse.statusCode {
         case 429:
             let retryAfter = httpResponse.allHeaderFields["Retry-After"] as? Int ?? 1

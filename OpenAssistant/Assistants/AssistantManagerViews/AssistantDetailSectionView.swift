@@ -26,8 +26,7 @@ struct AssistantDetailsSection: View {
             )
         }
         .onAppear {
-            fetchAssociatedVectorStore(for: assistant)
-            fetchAllVectorStores()
+            
         }
     }
 
@@ -58,31 +57,13 @@ struct AssistantDetailsSection: View {
                     VStack {
                         Text("No associated vector store found.")
                             .foregroundColor(.gray)
-                        Button("Create and Attach Vector Store") {
-                            createAndAttachVectorStore()
                         }
                         .buttonStyle(.borderedProminent)
                     }
                 }
             }
         }
-    }
-
-    private func createAndAttachVectorStore() {
-        vectorStoreManagerViewModel.createAndAttachVectorStore(
-            assistantId: assistant.id,
-            assistantName: assistant.name
-        )
-        .sink(receiveCompletion: { completion in
-            if case let .failure(error) = completion {
-                alertMessage = "Failed to attach vector store: \(error.localizedDescription)"
-                showAlert = true
-            }
-        }, receiveValue: { newVectorStoreId in
-            fetchVectorStore(by: newVectorStoreId)
-        })
-        .store(in: &cancellables)
-    }
+    
 
     private func fetchVectorStore(by id: String) {
         vectorStoreManagerViewModel.fetchVectorStore(id: id)
@@ -94,29 +75,6 @@ struct AssistantDetailsSection: View {
             .store(in: &cancellables)
     }
 
-    private func fetchAssociatedVectorStore(for assistant: Assistant) {
-        guard let vectorStoreId = assistant.tool_resources?.fileSearch?.vectorStoreIds?.first else {
-            print("No vector store associated with this assistant.")
-            return
-        }
-
-        fetchVectorStore(by: vectorStoreId)
-    }
-
-    private func fetchAllVectorStores() {
-        vectorStoreManagerViewModel.fetchVectorStores()
-            .sink(receiveCompletion: { completion in
-                if case let .failure(error) = completion {
-                    alertMessage = "Failed to fetch vector stores: \(error.localizedDescription)"
-                    showAlert = true
-                }
-            }, receiveValue: { vectorStores in
-                DispatchQueue.main.async {
-                    self.allVectorStores = vectorStores
-                }
-            })
-            .store(in: &cancellables)
-    }
 
     private func formattedDate(from timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))

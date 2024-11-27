@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 import Combine
 
@@ -15,7 +14,6 @@ struct AssistantDetailView: View {
     @State private var isAddingFile = false
     @State private var didDeleteFile = false
 
-    // Custom initializer for injecting the Assistant and ManagerViewModel
     init(assistant: Assistant, managerViewModel: AssistantManagerViewModel) {
         _viewModel = StateObject(wrappedValue: AssistantDetailViewModel(assistant: assistant))
         self.managerViewModel = managerViewModel
@@ -34,6 +32,7 @@ struct AssistantDetailView: View {
                     updateVectorStore(with: updatedStores)
                 }
                 AssistantToolsSection(assistant: $viewModel.assistant)
+
             }
             .navigationTitle("Update Assistant")
             .toolbar {
@@ -56,18 +55,6 @@ struct AssistantDetailView: View {
             }
             .onAppear(perform: onAppear)
             .onDisappear(perform: onDisappear)
-            .sheet(isPresented: $showVectorStoreDetail) {
-                if let vectorStore = vectorStore {
-                    VectorStoreDetailView(
-                        viewModel: vectorStoreManagerViewModel,
-                        vectorStore: vectorStore,
-                        isAddingFile: $isAddingFile,
-                        didDeleteFile: $didDeleteFile
-                    )
-                } else {
-                    Text("No vector store found.")
-                }
-            }
         }
     }
 
@@ -115,12 +102,14 @@ struct AssistantDetailView: View {
             }
         }
     }
+    
 
     private func updateVectorStore(with updatedStores: [VectorStore]) {
         if let store = updatedStores.first(where: { $0.id == viewModel.assistant.tool_resources?.fileSearch?.vectorStoreIds?.first }) {
             vectorStore = store
         }
     }
+
 
     private func showAlert(message: String) {
         alertMessage = message
@@ -137,6 +126,8 @@ struct AssistantDetailView: View {
             // Handle any necessary actions on disappear
         }
     }
+
+
 
     struct AssistantToolsSection: View {
         @Binding var assistant: Assistant

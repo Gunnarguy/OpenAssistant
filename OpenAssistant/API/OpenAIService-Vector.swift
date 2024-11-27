@@ -104,17 +104,8 @@ extension OpenAIService {
         
         return URLSession.shared.dataTaskPublisher(for: request)
             .tryMap { data, response -> String in
-                if let httpResponse = response as? HTTPURLResponse {
-                    print("HTTP Status Code: \(httpResponse.statusCode)")
-                    print("HTTP Headers: \(httpResponse.allHeaderFields)")
-                }
-                
                 guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
                     throw URLError(.badServerResponse)
-                }
-                
-                if let responseString = String(data: data, encoding: .utf8) {
-                    print("Response Body: \(responseString)")
                 }
                 
                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]

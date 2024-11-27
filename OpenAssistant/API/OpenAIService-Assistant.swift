@@ -363,7 +363,7 @@ struct ToolResources: Codable {
 
 // MARK: - FileSearchResources
 struct FileSearchResources: Codable {
-    let vectorStoreIds: [String]?
+    var vectorStoreIds: [String]?
 
     private enum CodingKeys: String, CodingKey {
         case vectorStoreIds = "vector_store_ids"
