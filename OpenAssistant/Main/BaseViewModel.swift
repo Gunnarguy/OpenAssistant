@@ -10,7 +10,7 @@ class BaseViewModel: ObservableObject {
     // MARK: - Stored Properties
     @AppStorage("OpenAI_API_Key") private var storedApiKey: String = "" {
         didSet {
-            initializeOpenAIService()
+            updateApiKey()
         }
     }
     private(set) var openAIService: OpenAIService?
@@ -51,9 +51,28 @@ class BaseViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    // MARK: - Update API Key
+    /// Updates the OpenAI service when the API key changes.
+    private func updateApiKey() {
+        if storedApiKey.isEmpty {
+            print("Updated API key is empty. Clearing OpenAI service.")
+            openAIService = nil
+        } else {
+            openAIService = OpenAIServiceInitializer.reinitialize(apiKey: storedApiKey)
+            print("API key updated. OpenAI service reinitialized.")
+        }
+    }
+
     // MARK: - Access API Key
     /// Provides read-only access to the API key.
     var apiKey: String {
         storedApiKey
+    }
+
+    // MARK: - Deinitializer
+    /// Ensures observers are cleared when the view model is deallocated.
+    deinit {
+        cancellables.removeAll()
+        print("BaseViewModel deinitialized. Observers cleared.")
     }
 }

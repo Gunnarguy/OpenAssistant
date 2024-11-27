@@ -16,7 +16,8 @@ class BaseAssistantViewModel: ObservableObject {
     }
 
     func initializeOpenAIService() {
-        if apiKey.isEmpty {
+        guard !apiKey.isEmpty else {
+            
             return
         }
         openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
@@ -51,7 +52,10 @@ class BaseAssistantViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func updateApiKey() {
+    func updateApiKey(newApiKey: String? = nil) {
+        if let newApiKey = newApiKey {
+            UserDefaults.standard.set(newApiKey, forKey: "OpenAI_API_Key")
+        }
         openAIService = OpenAIServiceInitializer.reinitialize(apiKey: apiKey)
     }
 }
