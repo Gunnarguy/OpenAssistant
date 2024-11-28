@@ -10,7 +10,13 @@ struct MainTabView: View {
     var body: some View {
         TabView {
             ForEach(Tab.allCases, id: \.self) { tab in
-                createTab(view: tab.view(messageStore: messageStore), label: tab.label, systemImage: tab.systemImage)
+                tab.view(messageStore: messageStore)
+                    .tabItem {
+                        Label(tab.label, systemImage: tab.systemImage)
+                    }
+                    .onAppear {
+                        print("\(tab.label) tab appeared")
+                    }
             }
         }
         .sheet(item: $selectedAssistant) { assistant in
@@ -18,17 +24,6 @@ struct MainTabView: View {
                 ChatView(assistant: assistant, messageStore: messageStore)
             }
         }
-    }
-    
-    @ViewBuilder
-    private func createTab<Content: View>(view: Content, label: String, systemImage: String) -> some View {
-        view
-            .tabItem {
-                Label(label, systemImage: systemImage)
-            }
-            .onAppear {
-                print("\(label) tab appeared")
-            }
     }
 }
 

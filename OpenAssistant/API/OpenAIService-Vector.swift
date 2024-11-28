@@ -333,11 +333,9 @@ struct VectorStore: Identifiable, Codable, Equatable {
     let expiresAt: Int?
     let lastActiveAt: Int?
     var files: [VectorStoreFile]? // Mutable to allow updates
-
     private enum CodingKeys: String, CodingKey {
         case id, name, description, status, usageBytes = "bytes", createdAt = "created_at", fileCounts = "file_counts", metadata, expiresAfter = "expires_after", expiresAt = "expires_at", lastActiveAt = "last_active_at", files
     }
-
     static func == (lhs: VectorStore, rhs: VectorStore) -> Bool {
         return lhs.id == rhs.id
     }

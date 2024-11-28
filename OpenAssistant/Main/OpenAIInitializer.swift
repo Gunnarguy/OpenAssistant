@@ -6,7 +6,8 @@ import SwiftUI
 class OpenAIServiceInitializer {
     
     /// The shared instance of OpenAIService.
-    static var sharedService: OpenAIService?
+    private static var sharedService: OpenAIService?
+    private static let lock = NSLock()
     
     /// Initializes or reinitializes the OpenAIService with the provided API key.
     /// - Parameter apiKey: The API key for authenticating with the OpenAI service.
@@ -16,6 +17,9 @@ class OpenAIServiceInitializer {
             print("Error: API key is empty.")
             return nil
         }
+        
+        lock.lock()
+        defer { lock.unlock() }
         
         if sharedService == nil || sharedService?.apiKey != apiKey {
             sharedService = OpenAIService(apiKey: apiKey)

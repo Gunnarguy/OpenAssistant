@@ -148,6 +148,7 @@ struct Assistant: Identifiable, Codable, Equatable {
     var name: String
     var description: String?
     var model: String
+    var vectorStoreId: String?
     var instructions: String?
     var threads: [Thread]?
     var tools: [Tool]

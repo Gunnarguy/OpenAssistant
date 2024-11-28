@@ -35,15 +35,13 @@ struct ExpiresAfter: Codable {
 
 // MARK: - ExpiresAfterType
 struct ExpiresAfterType: Codable {
-    let type: String
+    let type: String?
     let staticStrategy: StaticStrategy?
-
     private enum CodingKeys: String, CodingKey {
         case type, staticStrategy = "static"
     }
-
     func toDictionary() -> [String: Any] {
-        var dict: [String: Any] = ["type": type]
+        var dict: [String: Any] = ["type": type ?? ""] // Provide a default value if type is nil
         if let staticStrategy = staticStrategy {
             dict["static"] = staticStrategy.toDictionary()
         }

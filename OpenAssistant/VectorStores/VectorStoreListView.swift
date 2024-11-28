@@ -7,7 +7,6 @@ struct VectorStoreListView: View {
     @ObservedObject var viewModel = VectorStoreManagerViewModel()
     @State private var isShowingCreateAlert = false
     @State private var newVectorStoreName = ""
-    @State private var newVectorStoreFiles: [File] = []
     @State private var isAddingFile = false
     @State private var didDeleteFile = false
 
@@ -37,7 +36,7 @@ struct VectorStoreListView: View {
             .alert("Create New Vector Store", isPresented: $isShowingCreateAlert, actions: {
                 createAlertActions
             }, message: {
-                Text("Enter a name for the new vector store and select files.")
+                Text("Enter a name for the new vector store.")
             })
             .onAppear(perform: loadVectorStores)
             .onReceive(NotificationCenter.default.publisher(for: .settingsUpdated)) { _ in

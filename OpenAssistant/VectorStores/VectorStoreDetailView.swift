@@ -9,6 +9,7 @@ struct VectorStoreDetailView: View {
     @Binding var didDeleteFile: Bool
 
     @State private var files: [VectorStoreFile] = []
+    @State private var searchText = ""
     @State private var cancellables = Set<AnyCancellable>()
     @State private var alert: AlertData?
     @State private var isLoading = false
@@ -17,10 +18,15 @@ struct VectorStoreDetailView: View {
         List {
             VectorStoreDetailsSection(vectorStore: vectorStore)
             FileCountsSection(fileCounts: vectorStore.fileCounts)
-            FilesSection(files: files, isLoading: isLoading, onDelete: deleteFile)
+            FilesSection(files: filteredFiles, isLoading: isLoading, onDelete: deleteFile)
             AddFileSection(isAddingFile: $isAddingFile)
         }
         .navigationTitle(vectorStore.name ?? "Vector Store Details")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                refreshButton
+            }
+        }
         .onAppear(perform: loadFiles)
         .sheet(isPresented: $isAddingFile) {
             AddFileView(viewModel: viewModel, vectorStoreId: vectorStore)
@@ -29,6 +35,7 @@ struct VectorStoreDetailView: View {
         .alert(item: $alert) { alert in
             Alert(title: Text(alert.title), message: Text(alert.message), dismissButton: .default(Text("OK")))
         }
+        .searchable(text: $searchText, prompt: "Search files")
     }
     
     // MARK: - Helper Methods
@@ -66,6 +73,20 @@ struct VectorStoreDetailView: View {
     private func showAlert(title: String, message: String) {
         alert = AlertData(title: title, message: message)
     }
+
+    private var filteredFiles: [VectorStoreFile] {
+        if searchText.isEmpty {
+            return files
+        } else {
+            return files.filter { $0.id.contains(searchText) }
+        }
+    }
+    
+    private var refreshButton: some View {
+        Button(action: loadFiles) {
+            Image(systemName: "arrow.clockwise")
+        }
+    }
 }
 
 // MARK: - Reusable Views
@@ -76,6 +97,7 @@ struct VectorStoreDetailsSection: View {
     var body: some View {
         Section(header: Text("Details")) {
             Text("Name: \(vectorStore.name ?? "Unnamed Vector Store")")
+            Text("ID: \(vectorStore.id)") // Display the vector store ID
             if let status = vectorStore.status { Text("Status: \(status)") }
             if let usageBytes = vectorStore.usageBytes { Text("Usage: \(formatBytes(usageBytes))") }
             Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
@@ -114,7 +136,9 @@ struct FilesSection: View {
             } else {
                 ForEach(files) { file in
                     NavigationLink(destination: FileDetailView(file: file)) {
-                        Text("ID: \(file.id)")
+                        VStack(alignment: .leading) {
+                            Text("ID: \(file.id)")
+                        }
                     }
                 }
                 .onDelete(perform: onDelete)
@@ -147,9 +171,20 @@ extension VectorStoreDetailsSection {
         return formatter.string(from: date)
     }
     
-    private func formatBytes(_ bytes: Int) -> String {
-        let gb = Double(bytes) / (1024 * 1024 * 1024)
-        return String(format: "%.2f GB", gb)
+    private func formatBytes(_ bytes: Int?) -> String {
+        guard let bytes = bytes else { return "N/A" }
+        let kb = Double(bytes) / 1024
+        let mb = kb / 1024
+        let gb = mb / 1024
+        if gb >= 1 {
+            return String(format: "%.2f GB", gb)
+        } else if mb >= 1 {
+            return String(format: "%.2f MB", mb)
+        } else if kb >= 1 {
+            return String(format: "%.2f KB", kb)
+        } else {
+            return "\(bytes) bytes"
+        }
     }
 }
 
