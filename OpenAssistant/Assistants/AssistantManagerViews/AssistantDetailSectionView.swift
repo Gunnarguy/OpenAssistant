@@ -8,7 +8,6 @@ struct AssistantDetailsSection: View {
     @ObservedObject var vectorStoreManagerViewModel: VectorStoreManagerViewModel
 
     @State private var vectorStore: VectorStore?
-    @State private var allVectorStores: [VectorStore] = []
     @State private var alertMessage = ""
     @State private var showAlert = false
     @State private var cancellables = Set<AnyCancellable>()
@@ -26,7 +25,7 @@ struct AssistantDetailsSection: View {
             )
         }
         .onAppear {
-            
+            fetchAssociatedVectorStore()
         }
     }
 
@@ -54,27 +53,30 @@ struct AssistantDetailsSection: View {
                 }
             } else {
                 Section(header: Text("Vector Store")) {
-                    VStack {
-                        Text("No associated vector store found.")
-                            .foregroundColor(.gray)
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
+                    Text("No associated vector store found.")
+                        .foregroundColor(.gray)
                 }
             }
         }
-    
+    }
 
-    private func fetchVectorStore(by id: String) {
-        vectorStoreManagerViewModel.fetchVectorStore(id: id)
-            .sink(receiveCompletion: { _ in }, receiveValue: { fetchedVectorStore in
-                DispatchQueue.main.async {
-                    self.vectorStore = fetchedVectorStore
+    private func fetchAssociatedVectorStore() {
+        guard let vectorStoreId = assistant.tool_resources?.fileSearch?.vectorStoreIds?.first else {
+            vectorStore = nil
+            return
+        }
+
+        vectorStoreManagerViewModel.fetchVectorStore(id: vectorStoreId)
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                    alertMessage = "Failed to fetch vector store: \(error.localizedDescription)"
+                    showAlert = true
                 }
+            }, receiveValue: { fetchedVectorStore in
+                vectorStore = fetchedVectorStore
             })
             .store(in: &cancellables)
     }
-
 
     private func formattedDate(from timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))

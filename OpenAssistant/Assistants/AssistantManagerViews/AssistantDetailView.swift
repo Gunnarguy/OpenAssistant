@@ -32,7 +32,6 @@ struct AssistantDetailView: View {
                     updateVectorStore(with: updatedStores)
                 }
                 AssistantToolsSection(assistant: $viewModel.assistant)
-
             }
             .navigationTitle("Update Assistant")
             .toolbar {
@@ -102,14 +101,12 @@ struct AssistantDetailView: View {
             }
         }
     }
-    
 
     private func updateVectorStore(with updatedStores: [VectorStore]) {
         if let store = updatedStores.first(where: { $0.id == viewModel.assistant.tool_resources?.fileSearch?.vectorStoreIds?.first }) {
             vectorStore = store
         }
     }
-
 
     private func showAlert(message: String) {
         alertMessage = message
@@ -126,8 +123,6 @@ struct AssistantDetailView: View {
             // Handle any necessary actions on disappear
         }
     }
-
-
 
     struct AssistantToolsSection: View {
         @Binding var assistant: Assistant

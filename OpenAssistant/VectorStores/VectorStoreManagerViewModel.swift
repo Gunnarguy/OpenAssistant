@@ -25,14 +25,20 @@ class VectorStoreManagerViewModel: BaseViewModel {
         request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
     }
 
-    private func addCommonHeaders(to request: inout URLRequest) {
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-    }
-
     func initializeAndFetch() {
         fetchVectorStores()
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .sink(receiveCompletion: { completion in
+                switch completion {
+                case .finished:
+                    print("Successfully fetched vector stores.")
+                case .failure(let error):
+                    print("Error fetching vector stores: \(error.localizedDescription)")
+                    self.alertMessage = error.localizedDescription
+                    self.showAlert = true
+                }
+            }, receiveValue: { [weak self] stores in
+                self?.vectorStores = stores
+            })
             .store(in: &cancellables)
     }
 
@@ -104,16 +110,13 @@ class VectorStoreManagerViewModel: BaseViewModel {
             .eraseToAnyPublisher()
     }
 
-    
     func fetchVectorStore(id: String) -> AnyPublisher<VectorStore, Error> {
         guard let url = URL(string: "\(baseURL)/vector_stores/\(id)") else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
 
         var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        configureRequest(&request, httpMethod: "GET")
 
         return session.dataTaskPublisher(for: request)
             .tryMap { data, response -> VectorStore in
@@ -153,7 +156,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }
     }
 
-
     func updateVectorStore(vectorStoreId: String, parameters: [String: Any], completion: @escaping (Result<VectorStore, Error>) -> Void) {
         guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -177,7 +179,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }.resume()
     }
 
-    // VectorStoreManagerViewModel.swift
     func fetchVectorStores() -> AnyPublisher<[VectorStore], Error> {
         let endpoint = "vector_stores"
         guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
@@ -198,7 +199,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
             .eraseToAnyPublisher()
     }
 
-    
     func listVectorStores() -> AnyPublisher<[VectorStore], Error> {
         guard let url = URL(string: "\(baseURL)/vector_stores") else {
             return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])).eraseToAnyPublisher()
@@ -214,7 +214,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
             .eraseToAnyPublisher()
     }
 
-    
     func getVectorStore(vectorStoreId: String) -> AnyPublisher<VectorStore, Error> {
         guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)") else {
             return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])).eraseToAnyPublisher()
@@ -409,29 +408,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
             completion(.success(decodedResponse))
         } catch {
             completion(.failure(error))
-        }
-    }
-
-    func handleDataTaskResponse<T: Decodable>(data: Data?, response: URLResponse?, error: Error?, promise: @escaping (Result<T, Error>) -> Void) {
-        if let error = error {
-            promise(.failure(error))
-            return
-        }
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-            promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-            return
-        }
-        guard let data = data else {
-            promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-            return
-        }
-        do {
-            let response = try JSONDecoder().decode(T.self, from: data)
-            promise(.success(response))
-        } catch {
-            promise(.failure(error))
         }
     }
 }
