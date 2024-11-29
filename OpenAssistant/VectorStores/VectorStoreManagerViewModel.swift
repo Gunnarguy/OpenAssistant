@@ -428,6 +428,11 @@ class VectorStoreManagerViewModel: BaseViewModel {
     func removeVectorStoreId(from assistant: inout Assistant, vectorStoreId: String) {
         assistant.tool_resources?.fileSearch?.vectorStoreIds?.removeAll { $0 == vectorStoreId }
     }
+
+    func showNotification(message: String) {
+        alertMessage = message
+        showAlert = true
+    }
 }
 
 extension Future where Failure == Error {

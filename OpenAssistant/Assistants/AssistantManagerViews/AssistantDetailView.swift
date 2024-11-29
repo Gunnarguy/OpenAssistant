@@ -163,18 +163,46 @@ struct AssistantDetailView: View {
 struct VectorStoreManagementSection: View {
     @ObservedObject var viewModel: AssistantDetailViewModel
     @State private var vectorStoreId: String = ""
+    @State private var showSaveAlert = false
+    @State private var showDeleteAlert = false
+    @State private var saveAlertMessage = ""
+    @State private var deleteAlertMessage = ""
 
     var body: some View {
         Section(header: Text("Vector Store Management")) {
             TextField("Vector Store ID", text: $vectorStoreId)
-            HStack {
+            VStack {
                 Button("Save Vector Store ID") {
                     viewModel.saveVectorStoreId(vectorStoreId)
+                    showSaveAlert(message: "Vector Store ID saved successfully.")
                 }
-                Button("Delete Vector Store ID") {
-                    viewModel.deleteVectorStoreId(vectorStoreId)
-                }
+                .padding(.bottom, 5)
+                
             }
         }
+        .alert(isPresented: $showSaveAlert) {
+            Alert(
+                title: Text("Notification"),
+                message: Text(saveAlertMessage),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+        .alert(isPresented: $showDeleteAlert) {
+            Alert(
+                title: Text("Notification"),
+                message: Text(deleteAlertMessage),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+    }
+
+    private func showSaveAlert(message: String) {
+        saveAlertMessage = message
+        showSaveAlert = true
+    }
+
+    private func showDeleteAlert(message: String) {
+        deleteAlertMessage = message
+        showDeleteAlert = true
     }
 }
