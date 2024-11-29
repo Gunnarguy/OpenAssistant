@@ -39,10 +39,7 @@ extension OpenAIService {
     }
     
     /// Adds common headers required for OpenAI requests
-    func addCommonHeaders(to request: inout URLRequest) {
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-    }
+
     
     /// Executes a URLSession data task and handles decoding the response
     func handleURLSessionDataTask<T: Decodable>(request: URLRequest, completion: @escaping (Result<T, Error>) -> Void) {

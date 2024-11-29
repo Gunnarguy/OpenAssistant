@@ -13,6 +13,7 @@
 		B033D41A2CCAFECD00984B82 /* OpenAIService-Vector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */; };
 		B033D41C2CCB05F700984B82 /* OpenAIService-Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */; };
 		B033D41E2CCB0AB000984B82 /* OpenAIService-Threads.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */; };
+		B03B73742CFA67C3005D1F8A /* CommonMethods.swift in Sources */ = {isa = PBXBuildFile; fileRef = B03B73732CFA67C3005D1F8A /* CommonMethods.swift */; };
 		B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */; };
 		B059E6C72CAB8DDD00B1028E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B059E6C62CAB8DDD00B1028E /* Extensions.swift */; };
 		B07E5CDC2CE45D1D00B53135 /* FileUploadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07E5CDB2CE45D1D00B53135 /* FileUploadService.swift */; };
@@ -63,6 +64,7 @@
 		B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Vector.swift"; sourceTree = "<group>"; };
 		B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Assistant.swift"; sourceTree = "<group>"; };
 		B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Threads.swift"; sourceTree = "<group>"; };
+		B03B73732CFA67C3005D1F8A /* CommonMethods.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonMethods.swift; sourceTree = "<group>"; };
 		B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		B059E6C62CAB8DDD00B1028E /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		B07E5CDB2CE45D1D00B53135 /* FileUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileUploadService.swift; sourceTree = "<group>"; };
@@ -248,6 +250,7 @@
 		B0EEE73B2C99326A0012F2BA /* API */ = {
 			isa = PBXGroup;
 			children = (
+				B03B73732CFA67C3005D1F8A /* CommonMethods.swift */,
 				B0EEE73A2C99326A0012F2BA /* OpenAIService.swift */,
 				B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */,
 				B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */,
@@ -375,6 +378,7 @@
 				B033D41E2CCB0AB000984B82 /* OpenAIService-Threads.swift in Sources */,
 				B0DD9C622C9DFC3A00A0D623 /* OpenAIInitializer.swift in Sources */,
 				B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */,
+				B03B73742CFA67C3005D1F8A /* CommonMethods.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
