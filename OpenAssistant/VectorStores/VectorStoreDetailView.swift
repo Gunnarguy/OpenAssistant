@@ -97,7 +97,17 @@ struct VectorStoreDetailsSection: View {
     var body: some View {
         Section(header: Text("Details")) {
             Text("Name: \(vectorStore.name ?? "Unnamed Vector Store")")
-            Text("ID: \(vectorStore.id)") // Display the vector store ID
+            HStack {
+                Text("ID: \(vectorStore.id)") // Display the vector store ID
+                Button(action: {
+                    UIPasteboard.general.string = vectorStore.id
+                }) {
+                    Image(systemName: "doc.on.doc")
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(BorderlessButtonStyle())
+                .help("Copy ID")
+            }
             if let status = vectorStore.status { Text("Status: \(status)") }
             if let usageBytes = vectorStore.usageBytes { Text("Usage: \(formatBytes(usageBytes))") }
             Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
