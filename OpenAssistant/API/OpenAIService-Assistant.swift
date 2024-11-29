@@ -97,6 +97,9 @@ extension OpenAIService {
         if let temperature = temperature { body["temperature"] = temperature }
         if let topP = topP { body["top_p"] = topP }
         if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
+        
+        print("Updating assistant with body: \(body)")
+
         guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: "POST", body: body) else {
             completion(.failure(.invalidRequest))
             return
@@ -106,7 +109,7 @@ extension OpenAIService {
         }.resume()
     }
 
-    private func makeRequest(endpoint: String, httpMethod: String, body: [String: Any]) -> URLRequest? {
+    func makeRequest(endpoint: String, httpMethod: String, body: [String: Any]) -> URLRequest? {
         guard let url = URL(string: "https://api.openai.com/v1/\(endpoint)") else {
             return nil
         }

@@ -93,12 +93,12 @@ class VectorStoreManagerViewModel: BaseViewModel {
             }
             .eraseToAnyPublisher()
     }
-    
+
     func fetchAssistants(for vectorStore: VectorStore) -> AnyPublisher<[Assistant], Error> {
         let url = baseURL.appendingPathComponent("vector_stores/\(vectorStore.id)/assistants")
         var request = URLRequest(url: url)
         configureRequest(&request, httpMethod: "GET")
-        
+
         return session.dataTaskPublisher(for: request)
             .tryMap { data, response -> [Assistant] in
                 guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
@@ -145,11 +145,11 @@ class VectorStoreManagerViewModel: BaseViewModel {
     func addFileToVectorStore(vectorStoreId: String, fileId: String) async throws {
         let endpoint = "vector_stores/\(vectorStoreId)/file_batches"
         let body: [String: Any] = ["file_ids": [fileId]]
-        
+
         guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
             throw URLError(.badURL)
         }
-        
+
         let (_, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.badServerResponse)
@@ -409,6 +409,24 @@ class VectorStoreManagerViewModel: BaseViewModel {
         } catch {
             completion(.failure(error))
         }
+    }
+
+    // Add Vector Store ID to Assistant
+    func addVectorStoreId(to assistant: inout Assistant, vectorStoreId: String) {
+        if assistant.tool_resources == nil {
+            assistant.tool_resources = ToolResources(fileSearch: FileSearchResources(vectorStoreIds: [vectorStoreId]))
+        } else {
+            if assistant.tool_resources?.fileSearch == nil {
+                assistant.tool_resources?.fileSearch = FileSearchResources(vectorStoreIds: [vectorStoreId])
+            } else {
+                assistant.tool_resources?.fileSearch?.vectorStoreIds?.append(vectorStoreId)
+            }
+        }
+    }
+
+    // Remove Vector Store ID from Assistant
+    func removeVectorStoreId(from assistant: inout Assistant, vectorStoreId: String) {
+        assistant.tool_resources?.fileSearch?.vectorStoreIds?.removeAll { $0 == vectorStoreId }
     }
 }
 

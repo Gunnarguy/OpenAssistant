@@ -32,6 +32,7 @@ struct AssistantDetailView: View {
                     updateVectorStore(with: updatedStores)
                 }
                 AssistantToolsSection(assistant: $viewModel.assistant)
+                VectorStoreManagementSection(viewModel: viewModel)
             }
             .navigationTitle("Update Assistant")
             .toolbar {
@@ -64,6 +65,8 @@ struct AssistantDetailView: View {
 
     private func handleSave() {
         if validateAssistant() {
+            print("Saving assistant with ID: \(viewModel.assistant.id)")
+            viewModel.updateAssistant()
             managerViewModel.updateAssistant(assistant: viewModel.assistant) { result in
                 switch result {
                 case .success:
@@ -152,6 +155,25 @@ struct AssistantDetailView: View {
                 }
             } else {
                 assistant.tools.removeAll { $0.type == type }
+            }
+        }
+    }
+}
+
+struct VectorStoreManagementSection: View {
+    @ObservedObject var viewModel: AssistantDetailViewModel
+    @State private var vectorStoreId: String = ""
+
+    var body: some View {
+        Section(header: Text("Vector Store Management")) {
+            TextField("Vector Store ID", text: $vectorStoreId)
+            HStack {
+                Button("Save Vector Store ID") {
+                    viewModel.saveVectorStoreId(vectorStoreId)
+                }
+                Button("Delete Vector Store ID") {
+                    viewModel.deleteVectorStoreId(vectorStoreId)
+                }
             }
         }
     }
