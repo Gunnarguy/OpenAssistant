@@ -6,13 +6,22 @@ struct MessageView: View {
     
     var body: some View {
         HStack {
-            messageContent
-                .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
+            MessageBubble(message: message, colorScheme: colorScheme)
+                .frame(maxWidth: .infinity, alignment: messageAlignment)
         }
         .padding(.horizontal, 8)
     }
     
-    private var messageContent: some View {
+    private var messageAlignment: Alignment {
+        message.role == .user ? .trailing : .leading
+    }
+}
+
+struct MessageBubble: View {
+    let message: Message
+    let colorScheme: ColorScheme
+
+    var body: some View {
         Text(message.content.first?.text?.value ?? "")
             .padding(16)
             .background(messageBackgroundColor)

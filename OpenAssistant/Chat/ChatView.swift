@@ -12,21 +12,19 @@ struct ChatView: View {
     }
 
     var body: some View {
-        NavigationView {
-            ChatContentView(viewModel: viewModel, messageStore: messageStore, colorScheme: colorScheme)
-                .navigationTitle(viewModel.assistant.name)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, assistantId: viewModel.assistant.id)) {
-                            Image(systemName: "clock")
-                                .foregroundColor(.blue)
-                        }
+        ChatContentView(viewModel: viewModel, messageStore: messageStore, colorScheme: colorScheme)
+            .navigationTitle(viewModel.assistant.name)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, assistantId: viewModel.assistant.id)) {
+                        Image(systemName: "clock")
+                            .foregroundColor(.blue)
                     }
                 }
-                .alert(item: $viewModel.errorMessage) { errorMessage in
-                    Alert(title: Text("Error"), message: Text(errorMessage.message), dismissButton: .default(Text("OK")))
-                }
-        }
+            }
+            .alert(item: $viewModel.errorMessage) { errorMessage in
+                Alert(title: Text("Error"), message: Text(errorMessage.message), dismissButton: .default(Text("OK")))
+            }
     }
 }
 

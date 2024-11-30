@@ -7,13 +7,14 @@ struct SendButton: View {
     var body: some View {
         Button(action: sendMessageAction) {
             Image(systemName: "paperplane.fill")
-                .foregroundColor(viewModel.inputText.isEmpty || viewModel.isLoading ? .gray : .white)
+                .foregroundColor(canSendMessage ? .white : .gray)
                 .padding(16)
-                .background(viewModel.inputText.isEmpty || viewModel.isLoading ? Color.gray.opacity(0.6) : Color.blue)
+                .background(canSendMessage ? Color.blue : Color.gray.opacity(0.6))
                 .cornerRadius(25)
                 .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
+                .accessibilityLabel("Send Message")
         }
-        .disabled(viewModel.inputText.isEmpty || viewModel.isLoading)
+        .disabled(!canSendMessage)
     }
 
     private func sendMessageAction() {
@@ -21,5 +22,9 @@ struct SendButton: View {
         if let lastMessage = viewModel.messages.last {
             messageStore.addMessage(lastMessage)
         }
+    }
+
+    private var canSendMessage: Bool {
+        !viewModel.inputText.isEmpty && !viewModel.isLoading
     }
 }

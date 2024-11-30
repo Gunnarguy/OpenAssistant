@@ -5,10 +5,8 @@ import SwiftUI
 /// A store that manages chat messages, providing functionality to add, save, and load messages.
 class MessageStore: ObservableObject {
     // MARK: - Published Properties
-    @Published private(set) var messages: [Message] = []
-
-    // MARK: - Private Properties
-    private let userDefaultsKey = "savedMessages"
+    @Published var messages: [Message] = []
+    @AppStorage("savedMessages") private var savedMessagesData: Data?
 
     // MARK: - Initializer
     init() {
@@ -37,7 +35,7 @@ class MessageStore: ObservableObject {
     private func saveMessages() {
         do {
             let encoded = try JSONEncoder().encode(messages)
-            UserDefaults.standard.set(encoded, forKey: userDefaultsKey)
+            savedMessagesData = encoded
         } catch {
             print("Failed to encode messages: \(error.localizedDescription)")
         }
@@ -45,9 +43,9 @@ class MessageStore: ObservableObject {
 
     /// Loads the list of messages from UserDefaults.
     private func loadMessages() {
-        guard let savedMessages = UserDefaults.standard.data(forKey: userDefaultsKey) else { return }
+        guard let data = savedMessagesData else { return }
         do {
-            messages = try JSONDecoder().decode([Message].self, from: savedMessages)
+            messages = try JSONDecoder().decode([Message].self, from: data)
         } catch {
             print("Failed to decode messages: \(error.localizedDescription)")
         }

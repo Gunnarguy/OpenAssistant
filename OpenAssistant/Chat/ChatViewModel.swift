@@ -80,17 +80,14 @@ class ChatViewModel: BaseViewModel {
         let pollingInterval: TimeInterval = 2.0
         updateLoadingState(isLoading: true)
 
-        let timer = DispatchSource.makeTimerSource()
-        timer.schedule(deadline: .now(), repeating: pollingInterval)
-
-        timer.setEventHandler { [weak self] in
-            self?.checkRunStatus(threadId: threadId, runId: runId, timer: timer)
+        Timer.scheduledTimer(withTimeInterval: pollingInterval, repeats: true) { [weak self] timer in
+            Task { @MainActor in
+                self?.checkRunStatus(threadId: threadId, runId: runId, timer: timer)
+            }
         }
-
-        timer.resume()
     }
 
-    private func checkRunStatus(threadId: String, runId: String, timer: DispatchSourceTimer) {
+    private func checkRunStatus(threadId: String, runId: String, timer: Timer) {
         Task {
             do {
                 let run = try await fetchRunStatus(threadId: threadId, runId: runId)
@@ -100,22 +97,24 @@ class ChatViewModel: BaseViewModel {
             } catch {
                 await MainActor.run {
                     handleError("Failed to fetch run status: \(error.localizedDescription)")
-                    timer.cancel()
+                    timer.invalidate()
                     updateLoadingState(isLoading: false)
                 }
             }
         }
     }
 
-    private func handleRunStatus(_ run: Run, timer: DispatchSourceTimer) {
+    private func handleRunStatus(_ run: Run, timer: Timer) {
         print("Run status: \(run.status)")
         if run.status == "completed" {
             handleRunCompletion(run)
-            timer.cancel()
-            updateLoadingState(isLoading: false, step: 5)
+            timer.invalidate()
+            DispatchQueue.main.async {
+                self.updateLoadingState(isLoading: false, step: 5)
+            }
         } else if run.status == "failed" {
             handleError("Run failed.")
-            timer.cancel()
+            timer.invalidate()
             updateLoadingState(isLoading: false)
         }
     }
