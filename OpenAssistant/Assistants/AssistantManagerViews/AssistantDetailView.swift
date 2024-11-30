@@ -20,7 +20,7 @@ struct AssistantDetailView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 AssistantDetailsSection(
                     assistant: $viewModel.assistant,
@@ -55,6 +55,14 @@ struct AssistantDetailView: View {
             }
             .onAppear(perform: onAppear)
             .onDisappear(perform: onDisappear)
+            .navigationDestination(isPresented: $showVectorStoreDetail) {
+                VectorStoreDetailView(
+                    viewModel: vectorStoreManagerViewModel,
+                    vectorStore: vectorStore ?? VectorStore(id: "", name: "", description: "", status: "", usageBytes: 0, createdAt: 0, fileCounts: FileCounts(inProgress: 0, completed: 0, failed: 0, cancelled: 0, total: 0), metadata: nil, expiresAfter: nil, expiresAt: nil, lastActiveAt: nil, files: nil),
+                    isAddingFile: $isAddingFile,
+                    didDeleteFile: $didDeleteFile
+                )
+            }
         }
     }
 
