@@ -451,7 +451,7 @@ struct VectorStoreFilesResponse: Codable {
 // MARK: - File
 struct File: Identifiable, Codable {
     let id: String
-    let object: String? // Add this line
+    let object: String?
     let name: String?
     let status: String
     let createdAt: Int
@@ -459,9 +459,11 @@ struct File: Identifiable, Codable {
     let purpose: String?
     let mimeType: String?
     let objectType: String?
+    let lastError: String?
+    let chunkingStrategy: ChunkingStrategy?
     
     private enum CodingKeys: String, CodingKey {
-        case id, name, status, bytes, purpose, mimeType, objectType, object
+        case id, name, status, bytes, purpose, mimeType, objectType, object, lastError = "last_error", chunkingStrategy = "chunking_strategy"
         case createdAt = "created_at"
     }
 }
