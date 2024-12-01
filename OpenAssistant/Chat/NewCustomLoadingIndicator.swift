@@ -1,19 +1,27 @@
 import SwiftUI
 
-struct NewCustomLoadingIndicator: View {
-    @State private var isAnimating = false
+struct CustomProgressView: View {
+    let stepCounter: Int
 
     var body: some View {
         VStack {
-            Circle()
-                .trim(from: 0, to: 0.75)
-                .stroke(AngularGradient(gradient: Gradient(colors: [.blue.opacity(0.6), .green.opacity(0.6), .blue.opacity(0.6)]), center: .center), style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .frame(width: 30, height: 30)
-                .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
-                .animation(Animation.linear(duration: 2).repeatForever(autoreverses: false), value: isAnimating)
-                .onAppear {
-                    isAnimating = true
-                }
+            ZStack {
+                Circle()
+                    .trim(from: 0, to: CGFloat(stepCounter) / 6.0)
+                    .stroke(
+                        AngularGradient(
+                            gradient: Gradient(colors: [.blue, .green, .blue]),
+                            center: .center
+                        ),
+                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                    )
+                    .rotationEffect(Angle(degrees: -90))
+                    .frame(width: 50, height: 50)
+                    .animation(.easeInOut(duration: 0.5), value: stepCounter)
+                Text("\(stepCounter)/6")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
         }
     }
 }

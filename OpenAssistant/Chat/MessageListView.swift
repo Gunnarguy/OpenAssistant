@@ -47,7 +47,7 @@ struct MessageListView: View, MessageListViewProtocol {
     private var loadingIndicator: some View {
         Group {
             if viewModel.isLoading {
-                NewCustomLoadingIndicator()
+                CustomProgressView(stepCounter: viewModel.stepCounter)
                     .padding(.vertical, 10)
                     .id("loadingIndicator")
             }
