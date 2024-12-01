@@ -115,8 +115,20 @@ extension OpenAIService {
             .eraseToAnyPublisher()
     }
     
-    
-    
+    func createVectorStore(name: String, completion: @escaping (Result<VectorStore, OpenAIServiceError>) -> Void) {
+        let endpoint = "vector_stores"
+        let body: [String: Any] = ["name": name]
+
+        guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
+            completion(.failure(.invalidRequest))
+            return
+        }
+
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
+    }
+
     // MARK: - Fetch Vector Stores
     
     func fetchVectorStores() -> Future<[VectorStore], Error> {

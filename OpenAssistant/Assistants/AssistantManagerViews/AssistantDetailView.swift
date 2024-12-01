@@ -13,6 +13,7 @@ struct AssistantDetailView: View {
     @ObservedObject var managerViewModel: AssistantManagerViewModel
     @State private var isAddingFile = false
     @State private var didDeleteFile = false
+    @State private var vectorStoreName: String = ""
 
     init(assistant: Assistant, managerViewModel: AssistantManagerViewModel) {
         _viewModel = StateObject(wrappedValue: AssistantDetailViewModel(assistant: assistant))
@@ -26,7 +27,9 @@ struct AssistantDetailView: View {
                     assistant: $viewModel.assistant,
                     availableModels: managerViewModel.availableModels,
                     showVectorStoreDetail: $showVectorStoreDetail,
-                    vectorStoreManagerViewModel: vectorStoreManagerViewModel
+                    vectorStoreManagerViewModel: vectorStoreManagerViewModel,
+                    vectorStoreName: $vectorStoreName,
+                    onCreateVectorStore: createVectorStore
                 )
                 .onChange(of: vectorStoreManagerViewModel.vectorStores) { updatedStores in
                     updateVectorStore(with: updatedStores)
@@ -61,6 +64,13 @@ struct AssistantDetailView: View {
                     vectorStore: vectorStore ?? VectorStore(id: "", name: "", description: "", status: "", usageBytes: 0, createdAt: 0, fileCounts: FileCounts(inProgress: 0, completed: 0, failed: 0, cancelled: 0, total: 0), metadata: nil, expiresAfter: nil, expiresAt: nil, lastActiveAt: nil, files: nil),
                     isAddingFile: $isAddingFile,
                     didDeleteFile: $didDeleteFile
+                )
+            }
+            .alert(item: $viewModel.successMessage) { successMessage in
+                Alert(
+                    title: Text("Success"),
+                    message: Text(successMessage.message),
+                    dismissButton: .default(Text("OK"))
                 )
             }
         }
@@ -133,6 +143,10 @@ struct AssistantDetailView: View {
         if isAddingFile || didDeleteFile {
             // Handle any necessary actions on disappear
         }
+    }
+
+    private func createVectorStore() {
+        viewModel.createAndAssociateVectorStore(name: vectorStoreName)
     }
 
     struct AssistantToolsSection: View {

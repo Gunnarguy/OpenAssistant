@@ -6,6 +6,8 @@ struct AssistantDetailsSection: View {
     var availableModels: [String]
     @Binding var showVectorStoreDetail: Bool
     @ObservedObject var vectorStoreManagerViewModel: VectorStoreManagerViewModel
+    @Binding var vectorStoreName: String
+    var onCreateVectorStore: () -> Void
 
     @State private var vectorStore: VectorStore?
     @State private var alertMessage = ""
@@ -42,19 +44,20 @@ struct AssistantDetailsSection: View {
 
     private var vectorStoreSection: some View {
         Group {
-            if let vectorStore = vectorStore {
-                Section(header: Text("Vector Store")) {
+            Section(header: Text("Vector Store")) {
+                if let vectorStore = vectorStore {
                     Text("Name: \(vectorStore.name ?? "Unnamed")")
                     Text("ID: \(vectorStore.id)")
                     Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
                     Button("View Details") {
                         showVectorStoreDetail = true
                     }
+                } else {
+                    Text("No associated vector store.")
                 }
-            } else {
-                Section(header: Text("Vector Store")) {
-                    Text("No associated vector store found.")
-                        .foregroundColor(.gray)
+                TextField("Vector Store Name", text: $vectorStoreName)
+                Button("Create and Associate Vector Store") {
+                    onCreateVectorStore()
                 }
             }
         }

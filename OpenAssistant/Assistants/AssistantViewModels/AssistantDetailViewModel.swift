@@ -5,6 +5,8 @@ import SwiftUI
 @MainActor
 class AssistantDetailViewModel: BaseViewModel {
     @Published var assistant: Assistant
+    @Published var isLoading = false
+    @Published var successMessage: SuccessMessage?
 
     init(assistant: Assistant) {
         self.assistant = assistant
@@ -73,6 +75,31 @@ class AssistantDetailViewModel: BaseViewModel {
         updateAssistant()
     }
 
+    func createAndAssociateVectorStore(name: String) {
+        performServiceAction { openAIService in
+            self.isLoading = true
+            openAIService.createVectorStore(name: name) { [weak self] result in
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                    switch result {
+                    case .success(let vectorStore):
+                        if self?.assistant.tool_resources == nil {
+                            self?.assistant.tool_resources = ToolResources(fileSearch: FileSearchResources(vectorStoreIds: []))
+                        }
+                        if self?.assistant.tool_resources?.fileSearch == nil {
+                            self?.assistant.tool_resources?.fileSearch = FileSearchResources(vectorStoreIds: [])
+                        }
+                        self?.assistant.tool_resources?.fileSearch?.vectorStoreIds?.append(vectorStore.id)
+                        self?.updateAssistant()
+                        self?.successMessage = SuccessMessage(message: "Vector Store created and associated successfully.")
+                    case .failure(let error):
+                        self?.handleError(IdentifiableError(message: "Failed to create vector store: \(error.localizedDescription)"))
+                    }
+                }
+            }
+        }
+    }
+
     // Perform a service action with OpenAI
     private func performServiceAction(action: (OpenAIService) -> Void) {
         guard let openAIService = openAIService else {
@@ -92,5 +119,10 @@ class AssistantDetailViewModel: BaseViewModel {
                 self.handleError(IdentifiableError(message: "Operation failed: \(error.localizedDescription)"))
             }
         }
+    }
+
+    struct SuccessMessage: Identifiable {
+        let id = UUID()
+        let message: String
     }
 }
