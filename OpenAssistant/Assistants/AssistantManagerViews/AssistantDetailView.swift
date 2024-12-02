@@ -252,6 +252,26 @@ struct VectorStoreManagementSection: View {
                 }
                 .padding(.top, 8)
             }
+
+            // Associated Vector Store IDs Section
+            Section(header: Text("Associated Vector Store IDs")) {
+                if let vectorStoreIds = viewModel.assistant.tool_resources?.fileSearch?.vectorStoreIds, !vectorStoreIds.isEmpty {
+                    ForEach(vectorStoreIds, id: \.self) { id in
+                        HStack {
+                            Text(id)
+                            Spacer()
+                            Button(action: {
+                                viewModel.deleteVectorStoreId(id)
+                            }) {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                } else {
+                    Text("No associated vector store IDs.")
+                }
+            }
         }
         .alert(isPresented: $showAlert) {
             Alert(
