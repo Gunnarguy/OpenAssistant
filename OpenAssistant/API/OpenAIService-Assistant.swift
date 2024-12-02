@@ -12,14 +12,16 @@ extension OpenAIService {
             completion(.failure(.invalidRequest))
             return
         }
-        handleDataTask(with: request) { (result: Result<AssistantsResponse, OpenAIServiceError>) in
-            switch result {
-            case .success(let response):
-                completion(.success(response.data))
-            case .failure(let error):
-                completion(.failure(error))
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error) { (result: Result<AssistantsResponse, OpenAIServiceError>) in
+                switch result {
+                case .success(let response):
+                    completion(.success(response.data))
+                case .failure(let error):
+                    completion(.failure(error))
+                }
             }
-        }
+        }.resume()
     }
     
     // MARK: - Fetch Assistant Settings
@@ -28,7 +30,9 @@ extension OpenAIService {
             completion(.failure(.invalidRequest))
             return
         }
-        handleDataTask(with: request, completion: completion)
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
     }
     
     // MARK: - Create Assistant
@@ -62,7 +66,9 @@ extension OpenAIService {
             return
         }
 
-        handleDataTask(with: request, completion: completion)
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
     }
 
     // MARK: - Update Assistant
@@ -98,7 +104,9 @@ extension OpenAIService {
             completion(.failure(.invalidRequest))
             return
         }
-        handleDataTask(with: request, completion: completion)
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
     }
     
     // MARK: - Delete Assistant
@@ -108,7 +116,9 @@ extension OpenAIService {
             completion(.failure(.invalidRequest))
             return
         }
-        handleDeleteDataTask(with: request, completion: completion)
+        session.dataTask(with: request) { data, response, error in
+            self.handleDeleteResponse(data, response, error, completion: completion)
+        }.resume()
     }
 }
 

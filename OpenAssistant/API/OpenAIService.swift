@@ -233,59 +233,6 @@ class OpenAIService {
         }
     }
     
-    // MARK: - Handle Delete Data Task
-    func handleDeleteDataTask(with request: URLRequest, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
-        session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                completion(.failure(.networkError(error)))
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(.invalidResponse(response!)))
-                return
-            }
-            
-            completion(.success(()))
-        }.resume()
-    }
-}
-
-extension OpenAIService {
-    func handleDataTaskResponse<T: Decodable>(data: Data?, response: URLResponse?, error: Error?, completion: @escaping (Result<T, Error>) -> Void) {
-        if let error = error {
-            completion(.failure(error))
-            return
-        }
-        
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-            completion(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-            return
-        }
-        
-        guard let data = data else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-            return
-        }
-        
-        do {
-            let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-            completion(.success(decodedResponse))
-        } catch {
-            completion(.failure(error))
-        }
-    }
-    
-    // MARK: - Common URLSession Data Task Handler
-    func handleDataTask<T: Decodable>(with request: URLRequest, completion: @escaping (Result<T, OpenAIServiceError>) -> Void) {
-        session.dataTask(with: request) { data, response, error in
-            self.handleResponse(data, response, error, completion: completion)
-        }.resume()
-    }
-    
-    // Example usage in existing methods
     func fetchAvailableModels(completion: @escaping (Result<[String], Error>) -> Void) {
         guard let url = URL(string: "https://api.openai.com/v1/models") else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
@@ -295,14 +242,57 @@ extension OpenAIService {
         var request = URLRequest(url: url)
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         
-        handleDataTask(with: request) { (result: Result<ModelResponse, OpenAIServiceError>) in
-            switch result {
-            case .success(let modelResponse):
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                return
+            }
+            
+            do {
+                let modelResponse = try JSONDecoder().decode(ModelResponse.self, from: data)
                 let modelIds = modelResponse.data.map { $0.id }
                 completion(.success(modelIds))
-            case .failure(let error):
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+}
+    extension OpenAIService {
+        func handleDataTaskResponse<T: Decodable>(data: Data?, response: URLResponse?, error: Error?, completion: @escaping (Result<T, Error>) -> Void) {
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
+                completion(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                return
+            }
+            
+            do {
+                let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                completion(.success(decodedResponse))
+            } catch {
                 completion(.failure(error))
             }
         }
     }
-}
