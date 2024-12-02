@@ -29,12 +29,7 @@ class OpenAIService {
         case put = "PUT"
         case delete = "DELETE"
     }
-    
-    // ...existing code...
-    
-    // ...existing code...
-    
-    
+        
     // MARK: - HandleResponse
     internal func handleResponse<T: Decodable>(_ data: Data?, _ response: URLResponse?, _ error: Error?, completion: @escaping (Result<T, OpenAIServiceError>) -> Void) {
         if let error = error {
