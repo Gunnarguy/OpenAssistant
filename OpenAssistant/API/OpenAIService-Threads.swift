@@ -10,9 +10,7 @@ extension OpenAIService {
             completion(.failure(.custom("Failed to create request")))
             return
         }
-        session.dataTask(with: request) { data, response, error in
-            self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        handleDataTask(with: request, completion: completion)
     }
 
     // MARK: - Run Assistant on Thread
@@ -24,12 +22,7 @@ extension OpenAIService {
             return
         }
         logRequestDetails(request, body: body)
-        session.dataTask(with: request) { data, response, error in
-            if let data = data {
-                self.logResponseData(data)
-            }
-            self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        handleDataTask(with: request, completion: completion)
     }
     
     // MARK: - Fetch Run Status
@@ -39,9 +32,7 @@ extension OpenAIService {
             completion(.failure(.custom("Failed to create request")))
             return
         }
-        session.dataTask(with: request) { data, response, error in
-            self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        handleDataTask(with: request, completion: completion)
     }
     
     // MARK: - Fetch Run Messages
@@ -51,53 +42,7 @@ extension OpenAIService {
             completion(.failure(.custom("Failed to create request")))
             return
         }
-        session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                self.logError("Network error: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                self.logError("Invalid response: \(String(describing: response))")
-                DispatchQueue.main.async {
-                    completion(.failure(.unknownError))
-                }
-                return
-            }
-
-            if !(200...299).contains(httpResponse.statusCode) {
-                self.logError("HTTP error: \(httpResponse.statusCode)")
-                DispatchQueue.main.async {
-                    completion(.failure(.invalidResponse(httpResponse)))
-                }
-                return
-            }
-
-            guard let data = data else {
-                self.logError("No data received")
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-
-            self.logResponseData(data)
-
-            do {
-                let decodedResponse = try JSONDecoder().decode(MessageResponseList.self, from: data)
-                DispatchQueue.main.async {
-                    completion(.success(decodedResponse.data))
-                }
-            } catch {
-                self.logError("Decoding error: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError(data, error)))
-                }
-            }
-        }.resume()
+        handleDataTask(with: request, completion: completion)
     }
     
     // MARK: - Add Message to Thread
@@ -112,34 +57,14 @@ extension OpenAIService {
             return
         }
         logRequestDetails(request, body: body)
-        session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                self.logError("Network error: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
+        handleDataTask(with: request) { (result: Result<EmptyResponse, OpenAIServiceError>) in
+            switch result {
+            case .success:
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
             }
-            guard let data = data else {
-                self.logError("No data received")
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-            self.logResponseData(data)
-            do {
-                _ = try JSONDecoder().decode(OpenAIResponse.self, from: data)
-                DispatchQueue.main.async {
-                    completion(.success(()))
-                }
-            } catch {
-                self.logError("Decoding error: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError(data, error)))
-                }
-            }
-        }.resume()
+        }
     }
     
     // MARK: - Fetch Thread Details
@@ -149,12 +74,12 @@ extension OpenAIService {
             completion(.failure(.custom("Failed to create request")))
             return
         }
-        session.dataTask(with: request) { data, response, error in
-            self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        handleDataTask(with: request, completion: completion)
     }
 }
 
+// MARK: - EmptyResponse
+struct EmptyResponse: Decodable {}
 
 // MARK: - Message
 struct Message: Identifiable, Codable, Equatable {

@@ -124,9 +124,7 @@ extension OpenAIService {
             return
         }
 
-        session.dataTask(with: request) { data, response, error in
-            self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        handleDataTask(with: request, completion: completion)
     }
 
     // MARK: - Fetch Vector Stores
@@ -140,7 +138,7 @@ extension OpenAIService {
                 return
             }
             
-            self.handleURLSessionDataTask(request: request) { (result: Result<VectorStoreResponse, Error>) in
+            self.handleDataTask(with: request) { (result: Result<VectorStoreResponse, OpenAIServiceError>) in
                 switch result {
                 case .success(let response):
                     promise(.success(response.data))
