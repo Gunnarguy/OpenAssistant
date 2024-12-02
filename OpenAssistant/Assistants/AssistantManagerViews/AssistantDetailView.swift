@@ -25,17 +25,20 @@ struct AssistantDetailView: View {
             Form {
                 AssistantDetailsSection(
                     assistant: $viewModel.assistant,
-                    availableModels: managerViewModel.availableModels,
-                    showVectorStoreDetail: $showVectorStoreDetail,
+                    availableModels: managerViewModel.availableModels
+                )
+                AssistantToolsSection(assistant: $viewModel.assistant)
+                VectorStoreManagementSection(
+                    viewModel: viewModel,
+                    vectorStore: vectorStore,
                     vectorStoreManagerViewModel: vectorStoreManagerViewModel,
+                    showVectorStoreDetail: $showVectorStoreDetail,
                     vectorStoreName: $vectorStoreName,
                     onCreateVectorStore: createVectorStore
                 )
-                .onChange(of: vectorStoreManagerViewModel.vectorStores) { updatedStores in
-                    updateVectorStore(with: updatedStores)
-                }
-                AssistantToolsSection(assistant: $viewModel.assistant)
-                VectorStoreManagementSection(viewModel: viewModel)
+            }
+            .onChange(of: vectorStoreManagerViewModel.vectorStores) { updatedStores in
+                updateVectorStore(with: updatedStores)
             }
             .navigationTitle("Update Assistant")
             .toolbar {
@@ -184,47 +187,91 @@ struct AssistantDetailView: View {
 
 struct VectorStoreManagementSection: View {
     @ObservedObject var viewModel: AssistantDetailViewModel
+    var vectorStore: VectorStore?
+    @ObservedObject var vectorStoreManagerViewModel: VectorStoreManagerViewModel
+    @Binding var showVectorStoreDetail: Bool
+    @Binding var vectorStoreName: String
+    var onCreateVectorStore: () -> Void
+    
     @State private var vectorStoreId: String = ""
-    @State private var showSaveAlert = false
-    @State private var showDeleteAlert = false
-    @State private var saveAlertMessage = ""
-    @State private var deleteAlertMessage = ""
+    @State private var showAlert = false
+    @State private var alertMessage = ""
 
     var body: some View {
-        Section(header: Text("Vector Store Management")) {
-            TextField("Vector Store ID", text: $vectorStoreId)
-            VStack {
-                Button("Save Vector Store ID") {
-                    viewModel.saveVectorStoreId(vectorStoreId)
-                    showSaveAlert(message: "Vector Store ID saved successfully.")
+        Group {
+            // Current Vector Store Info Section
+            Section(header: Text("Current Vector Store")) {
+                if let vectorStore = vectorStore {
+                    Text("Name: \(vectorStore.name ?? "Unnamed")")
+                    Text("ID: \(vectorStore.id)")
+                    Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
+                    Button(action: {
+                        showVectorStoreDetail = true
+                    }) {
+                        Text("View Details")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                    }
+                } else {
+                    Text("No associated vector store.")
                 }
-                .padding(.bottom, 5)
-                
+            }
+            
+            // Create New Vector Store Section
+            Section(header: Text("Create New Vector Store")) {
+                TextField("Vector Store Name", text: $vectorStoreName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                Button(action: onCreateVectorStore) {
+                    Text("Create and Associate Vector Store")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+                .padding(.top, 8)
+            }
+            
+            // Manual Association Section
+            Section(header: Text("Manual Association")) {
+                TextField("Vector Store ID", text: $vectorStoreId)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                Button(action: {
+                    viewModel.saveVectorStoreId(vectorStoreId)
+                    showAlert(message: "Vector Store ID saved successfully.")
+                }) {
+                    Text("Save Vector Store ID")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+                .padding(.top, 8)
             }
         }
-        .alert(isPresented: $showSaveAlert) {
+        .alert(isPresented: $showAlert) {
             Alert(
                 title: Text("Notification"),
-                message: Text(saveAlertMessage),
-                dismissButton: .default(Text("OK"))
-            )
-        }
-        .alert(isPresented: $showDeleteAlert) {
-            Alert(
-                title: Text("Notification"),
-                message: Text(deleteAlertMessage),
+                message: Text(alertMessage),
                 dismissButton: .default(Text("OK"))
             )
         }
     }
 
-    private func showSaveAlert(message: String) {
-        saveAlertMessage = message
-        showSaveAlert = true
+    private func showAlert(message: String) {
+        alertMessage = message
+        showAlert = true
     }
-
-    private func showDeleteAlert(message: String) {
-        deleteAlertMessage = message
-        showDeleteAlert = true
+    
+    private func formattedDate(from timestamp: Int) -> String {
+        let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }

@@ -4,34 +4,8 @@ import Combine
 struct AssistantDetailsSection: View {
     @Binding var assistant: Assistant
     var availableModels: [String]
-    @Binding var showVectorStoreDetail: Bool
-    @ObservedObject var vectorStoreManagerViewModel: VectorStoreManagerViewModel
-    @Binding var vectorStoreName: String
-    var onCreateVectorStore: () -> Void
-
-    @State private var vectorStore: VectorStore?
-    @State private var alertMessage = ""
-    @State private var showAlert = false
-    @State private var cancellables = Set<AnyCancellable>()
 
     var body: some View {
-        VStack {
-            assistantDetailsSection
-            vectorStoreSection
-        }
-        .alert(isPresented: $showAlert) {
-            Alert(
-                title: Text("Error"),
-                message: Text(alertMessage),
-                dismissButton: .default(Text("OK"))
-            )
-        }
-        .onAppear {
-            fetchAssociatedVectorStore()
-        }
-    }
-
-    private var assistantDetailsSection: some View {
         Section(header: Text("Assistant Details")) {
             NameField(name: $assistant.name)
             InstructionsField(instructions: Binding($assistant.instructions, default: ""))
@@ -40,53 +14,6 @@ struct AssistantDetailsSection: View {
             TemperatureSlider(temperature: $assistant.temperature)
             TopPSlider(topP: $assistant.top_p)
         }
-    }
-
-    private var vectorStoreSection: some View {
-        Group {
-            Section(header: Text("Vector Store")) {
-                if let vectorStore = vectorStore {
-                    Text("Name: \(vectorStore.name ?? "Unnamed")")
-                    Text("ID: \(vectorStore.id)")
-                    Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
-                    Button("View Details") {
-                        showVectorStoreDetail = true
-                    }
-                } else {
-                    Text("No associated vector store.")
-                }
-                TextField("Vector Store Name", text: $vectorStoreName)
-                Button("Create and Associate Vector Store") {
-                    onCreateVectorStore()
-                }
-            }
-        }
-    }
-
-    private func fetchAssociatedVectorStore() {
-        guard let vectorStoreId = assistant.tool_resources?.fileSearch?.vectorStoreIds?.first else {
-            vectorStore = nil
-            return
-        }
-
-        vectorStoreManagerViewModel.fetchVectorStore(id: vectorStoreId)
-            .sink(receiveCompletion: { completion in
-                if case let .failure(error) = completion {
-                    alertMessage = "Failed to fetch vector store: \(error.localizedDescription)"
-                    showAlert = true
-                }
-            }, receiveValue: { fetchedVectorStore in
-                vectorStore = fetchedVectorStore
-            })
-            .store(in: &cancellables)
-    }
-
-    private func formattedDate(from timestamp: Int) -> String {
-        let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
     }
 }
 
