@@ -2,12 +2,35 @@ import Foundation
 import Combine
 import SwiftUI
 
+enum LoadingState: Int, CaseIterable {
+    case idle = 0
+    case creatingThread = 1
+    case threadCreated = 2
+    case runningAssistant = 3
+    case processingResponse = 4
+    case completingRun = 5
+    case sendingMessage = 6
+    
+    var description: String {
+        switch self {
+        case .idle: return "Ready"
+        case .creatingThread: return "Creating Thread"
+        case .threadCreated: return "Thread Created"
+        case .runningAssistant: return "Running Assistant"
+        case .processingResponse: return "Processing"
+        case .completingRun: return "Completing"
+        case .sendingMessage: return "Sending Message"
+        }
+    }
+}
+
 @MainActor
 class ChatViewModel: BaseViewModel {
     @Published var messages: [Message] = []
     @Published var inputText: String = ""
     @Published var isLoading = false
     @Published var stepCounter: Int = 0
+    @Published var loadingState: LoadingState = .idle
 
     var scrollViewProxy: ScrollViewProxy?
     let assistant: Assistant
@@ -26,7 +49,7 @@ class ChatViewModel: BaseViewModel {
 
     func createThread() {
         guard !hasCreatedThread else { return }
-        updateLoadingState(isLoading: true, step: 1)
+        updateLoadingState(isLoading: true, state: .creatingThread)
         print("Creating thread...")
 
         openAIService?.createThread { [weak self] result in
@@ -52,7 +75,7 @@ class ChatViewModel: BaseViewModel {
 
     func runAssistantOnThread() {
         guard let thread = thread else { return }
-        updateLoadingState(isLoading: true, step: 3)
+        updateLoadingState(isLoading: true, state: .runningAssistant)
         print("Running assistant on thread: \(thread.id)")
 
         openAIService?.runAssistantOnThread(threadId: thread.id, assistantId: assistant.id) { [weak self] result in
@@ -110,7 +133,7 @@ class ChatViewModel: BaseViewModel {
             handleRunCompletion(run)
             timer.invalidate()
             DispatchQueue.main.async {
-                self.updateLoadingState(isLoading: false, step: 5)
+                self.updateLoadingState(isLoading: false, state: .completingRun)
             }
         } else if run.status == "failed" {
             handleError("Run failed.")
@@ -170,7 +193,7 @@ class ChatViewModel: BaseViewModel {
         messageStore.addMessage(userMessage)
         checkForDuplicateIDs()
         inputText = ""
-        updateLoadingState(isLoading: true, step: 6)
+        updateLoadingState(isLoading: true, state: .sendingMessage)
 
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
@@ -248,10 +271,14 @@ class ChatViewModel: BaseViewModel {
         }
     }
 
-    private func updateLoadingState(isLoading: Bool, step: Int? = nil) {
+    private func updateLoadingState(isLoading: Bool, state: LoadingState? = nil) {
         self.isLoading = isLoading
-        if let step = step {
-            self.stepCounter = step
+        if let state = state {
+            self.loadingState = state
+            self.stepCounter = state.rawValue
+        } else if !isLoading {
+            self.loadingState = .idle
+            self.stepCounter = 0
         }
     }
 }

@@ -8,13 +8,11 @@ struct ChatContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             MessageListView(viewModel: viewModel, colorScheme: colorScheme)
-            InputView(viewModel: viewModel, messageStore: messageStore, colorScheme: colorScheme)
             if viewModel.isLoading {
-                CustomProgressView(stepCounter: viewModel.stepCounter)
-                    .padding(.bottom, 10)
+                LoadingProgressView(viewModel: viewModel)
+                    .padding(.vertical, 10)
             }
-            StepCounterView(stepCounter: viewModel.stepCounter)
-                .padding(.bottom, 10)
+            InputView(viewModel: viewModel, messageStore: messageStore, colorScheme: colorScheme)
         }
         .padding(.horizontal)
         .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
