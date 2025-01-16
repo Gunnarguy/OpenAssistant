@@ -1,0 +1,62 @@
+# Xcode Build Artifacts
+build/
+DerivedData/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM
+
+# User-Specific Settings
+xcuserdata/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Package.resolved
+.swiftpm/xcode/package.xcworkspace/
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+Carthage/Checkouts/
+Carthage/Build/iOS/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# General macOS Files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+Icon?
+Icon\r
+Thumbs.db
+
+# Backup Files
+*.swp
+*.swo
+*.tmp
+*.DS_Store
+
+# Logs
+*.log
+
+# Generated Schemes
+xcshareddata/xcschemes/*.xcscheme
+
+# GitHub Actions
+/.github/workflows/*
