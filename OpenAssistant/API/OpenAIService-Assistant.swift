@@ -120,6 +120,18 @@ extension OpenAIService {
             self.handleDeleteResponse(data, response, error, completion: completion)
         }.resume()
     }
+
+    // New: Fetch Assistant Details
+    func fetchAssistantDetails(assistantId: String, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void) {
+        let endpoint = "assistants/\(assistantId)"
+        guard let request = makeRequest(endpoint: endpoint) else {
+            completion(.failure(.custom("Failed to create request")))
+            return
+        }
+        session.dataTask(with: request) { data, response, error in
+            self.handleResponse(data, response, error, completion: completion)
+        }.resume()
+    }
 }
 
 

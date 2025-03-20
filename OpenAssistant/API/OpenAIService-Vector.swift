@@ -6,7 +6,7 @@ extension OpenAIService {
     // MARK: - Private Helper Methods
     
     /// Creates a URLRequest with dynamic Content-Type handling for JSON and multipart requests
-    func createRequest(endpoint: String, method: String = "GET", body: [String: Any]? = nil, contentType: String? = "application/json") -> URLRequest? {
+    func createRequest(endpoint: String, method: String = "GET", body: [String: Any]? = nil, contentType: ContentType = .json) -> URLRequest? {
         guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
             print("Invalid URL for endpoint: \(endpoint)")
             return nil
@@ -15,12 +15,12 @@ extension OpenAIService {
         var request = URLRequest(url: url)
         request.httpMethod = method
         addCommonHeaders(to: &request)
-
-        if let contentType = contentType {
-            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
-        }
-
-        if let body = body, contentType == "application/json" {
+        
+        // Set the Content-Type header from enum rawValue.
+        request.setValue(contentType.rawValue, forHTTPHeaderField: "Content-Type")
+        
+        // Serialize JSON: check against .json instead of the string "application/json"
+        if let body = body, contentType == .json {
             do {
                 let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
                 request.httpBody = jsonData

@@ -70,3 +70,24 @@ class BaseViewModel: ObservableObject {
         print("BaseViewModel deinitialized. Observers cleared.")
     }
 }
+
+extension BaseViewModel {
+    func handleResult<T>(_ result: Result<T, OpenAIServiceError>, success: @escaping (T) -> Void) {
+        DispatchQueue.main.async {
+            switch result {
+            case .success(let value):
+                success(value)
+            case .failure(let error):
+                self.handleError(IdentifiableError(message: "Operation failed: \(error.localizedDescription)"))
+            }
+        }
+    }
+    
+    func performServiceAction(_ action: (OpenAIService) -> Void) {
+        guard let service = openAIService else {
+            handleError(IdentifiableError(message: "OpenAIService is not initialized"))
+            return
+        }
+        action(service)
+    }
+}

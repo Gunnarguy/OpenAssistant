@@ -29,7 +29,41 @@ class OpenAIService {
         case put = "PUT"
         case delete = "DELETE"
     }
+    
+    // MARK: - Request Configuration
+    
+    /// Creates a URLRequest with common headers.
+    func makeRequest(endpoint: String, httpMethod: HTTPMethod = .get, body: [String: Any]? = nil, contentType: ContentType = .json) -> URLRequest? {
+        guard let url = URL(string: "\(baseURL)\(endpoint)") else {
+            logError("Invalid URL for endpoint: \(endpoint)")
+            return nil
+        }
         
+        var request = URLRequest(url: url)
+        request.httpMethod = httpMethod.rawValue
+        addCommonHeaders(to: &request, contentType: contentType)
+        
+        if let body = body {
+            do {
+                let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
+                request.httpBody = jsonData
+                logRequestDetails(request, body: body)
+            } catch {
+                logError("Failed to serialize request body: \(error.localizedDescription)")
+                return nil
+            }
+        }
+        
+        return request
+    }
+    
+    /// Adds common headers required for OpenAI requests
+    private func addCommonHeaders(to request: inout URLRequest, contentType: ContentType = .json) {
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: HTTPHeaderField.authorization.rawValue)
+        request.setValue(contentType.rawValue, forHTTPHeaderField: HTTPHeaderField.contentType.rawValue)
+        request.setValue("assistants=v2", forHTTPHeaderField: HTTPHeaderField.openAIBeta.rawValue)
+    }
+    
     // MARK: - HandleResponse
     internal func handleResponse<T: Decodable>(_ data: Data?, _ response: URLResponse?, _ error: Error?, completion: @escaping (Result<T, OpenAIServiceError>) -> Void) {
         if let error = error {

@@ -100,27 +100,6 @@ class AssistantDetailViewModel: BaseViewModel {
         }
     }
 
-    // Perform a service action with OpenAI
-    private func performServiceAction(action: (OpenAIService) -> Void) {
-        guard let openAIService = openAIService else {
-            handleError(IdentifiableError(message: "OpenAIService is not initialized"))
-            return
-        }
-        action(openAIService)
-    }
-
-    // Handle result and errors
-    private func handleResult<T>(_ result: Result<T, OpenAIServiceError>, successHandler: @escaping (T) -> Void) {
-        DispatchQueue.main.async {
-            switch result {
-            case .success(let value):
-                successHandler(value)
-            case .failure(let error):
-                self.handleError(IdentifiableError(message: "Operation failed: \(error.localizedDescription)"))
-            }
-        }
-    }
-
     struct SuccessMessage: Identifiable {
         let id = UUID()
         let message: String
