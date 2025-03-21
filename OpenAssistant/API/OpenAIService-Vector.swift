@@ -6,14 +6,14 @@ extension OpenAIService {
     // MARK: - Private Helper Methods
     
     /// Creates a URLRequest with dynamic Content-Type handling for JSON and multipart requests
-    func createRequest(endpoint: String, method: String = "GET", body: [String: Any]? = nil, contentType: ContentType = .json) -> URLRequest? {
-        guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
+    func createRequest(endpoint: String, method: HTTPMethod = .get, body: [String: Any]? = nil, contentType: ContentType = .json) -> URLRequest? {
+        guard let url = URL(string: "\(baseURL)\(endpoint)") else {
             print("Invalid URL for endpoint: \(endpoint)")
             return nil
         }
 
         var request = URLRequest(url: url)
-        request.httpMethod = method
+        request.httpMethod = method.rawValue
         addCommonHeaders(to: &request)
         
         // Set the Content-Type header from enum rawValue.
@@ -44,44 +44,16 @@ extension OpenAIService {
     /// Executes a URLSession data task and handles decoding the response
     func handleURLSessionDataTask<T: Decodable>(request: URLRequest, completion: @escaping (Result<T, Error>) -> Void) {
         session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("Request error: \(error.localizedDescription)")
-                completion(.failure(error))
-                return
-            }
-            
-            guard let data = data else {
-                print("No data received for request to \(request.url?.absoluteString ?? "unknown URL")")
-                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                return
-            }
-            
-            // Debug: Print response data as a string
-            if let responseDataString = String(data: data, encoding: .utf8) {
-                print("Response data: \(responseDataString)")
-            }
-            
-            do {
-                let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-                completion(.success(decodedResponse))
-            } catch {
-                print("Decoding error: \(error.localizedDescription)")
-                completion(.failure(error))
-            }
+            self.handleDataTaskResponse(data: data, response: response, error: error, completion: completion)
         }.resume()
     }
     
 
 
     // MARK: - Request Configuration
-    func configureRequest(_ request: inout URLRequest, httpMethod: String) {
-        request.httpMethod = httpMethod
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    }
 
     func createVectorStore(name: String) -> AnyPublisher<String, Error> {
-        guard let url = URL(string: "https://api.openai.com/v1/vector_stores") else {
+        guard let url = URL(string: "\(baseURL)vector_stores") else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
         
@@ -119,7 +91,7 @@ extension OpenAIService {
         let endpoint = "vector_stores"
         let body: [String: Any] = ["name": name]
 
-        guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
+        guard let request = createRequest(endpoint: endpoint, method: .post, body: body) else {
             completion(.failure(.invalidRequest))
             return
         }
@@ -193,12 +165,9 @@ extension OpenAIService {
     // MARK: - Retrieve File Batch
 
     func getFileBatch(vectorStoreId: String, batchId: String) -> AnyPublisher<VectorStoreFileBatch, Error> {
-        guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/file_batches/\(batchId)") else {
-            return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])).eraseToAnyPublisher()
+        guard let request = makeRequest(endpoint: "vector_stores/\(vectorStoreId)/file_batches/\(batchId)", httpMethod: .get) else {
+            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
-        
-        var request = URLRequest(url: url)
-        configureRequest(&request, httpMethod: .get)
         
         return URLSession.shared.dataTaskPublisher(for: request)
             .map(\.data)
@@ -210,12 +179,9 @@ extension OpenAIService {
     // MARK: - List Files in File Batch
 
     func listFilesInFileBatch(vectorStoreId: String, batchId: String) -> AnyPublisher<[File], Error> {
-        guard let url = URL(string: "\(baseURL)/vector_stores/\(vectorStoreId)/file_batches/\(batchId)/files") else {
-            return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])).eraseToAnyPublisher()
+        guard let request = makeRequest(endpoint: "vector_stores/\(vectorStoreId)/file_batches/\(batchId)/files", httpMethod: .get) else {
+            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
-        
-        var request = URLRequest(url: url)
-        configureRequest(&request, httpMethod: .get)
         
         return URLSession.shared.dataTaskPublisher(for: request)
             .map(\.data)
@@ -279,7 +245,7 @@ extension OpenAIService {
             body["files"] = files
         }
         
-        guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
+        guard let request = createRequest(endpoint: endpoint, method: .post, body: body) else {
             completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
             return
         }
@@ -293,7 +259,7 @@ extension OpenAIService {
     func deleteVectorStore(vectorStoreId: String) -> AnyPublisher<Void, Error> {
         let endpoint = "vector_stores/\(vectorStoreId)"
         
-        guard let request = createRequest(endpoint: endpoint, method: "DELETE") else {
+        guard let request = createRequest(endpoint: endpoint, method: .delete) else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
         
@@ -316,7 +282,7 @@ extension OpenAIService {
     func deleteFile(fileID: String) -> AnyPublisher<Void, Error> {
         let endpoint = "files/\(fileID)"
         
-        guard let request = createRequest(endpoint: endpoint, method: "DELETE") else {
+        guard let request = createRequest(endpoint: endpoint, method: .delete) else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
         

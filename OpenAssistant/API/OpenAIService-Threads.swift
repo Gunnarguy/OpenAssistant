@@ -52,49 +52,12 @@ extension OpenAIService {
             return
         }
         session.dataTask(with: request) { data, response, error in
-            if let error = error {
-                self.logError("Network error: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.networkError(error)))
-                }
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                self.logError("Invalid response: \(String(describing: response))")
-                DispatchQueue.main.async {
-                    completion(.failure(.unknownError))
-                }
-                return
-            }
-
-            if !(200...299).contains(httpResponse.statusCode) {
-                self.logError("HTTP error: \(httpResponse.statusCode)")
-                DispatchQueue.main.async {
-                    completion(.failure(.invalidResponse(httpResponse)))
-                }
-                return
-            }
-
-            guard let data = data else {
-                self.logError("No data received")
-                DispatchQueue.main.async {
-                    completion(.failure(.noData))
-                }
-                return
-            }
-
-            self.logResponseData(data)
-
-            do {
-                let decodedResponse = try JSONDecoder().decode(MessageResponseList.self, from: data)
-                DispatchQueue.main.async {
-                    completion(.success(decodedResponse.data))
-                }
-            } catch {
-                self.logError("Decoding error: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError(data, error)))
+            self.handleResponse(data, response, error) { (result: Result<MessageResponseList, OpenAIServiceError>) in
+                switch result {
+                case .success(let responseList):
+                    completion(.success(responseList.data))
+                case .failure(let error):
+                    completion(.failure(error))
                 }
             }
         }.resume()
@@ -113,31 +76,23 @@ extension OpenAIService {
         }
         logRequestDetails(request, body: body)
         session.dataTask(with: request) { data, response, error in
+            // Simply check for a successful response, we don't need to decode a specific type
             if let error = error {
-                self.logError("Network error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     completion(.failure(.networkError(error)))
                 }
                 return
             }
-            guard let data = data else {
-                self.logError("No data received")
+            
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
                 DispatchQueue.main.async {
-                    completion(.failure(.noData))
+                    completion(.failure(.invalidResponse(response!)))
                 }
                 return
             }
-            self.logResponseData(data)
-            do {
-                _ = try JSONDecoder().decode(OpenAIResponse.self, from: data)
-                DispatchQueue.main.async {
-                    completion(.success(()))
-                }
-            } catch {
-                self.logError("Decoding error: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(.decodingError(data, error)))
-                }
+            
+            DispatchQueue.main.async {
+                completion(.success(()))
             }
         }.resume()
     }
