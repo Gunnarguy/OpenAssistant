@@ -31,7 +31,13 @@ class ChatViewModel: BaseViewModel {
     @Published var isLoading = false
     @Published var stepCounter: Int = 0
     @Published var loadingState: LoadingState = .idle
+    
+    // Expose the thread ID as a computed property
+    var threadId: String? {
+        return thread?.id
+    }
 
+    // Remove 'weak' keyword as ScrollViewProxy is not a class type
     var scrollViewProxy: ScrollViewProxy?
     let assistant: Assistant
     private var thread: Thread?
@@ -244,9 +250,22 @@ class ChatViewModel: BaseViewModel {
     // MARK: - UI Updates
 
     func scrollToLastMessage() {
-        if let lastMessage = messages.last {
-            scrollViewProxy?.scrollTo(lastMessage.id, anchor: .bottom)
+        guard let scrollViewProxy = scrollViewProxy, !messages.isEmpty, let lastMessage = messages.last else {
+            return
         }
+        
+        // Use a safer way to scroll to the last message with a slight delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Remove [weak self] since we're not using 'self' in this closure
+            withAnimation {
+                scrollViewProxy.scrollTo(lastMessage.id, anchor: .bottom)
+            }
+        }
+    }
+    
+    // Add a safe setter method for the scrollViewProxy
+    func setScrollViewProxy(_ proxy: ScrollViewProxy?) {
+        self.scrollViewProxy = proxy
     }
 
     // MARK: - Error Handling

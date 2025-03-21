@@ -9,68 +9,41 @@ protocol MessageListViewProtocol {
     func scrollToLoadingIndicator(proxy: ScrollViewProxy)
 }
 
-struct MessageListView: View, MessageListViewProtocol {
+struct MessageListView: View {
     @ObservedObject var viewModel: ChatViewModel
     var colorScheme: ColorScheme
     
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
-                    messageList
-                    loadingIndicator
+                LazyVStack(spacing: 15) {
+                    ForEach(viewModel.messages) { message in
+                        MessageBubble(message: message, colorScheme: colorScheme)
+                            .id(message.id)
+                    }
+                    
+                    // Add spacer at the bottom to allow scrolling past the last message
+                    Spacer(minLength: 60)
                 }
-            }
-            .padding(.horizontal)
-            .padding(.top, 8)
-            .onChange(of: viewModel.messages) { _ in
-                scrollToLastMessage(proxy: proxy)
-            }
-            .onChange(of: viewModel.isLoading) { _ in
-                scrollToLoadingIndicator(proxy: proxy)
+                .padding(.top, 10)
             }
             .onAppear {
-                viewModel.scrollViewProxy = proxy
-                viewModel.createThread()
-                scrollToLastMessage(proxy: proxy)
+                // Safely set the proxy when the view appears
+                viewModel.setScrollViewProxy(proxy)
+                
+                // Scroll to last message with a delay to ensure layout is complete
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    viewModel.scrollToLastMessage()
+                }
             }
-            .background(Color.clear)
-        }
-    }
-    
-    private var messageList: some View {
-        ForEach(viewModel.messages) { message in
-            MessageView(message: message, colorScheme: colorScheme)
-        }
-    }
-    
-    private var loadingIndicator: some View {
-        Group {
-            if viewModel.isLoading {
-                LoadingProgressView(viewModel: viewModel)
-                    .padding(.vertical, 10)
-                    .id("loadingIndicator")
+            .onChange(of: viewModel.messages.count) { _ in
+                // Scroll when messages change
+                viewModel.scrollToLastMessage()
             }
-        }
-    }
-
-    func scrollToLastMessage(proxy: ScrollViewProxy) {
-        if let lastMessageId = viewModel.messages.last?.id {
-            proxy.scrollTo(lastMessageId, anchor: .bottom)
-        }
-    }
-
-    struct LoadingProgressView: View {
-    var viewModel: ChatViewModel
-    
-    var body: some View {
-        ProgressView() // simple loading indicator representation
-    }
-}
-
-    func scrollToLoadingIndicator(proxy: ScrollViewProxy) {
-        if viewModel.isLoading {
-            proxy.scrollTo("loadingIndicator", anchor: .bottom)
+            // Important: Clear the proxy reference when the view disappears
+            .onDisappear {
+                viewModel.setScrollViewProxy(nil)
+            }
         }
     }
 }

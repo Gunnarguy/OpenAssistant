@@ -63,6 +63,36 @@ struct VectorStoreFile: Identifiable, Codable {
         case lastError = "last_error"
         case chunkingStrategy = "chunking_strategy"
     }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        object = try container.decode(String.self, forKey: .object)
+        usageBytes = try container.decode(Int.self, forKey: .usageBytes)
+        createdAt = try container.decode(Int.self, forKey: .createdAt)
+        vectorStoreId = try container.decode(String.self, forKey: .vectorStoreId)
+        status = try container.decode(String.self, forKey: .status)
+        if let errorString = try? container.decodeIfPresent(String.self, forKey: .lastError) {
+            lastError = errorString
+        } else if let errorDict = try? container.decodeIfPresent([String: String].self, forKey: .lastError) {
+            lastError = errorDict.description
+        } else {
+            lastError = nil
+        }
+        chunkingStrategy = try container.decodeIfPresent(ChunkingStrategy.self, forKey: .chunkingStrategy)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(object, forKey: .object)
+        try container.encode(usageBytes, forKey: .usageBytes)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(vectorStoreId, forKey: .vectorStoreId)
+        try container.encode(status, forKey: .status)
+        try container.encode(lastError, forKey: .lastError)
+        try container.encode(chunkingStrategy, forKey: .chunkingStrategy)
+    }
 }
 
 // MARK: - Chunking Strategy
