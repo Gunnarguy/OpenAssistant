@@ -68,6 +68,6 @@ class BaseAssistantViewModel: ObservableObject {
         if let newApiKey = newApiKey {
             UserDefaults.standard.set(newApiKey, forKey: "OpenAI_API_Key")
         }
-        openAIService = OpenAIServiceInitializer.reinitialize(apiKey: apiKey)
+        openAIService = OpenAIServiceInitializer.initialize(apiKey: apiKey)
     }
 }

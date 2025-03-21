@@ -60,6 +60,14 @@ struct MessageListView: View, MessageListViewProtocol {
         }
     }
 
+    struct LoadingProgressView: View {
+    var viewModel: ChatViewModel
+    
+    var body: some View {
+        ProgressView() // simple loading indicator representation
+    }
+}
+
     func scrollToLoadingIndicator(proxy: ScrollViewProxy) {
         if viewModel.isLoading {
             proxy.scrollTo("loadingIndicator", anchor: .bottom)

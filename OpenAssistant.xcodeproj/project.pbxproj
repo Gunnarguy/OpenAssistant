@@ -22,10 +22,8 @@
 		B0B14F722CB626FF00778895 /* MessageListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B14F712CB626FF00778895 /* MessageListView.swift */; };
 		B0B14F742CB6271300778895 /* InputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B14F732CB6271300778895 /* InputView.swift */; };
 		B0B14F762CB6273B00778895 /* SendButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B14F752CB6273B00778895 /* SendButton.swift */; };
-		B0B14F782CB6275200778895 /* StepCounterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B14F772CB6275200778895 /* StepCounterView.swift */; };
 		B0B14F7A2CB6276B00778895 /* MessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B14F792CB6276B00778895 /* MessageView.swift */; };
 		B0B14F7C2CB6279900778895 /* ChatHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B14F7B2CB6279900778895 /* ChatHistoryView.swift */; };
-		B0B14F7E2CB627D100778895 /* NewCustomLoadingIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B14F7D2CB627D100778895 /* NewCustomLoadingIndicator.swift */; };
 		B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */; };
 		B0BFE4442C9BDC8800EB6D81 /* AssistantFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */; };
 		B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */; };
@@ -74,10 +72,8 @@
 		B0B14F712CB626FF00778895 /* MessageListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageListView.swift; sourceTree = "<group>"; };
 		B0B14F732CB6271300778895 /* InputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputView.swift; sourceTree = "<group>"; };
 		B0B14F752CB6273B00778895 /* SendButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendButton.swift; sourceTree = "<group>"; };
-		B0B14F772CB6275200778895 /* StepCounterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterView.swift; sourceTree = "<group>"; };
 		B0B14F792CB6276B00778895 /* MessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageView.swift; sourceTree = "<group>"; };
 		B0B14F7B2CB6279900778895 /* ChatHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatHistoryView.swift; sourceTree = "<group>"; };
-		B0B14F7D2CB627D100778895 /* NewCustomLoadingIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCustomLoadingIndicator.swift; sourceTree = "<group>"; };
 		B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailView.swift; sourceTree = "<group>"; };
 		B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantFormView.swift; sourceTree = "<group>"; };
 		B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
@@ -231,10 +227,8 @@
 				B0B14F712CB626FF00778895 /* MessageListView.swift */,
 				B0B14F732CB6271300778895 /* InputView.swift */,
 				B0B14F752CB6273B00778895 /* SendButton.swift */,
-				B0B14F772CB6275200778895 /* StepCounterView.swift */,
 				B0B14F792CB6276B00778895 /* MessageView.swift */,
 				B0B14F7B2CB6279900778895 /* ChatHistoryView.swift */,
-				B0B14F7D2CB627D100778895 /* NewCustomLoadingIndicator.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -348,7 +342,6 @@
 				B059E6C72CAB8DDD00B1028E /* Extensions.swift in Sources */,
 				B0EEE7442C99326A0012F2BA /* MessageStore.swift in Sources */,
 				B07E5CDC2CE45D1D00B53135 /* FileUploadService.swift in Sources */,
-				B0B14F7E2CB627D100778895 /* NewCustomLoadingIndicator.swift in Sources */,
 				B0EEE7452C99326A0012F2BA /* OpenAssistantApp.swift in Sources */,
 				B0EEE7462C99326A0012F2BA /* CreateAssistantView.swift in Sources */,
 				B033D41A2CCAFECD00984B82 /* OpenAIService-Vector.swift in Sources */,
@@ -376,7 +369,6 @@
 				B0B14F7C2CB6279900778895 /* ChatHistoryView.swift in Sources */,
 				B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */,
 				B0EEE7532C99326A0012F2BA /* AssistantPickerViewModel.swift in Sources */,
-				B0B14F782CB6275200778895 /* StepCounterView.swift in Sources */,
 				B0EEE7542C99326A0012F2BA /* AddFileView.swift in Sources */,
 				B0EEE7562C99326A0012F2BA /* VectorStoreDetailView.swift in Sources */,
 				B033D41E2CCB0AB000984B82 /* OpenAIService-Threads.swift in Sources */,
