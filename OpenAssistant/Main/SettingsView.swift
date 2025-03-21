@@ -11,6 +11,7 @@ struct SettingsView: View {
     @EnvironmentObject var assistantManagerViewModel: AssistantManagerViewModel
     @Environment(\.presentationMode) var presentationMode
 
+    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             apiKeySection
@@ -22,7 +23,11 @@ struct SettingsView: View {
         .navigationBarTitle("Settings", displayMode: .inline)
         .preferredColorScheme(isDarkMode ? .dark : .light)
         .alert(isPresented: $showAlert) {
-            Alert(title: Text("Settings"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+            Alert(
+                title: Text("Settings"), 
+                message: Text(alertMessage), 
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 
@@ -60,7 +65,9 @@ struct SettingsView: View {
         validateApiKey()
         if isApiKeyValid {
             alertMessage = "Settings saved successfully."
+            #if DEBUG
             print("API Key saved: \(apiKey)")
+            #endif
 
             // Notify other views to refresh data after API key is saved
             NotificationCenter.default.post(name: .settingsUpdated, object: nil)
@@ -71,13 +78,16 @@ struct SettingsView: View {
             alertMessage = "API Key cannot be empty."
         }
         showAlert = true
+        #if DEBUG
         print("Dark Mode: \(isDarkMode)")
+        #endif
     }
+}
 
-    struct SettingsView_Previews: PreviewProvider {
-        static var previews: some View {
-            SettingsView()
-                .environmentObject(AssistantManagerViewModel())
-        }
+// MARK: - Previews
+struct SettingsView_Previews: PreviewProvider {
+    static var previews: some View {
+        SettingsView()
+            .environmentObject(AssistantManagerViewModel())
     }
 }

@@ -2,11 +2,14 @@ import Foundation
 import Combine
 import SwiftUI
 
+// MARK: - MainTabView
 struct MainTabView: View {
+    // MARK: - Properties
     @Binding var selectedAssistant: Assistant?
     @ObservedObject var vectorStoreViewModel: VectorStoreManagerViewModel
     @ObservedObject var messageStore: MessageStore
     
+    // MARK: - Body
     var body: some View {
         TabView {
             ForEach(Tab.allCases, id: \.self) { tab in
@@ -29,12 +32,15 @@ struct MainTabView: View {
     }
 }
 
-private enum Tab: CaseIterable {
+// MARK: - Tab Enum
+private enum Tab: String, CaseIterable {
+    // MARK: Tab Cases
     case assistants
     case manage
     case vectorStores
     case settings
     
+    // MARK: UI Properties
     var label: String {
         switch self {
         case .assistants: return "Assistants"
@@ -53,6 +59,7 @@ private enum Tab: CaseIterable {
         }
     }
     
+    // MARK: View Builder
     @MainActor @ViewBuilder
     func view(messageStore: MessageStore, vectorStoreViewModel: VectorStoreManagerViewModel) -> some View {
         switch self {

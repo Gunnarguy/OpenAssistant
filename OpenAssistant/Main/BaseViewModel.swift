@@ -8,15 +8,16 @@ class BaseViewModel: ObservableObject {
     @Published var errorMessage: IdentifiableError?
     
     // MARK: - Stored Properties
-    @AppStorage("OpenAI_API_Key") private var storedApiKey: String = "" {
-        didSet {
-            updateApiKey()
-        }
-    }
+    @AppStorage("OpenAI_API_Key") private var storedApiKey: String = ""
     private(set) var openAIService: OpenAIService?
     private var cancellables = Set<AnyCancellable>()
 
-    // MARK: - Initializer
+    // MARK: - Computed Properties
+    var apiKey: String {
+        storedApiKey
+    }
+
+    // MARK: - Initialization
     init() {
         initializeOpenAIService()
         setupNotificationObservers()
@@ -26,60 +27,70 @@ class BaseViewModel: ObservableObject {
     func initializeOpenAIService() {
         guard !storedApiKey.isEmpty else {
             openAIService = nil
-            print("API key is empty. OpenAI service is not initialized.")
+            logMessage("API key is empty. OpenAI service is not initialized.")
             return
         }
         openAIService = OpenAIServiceInitializer.initialize(apiKey: storedApiKey)
-        print("OpenAI service initialized with the provided API key.")
+        logMessage("OpenAI service initialized with the provided API key.")
     }
 
     // MARK: - Error Handling
     func handleError(_ error: IdentifiableError) {
         errorMessage = error
-        print("Error encountered: \(error.message)")
+        logMessage("Error encountered: \(error.message)", isError: true)
     }
 
     // MARK: - Notification Observers
-    func setupNotificationObservers() {
+    private func setupNotificationObservers() {
         NotificationCenter.default.publisher(for: .settingsUpdated)
             .sink { [weak self] _ in
-                self?.initializeOpenAIService()
+                Task { @MainActor in
+                    self?.handleSettingsUpdated()
+                }
             }
             .store(in: &cancellables)
     }
+    
+    private func handleSettingsUpdated() {
+        initializeOpenAIService()
+        logMessage("Settings updated notification received.")
+    }
 
-    // MARK: - Update API Key
-    private func updateApiKey() {
+    // MARK: - Logging
+    nonisolated private func logMessage(_ message: String, isError: Bool = false) {
+        #if DEBUG
+        let prefix = isError ? "ERROR: " : "INFO: "
+        print("\(prefix)\(message)")
+        #endif
+    }
+
+    // MARK: - API Key Observer
+    private func didSetApiKey() {
         guard !storedApiKey.isEmpty else {
-            print("Updated API key is empty. Clearing OpenAI service.")
+            logMessage("Updated API key is empty. Clearing OpenAI service.", isError: true)
             openAIService = nil
             return
         }
-        openAIService = OpenAIServiceInitializer.reinitialize(apiKey: storedApiKey)
-        print("API key updated. OpenAI service reinitialized.")
-    }
-
-    // MARK: - Access API Key
-    var apiKey: String {
-        storedApiKey
+        openAIService = OpenAIServiceInitializer.initialize(apiKey: storedApiKey)
+        logMessage("API key updated. OpenAI service reinitialized.")
     }
 
     // MARK: - Deinitializer
     deinit {
         cancellables.removeAll()
-        print("BaseViewModel deinitialized. Observers cleared.")
+        logMessage("BaseViewModel deinitialized. Observers cleared.")
     }
 }
 
+// MARK: - Result Handling
 extension BaseViewModel {
     func handleResult<T>(_ result: Result<T, OpenAIServiceError>, success: @escaping (T) -> Void) {
-        DispatchQueue.main.async {
-            switch result {
-            case .success(let value):
-                success(value)
-            case .failure(let error):
-                self.handleError(IdentifiableError(message: "Operation failed: \(error.localizedDescription)"))
-            }
+        switch result {
+        case .success(let value):
+            success(value)
+        case .failure(let error):
+            let errorMessage = "Operation failed: \(error.localizedDescription)"
+            handleError(IdentifiableError(message: errorMessage))
         }
     }
     
