@@ -48,7 +48,27 @@ class ChatViewModel: BaseViewModel {
         self.assistant = assistant
         self.messageStore = messageStore
         super.init()
-        createThread()
+        
+        if let existingThreads = assistant.threads, !existingThreads.isEmpty {
+            self.thread = existingThreads.first
+            self.hasCreatedThread = true
+            // Fetch messages for the existing thread
+            if let threadId = thread?.id {
+                fetchMessagesForThread(threadId: threadId)
+            }
+        } else {
+            createThread()
+        }
+    }
+    
+    private func fetchMessagesForThread(threadId: String) {
+        updateLoadingState(isLoading: true, state: .processingResponse)
+        openAIService?.fetchRunMessages(threadId: threadId) { [weak self] result in
+            Task { @MainActor in
+                self?.handleFetchMessagesResult(result)
+                self?.updateLoadingState(isLoading: false)
+            }
+        }
     }
 
     // MARK: - Thread Management
@@ -75,7 +95,7 @@ class ChatViewModel: BaseViewModel {
             stepCounter = 2
             print("Thread created successfully: \(thread.id)")
         case .failure(let error):
-            handleError("Failed to create thread: \(error.localizedDescription)")
+            handleError(error)
         }
     }
 
@@ -99,7 +119,7 @@ class ChatViewModel: BaseViewModel {
             stepCounter = 4
             pollRunStatus(threadId: threadId, runId: run.id)
         case .failure(let error):
-            handleError("Failed to run assistant on thread: \(error.localizedDescription)")
+            handleError(error)
         }
     }
 
@@ -125,7 +145,11 @@ class ChatViewModel: BaseViewModel {
                 }
             } catch {
                 await MainActor.run {
-                    handleError("Failed to fetch run status: \(error.localizedDescription)")
+                    if let openAIError = error as? OpenAIServiceError {
+                        handleError(openAIError)
+                    } else {
+                        handleError("Failed to fetch run status: \(error.localizedDescription)")
+                    }
                     timer.invalidate()
                     updateLoadingState(isLoading: false)
                 }
@@ -182,7 +206,7 @@ class ChatViewModel: BaseViewModel {
             messageStore.addMessages(newMessages)
             scrollToLastMessage()
         case .failure(let error):
-            handleError("Failed to fetch messages: \(error.localizedDescription)")
+            handleError(error)
         }
     }
 
@@ -192,12 +216,9 @@ class ChatViewModel: BaseViewModel {
         guard let thread = thread, !inputText.isEmpty else { return }
 
         let userMessage = createUserMessage(threadId: thread.id)
-        print("Message IDs before adding new message:")
-        messages.forEach { print($0.id) }
-
+        
         messages.append(userMessage)
         messageStore.addMessage(userMessage)
-        checkForDuplicateIDs()
         inputText = ""
         updateLoadingState(isLoading: true, state: .sendingMessage)
 
@@ -213,7 +234,7 @@ class ChatViewModel: BaseViewModel {
     }
 
     private func createUserMessage(threadId: String) -> Message {
-        let uniqueID = UUID().uuidString
+        let uniqueID = generateUniqueMessageID()
         return Message(
             id: uniqueID,
             object: "thread.message",
@@ -243,7 +264,7 @@ class ChatViewModel: BaseViewModel {
             runAssistantOnThread()
         case .failure(let error):
             updateLoadingState(isLoading: false)
-            handleError("Failed to send message: \(error.localizedDescription)")
+            handleError(error)
         }
     }
 
@@ -277,18 +298,16 @@ class ChatViewModel: BaseViewModel {
             updateLoadingState(isLoading: false)
         }
     }
-
-    // MARK: - Utility
-
-    private func checkForDuplicateIDs() {
-        let ids = messages.map { $0.id }
-        let duplicates = Dictionary(grouping: ids, by: { $0 }).filter { $1.count > 1 }.keys
-        if !duplicates.isEmpty {
-            print("Duplicate IDs found: \(duplicates)")
-        } else {
-            print("All IDs are unique.")
+    
+    private func handleError(_ error: OpenAIServiceError) {
+        Task { @MainActor in
+            self.errorMessage = IdentifiableError(message: error.localizedDescription)
+            self.hasCreatedThread = false
+            updateLoadingState(isLoading: false)
         }
     }
+
+    // MARK: - Utility
 
     private func updateLoadingState(isLoading: Bool, state: LoadingState? = nil) {
         self.isLoading = isLoading
