@@ -4,19 +4,21 @@ import SwiftUI
 
 struct MainTabView: View {
     @Binding var selectedAssistant: Assistant?
-    @ObservedObject var viewModel: VectorStoreManagerViewModel
+    @ObservedObject var vectorStoreViewModel: VectorStoreManagerViewModel
     @ObservedObject var messageStore: MessageStore
     
     var body: some View {
         TabView {
             ForEach(Tab.allCases, id: \.self) { tab in
-                tab.view(messageStore: messageStore)
+                tab.view(messageStore: messageStore, vectorStoreViewModel: vectorStoreViewModel)
                     .tabItem {
                         Label(tab.label, systemImage: tab.systemImage)
                     }
+                    #if DEBUG
                     .onAppear {
                         print("\(tab.label) tab appeared")
                     }
+                    #endif
             }
         }
         .sheet(item: $selectedAssistant) { assistant in
@@ -52,14 +54,14 @@ private enum Tab: CaseIterable {
     }
     
     @MainActor @ViewBuilder
-    func view(messageStore: MessageStore) -> some View {
+    func view(messageStore: MessageStore, vectorStoreViewModel: VectorStoreManagerViewModel) -> some View {
         switch self {
         case .assistants:
             AssistantPickerView(messageStore: messageStore)
         case .manage:
             AssistantManagerView()
         case .vectorStores:
-            VectorStoreListView(viewModel: VectorStoreManagerViewModel())
+            VectorStoreListView(viewModel: vectorStoreViewModel)
         case .settings:
             SettingsView()
         }
