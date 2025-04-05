@@ -185,7 +185,6 @@
 		B07E218E2DA1EB8200C59A23 /* AssistantManager */ = {
 			isa = PBXGroup;
 			children = (
-				B0EEE73C2C99326A0012F2BA /* SettingsView.swift */,
 				B0EEE7222C99326A0012F2BA /* AssistantManagerViewModel.swift */,
 				B0EEE7212C99326A0012F2BA /* AssistantManagerView.swift */,
 			);
@@ -231,10 +230,8 @@
 			isa = PBXGroup;
 			children = (
 				B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */,
-				B0DD9C612C9DFC3A00A0D623 /* OpenAIInitializer.swift */,
 				B059E6C62CAB8DDD00B1028E /* Extensions.swift */,
 				B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */,
-				B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */,
 				B0DC007F2CC895FB0080C096 /* Additional.swift */,
 				B0EEE7382C99326A0012F2BA /* Errors.swift */,
 				B0EEE7372C99326A0012F2BA /* ResponseFormat.swift */,
@@ -293,6 +290,7 @@
 				B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */,
 				B0EEE7282C99326A0012F2BA /* MessageStore.swift */,
 				B07E21912DA1EC6C00C59A23 /* Chat */,
+				B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */,
 			);
 			path = MVVMs;
 			sourceTree = "<group>";
@@ -304,6 +302,8 @@
 				B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */,
 				B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */,
 				B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */,
+				B0EEE73C2C99326A0012F2BA /* SettingsView.swift */,
+				B0DD9C612C9DFC3A00A0D623 /* OpenAIInitializer.swift */,
 			);
 			path = APIService;
 			sourceTree = "<group>";
