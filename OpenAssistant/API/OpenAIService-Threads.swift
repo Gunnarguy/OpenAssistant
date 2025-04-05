@@ -2,9 +2,16 @@ import Foundation
 import Combine
 import SwiftUI
 
+// MARK: - Thread Management
 extension OpenAIService {
     
     // MARK: - Create Thread
+    
+    /**
+     Creates a new thread for conversations with the assistant.
+     
+     - Parameter completion: Callback with Result containing Thread on success or OpenAIServiceError on failure
+     */
     func createThread(completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
         guard let request = makeRequest(endpoint: "threads", httpMethod: .post) else {
             completion(.failure(.custom("Failed to create request")))
@@ -14,8 +21,33 @@ extension OpenAIService {
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
+    
+    /**
+     Creates a new thread using async/await.
+     
+     - Returns: A new Thread object
+     - Throws: OpenAIServiceError if the request fails
+     */
+    @available(iOS 15.0, *)
+    func createThread() async throws -> Thread {
+        guard let request = makeRequest(endpoint: "threads", httpMethod: .post) else {
+            throw OpenAIServiceError.invalidRequest
+        }
+        
+        let (data, response) = try await session.data(for: request)
+        return try self.decodeResponse(data: data, response: response)
+    }
 
     // MARK: - Run Assistant on Thread
+    
+    /**
+     Runs an assistant on the specified thread.
+     
+     - Parameters:
+        - threadId: The ID of the thread
+        - assistantId: The ID of the assistant to run
+        - completion: Callback with Result containing Run on success or OpenAIServiceError on failure
+     */
     func runAssistantOnThread(threadId: String, assistantId: String, completion: @escaping (Result<Run, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/runs"
         let body: [String: Any] = ["assistant_id": assistantId]
@@ -32,7 +64,44 @@ extension OpenAIService {
         }.resume()
     }
     
+    /**
+     Runs an assistant on a thread using async/await.
+     
+     - Parameters:
+        - threadId: The ID of the thread
+        - assistantId: The ID of the assistant to run
+     - Returns: Run object containing details about the run
+     - Throws: OpenAIServiceError if the request fails
+     */
+    @available(iOS 15.0, *)
+    func runAssistantOnThread(threadId: String, assistantId: String) async throws -> Run {
+        let endpoint = "threads/\(threadId)/runs"
+        let body: [String: Any] = ["assistant_id": assistantId]
+        
+        guard let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body) else {
+            throw OpenAIServiceError.invalidRequest
+        }
+        
+        logRequestDetails(request, body: body)
+        let (data, response) = try await session.data(for: request)
+        
+        if let data = data {
+            self.logResponseData(data)
+        }
+        
+        return try self.decodeResponse(data: data, response: response)
+    }
+    
     // MARK: - Fetch Run Status
+    
+    /**
+     Fetches the status of a run.
+     
+     - Parameters:
+        - threadId: The ID of the thread
+        - runId: The ID of the run
+        - completion: Callback with Result containing Run on success or OpenAIServiceError on failure
+     */
     func fetchRunStatus(threadId: String, runId: String, completion: @escaping (Result<Run, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/runs/\(runId)"
         guard let request = makeRequest(endpoint: endpoint) else {
@@ -44,7 +113,36 @@ extension OpenAIService {
         }.resume()
     }
     
+    /**
+     Fetches the status of a run using async/await.
+     
+     - Parameters:
+        - threadId: The ID of the thread
+        - runId: The ID of the run
+     - Returns: Run object with updated status
+     - Throws: OpenAIServiceError if the request fails
+     */
+    @available(iOS 15.0, *)
+    func fetchRunStatus(threadId: String, runId: String) async throws -> Run {
+        let endpoint = "threads/\(threadId)/runs/\(runId)"
+        
+        guard let request = makeRequest(endpoint: endpoint) else {
+            throw OpenAIServiceError.invalidRequest
+        }
+        
+        let (data, response) = try await session.data(for: request)
+        return try self.decodeResponse(data: data, response: response)
+    }
+    
     // MARK: - Fetch Run Messages
+    
+    /**
+     Fetches messages for a thread.
+     
+     - Parameters:
+        - threadId: The ID of the thread
+        - completion: Callback with Result containing array of Messages on success or OpenAIServiceError on failure
+     */
     func fetchRunMessages(threadId: String, completion: @escaping (Result<[Message], OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/messages"
         guard let request = makeRequest(endpoint: endpoint) else {
@@ -63,7 +161,36 @@ extension OpenAIService {
         }.resume()
     }
     
+    /**
+     Fetches messages for a thread using async/await.
+     
+     - Parameter threadId: The ID of the thread
+     - Returns: Array of Message objects
+     - Throws: OpenAIServiceError if the request fails
+     */
+    @available(iOS 15.0, *)
+    func fetchRunMessages(threadId: String) async throws -> [Message] {
+        let endpoint = "threads/\(threadId)/messages"
+        
+        guard let request = makeRequest(endpoint: endpoint) else {
+            throw OpenAIServiceError.invalidRequest
+        }
+        
+        let (data, response) = try await session.data(for: request)
+        let responseList: MessageResponseList = try self.decodeResponse(data: data, response: response)
+        return responseList.data
+    }
+    
     // MARK: - Add Message to Thread
+    
+    /**
+     Adds a message to a thread.
+     
+     - Parameters:
+        - threadId: The ID of the thread
+        - message: Message to add to the thread
+        - completion: Callback with Result containing Void on success or OpenAIServiceError on failure
+     */
     func addMessageToThread(threadId: String, message: Message, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)/messages"
         let body: [String: Any] = [
@@ -97,7 +224,43 @@ extension OpenAIService {
         }.resume()
     }
     
+    /**
+     Adds a message to a thread using async/await.
+     
+     - Parameters:
+        - threadId: The ID of the thread
+        - message: Message to add to the thread
+     - Throws: OpenAIServiceError if the request fails
+     */
+    @available(iOS 15.0, *)
+    func addMessageToThread(threadId: String, message: Message) async throws {
+        let endpoint = "threads/\(threadId)/messages"
+        let body: [String: Any] = [
+            "role": message.role.rawValue,
+            "content": message.content.map { $0.toDictionary() }
+        ]
+        
+        guard let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body) else {
+            throw OpenAIServiceError.invalidRequest
+        }
+        
+        logRequestDetails(request, body: body)
+        let (_, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw OpenAIServiceError.invalidResponse(response)
+        }
+    }
+    
     // MARK: - Fetch Thread Details
+    
+    /**
+     Fetches details for a thread.
+     
+     - Parameters:
+        - threadId: The ID of the thread
+        - completion: Callback with Result containing Thread on success or OpenAIServiceError on failure
+     */
     func fetchThreadDetails(threadId: String, completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
         let endpoint = "threads/\(threadId)"
         guard let request = makeRequest(endpoint: endpoint) else {
@@ -107,6 +270,60 @@ extension OpenAIService {
         session.dataTask(with: request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
+    }
+    
+    /**
+     Fetches thread details using async/await.
+     
+     - Parameter threadId: The ID of the thread
+     - Returns: Thread object with details
+     - Throws: OpenAIServiceError if the request fails
+     */
+    @available(iOS 15.0, *)
+    func fetchThreadDetails(threadId: String) async throws -> Thread {
+        let endpoint = "threads/\(threadId)"
+        
+        guard let request = makeRequest(endpoint: endpoint) else {
+            throw OpenAIServiceError.invalidRequest
+        }
+        
+        let (data, response) = try await session.data(for: request)
+        return try self.decodeResponse(data: data, response: response)
+    }
+    
+    // MARK: - Helper Methods
+    
+    /**
+     Decodes an API response into the specified type.
+     
+     - Parameters:
+        - data: The response data
+        - response: The HTTP response
+     - Returns: Decoded object of type T
+     - Throws: OpenAIServiceError if decoding fails or response is invalid
+     */
+    @available(iOS 15.0, *)
+    private func decodeResponse<T: Decodable>(data: Data, response: URLResponse) throws -> T {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw OpenAIServiceError.invalidResponse(response)
+        }
+        
+        guard (200...299).contains(httpResponse.statusCode) else {
+            if httpResponse.statusCode == 429 {
+                let retryAfter = httpResponse.allHeaderFields["Retry-After"] as? Int ?? 1
+                throw OpenAIServiceError.rateLimitExceeded(retryAfter)
+            } else if httpResponse.statusCode == 500 {
+                throw OpenAIServiceError.internalServerError
+            } else {
+                throw OpenAIServiceError.invalidResponse(httpResponse)
+            }
+        }
+        
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw OpenAIServiceError.decodingError(data, error)
+        }
     }
 }
 
