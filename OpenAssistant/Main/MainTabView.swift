@@ -2,21 +2,26 @@ import Foundation
 import Combine
 import SwiftUI
 
+// MARK: - MainTabView
 struct MainTabView: View {
+    // MARK: - Properties
     @Binding var selectedAssistant: Assistant?
-    @ObservedObject var viewModel: VectorStoreManagerViewModel
+    @ObservedObject var vectorStoreViewModel: VectorStoreManagerViewModel
     @ObservedObject var messageStore: MessageStore
     
+    // MARK: - Body
     var body: some View {
         TabView {
             ForEach(Tab.allCases, id: \.self) { tab in
-                tab.view(messageStore: messageStore)
+                tab.view(messageStore: messageStore, vectorStoreViewModel: vectorStoreViewModel)
                     .tabItem {
                         Label(tab.label, systemImage: tab.systemImage)
                     }
+                    #if DEBUG
                     .onAppear {
                         print("\(tab.label) tab appeared")
                     }
+                    #endif
             }
         }
         .sheet(item: $selectedAssistant) { assistant in
@@ -27,12 +32,15 @@ struct MainTabView: View {
     }
 }
 
-private enum Tab: CaseIterable {
+// MARK: - Tab Enum
+private enum Tab: String, CaseIterable {
+    // MARK: Tab Cases
     case assistants
     case manage
     case vectorStores
     case settings
     
+    // MARK: UI Properties
     var label: String {
         switch self {
         case .assistants: return "Assistants"
@@ -51,15 +59,16 @@ private enum Tab: CaseIterable {
         }
     }
     
+    // MARK: View Builder
     @MainActor @ViewBuilder
-    func view(messageStore: MessageStore) -> some View {
+    func view(messageStore: MessageStore, vectorStoreViewModel: VectorStoreManagerViewModel) -> some View {
         switch self {
         case .assistants:
             AssistantPickerView(messageStore: messageStore)
         case .manage:
             AssistantManagerView()
         case .vectorStores:
-            VectorStoreListView(viewModel: VectorStoreManagerViewModel())
+            VectorStoreListView(viewModel: vectorStoreViewModel)
         case .settings:
             SettingsView()
         }

@@ -9,23 +9,17 @@ struct VectorStoreListView: View {
     @State private var newVectorStoreName = ""
     @State private var isAddingFile = false
     @State private var didDeleteFile = false
+    @State private var isLoading = false
+    @State private var searchText = ""
 
     var body: some View {
         NavigationView {
-            List {
-                ForEach(viewModel.vectorStores) { vectorStore in
-                    NavigationLink(
-                        destination: VectorStoreDetailView(
-                            viewModel: viewModel,
-                            vectorStore: vectorStore,
-                            isAddingFile: $isAddingFile,
-                            didDeleteFile: $didDeleteFile
-                        )
-                    ) {
-                        VectorStoreRow(vectorStore: vectorStore)
-                    }
+            Group {
+                if isLoading && viewModel.vectorStores.isEmpty {
+                    loadingView
+                } else {
+                    mainListView
                 }
-                .onDelete(perform: deleteVectorStore)
             }
             .navigationTitle("Vector Stores")
             .toolbar {
@@ -45,8 +39,88 @@ struct VectorStoreListView: View {
             .alert(item: $viewModel.errorMessage) { error in
                 Alert(title: Text("Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
             }
+            .searchable(text: $searchText, prompt: "Search vector stores")
             .refreshable {
-                loadVectorStores()
+                await refreshVectorStores()
+            }
+        }
+    }
+    
+    private var loadingView: some View {
+        VStack {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle())
+                .scaleEffect(1.5)
+            
+            Text("Loading Vector Stores...")
+                .font(.headline)
+                .foregroundColor(.secondary)
+                .padding(.top, 20)
+        }
+    }
+    
+    private var mainListView: some View {
+        List {
+            if viewModel.vectorStores.isEmpty {
+                emptyStateView
+            } else {
+                ForEach(filteredStores) { vectorStore in
+                    NavigationLink(
+                        destination: VectorStoreDetailView(
+                            viewModel: viewModel,
+                            vectorStore: vectorStore,
+                            isAddingFile: $isAddingFile,
+                            didDeleteFile: $didDeleteFile
+                        )
+                    ) {
+                        VectorStoreRow(vectorStore: vectorStore)
+                    }
+                    .swipeActions {
+                        Button(role: .destructive) {
+                            viewModel.deleteVectorStore(vectorStoreId: vectorStore.id)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private var emptyStateView: some View {
+        Section {
+            VStack(spacing: 20) {
+                Image(systemName: "rectangle.stack.badge.plus")
+                    .font(.system(size: 50))
+                    .foregroundColor(.blue.opacity(0.8))
+                
+                Text("No Vector Stores Found")
+                    .font(.headline)
+                
+                Text("Create a new vector store to get started")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                Button("Create Vector Store") {
+                    isShowingCreateAlert = true
+                }
+                .buttonStyle(.borderedProminent)
+                .padding(.top, 10)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    private var filteredStores: [VectorStore] {
+        if searchText.isEmpty {
+            return viewModel.vectorStores
+        } else {
+            return viewModel.vectorStores.filter { store in
+                (store.name ?? "").localizedCaseInsensitiveContains(searchText) ||
+                store.id.localizedCaseInsensitiveContains(searchText)
             }
         }
     }
@@ -68,56 +142,65 @@ struct VectorStoreListView: View {
     }
 
     private func loadVectorStores() {
+        isLoading = true
         viewModel.fetchVectorStores()
             .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: handleFetchCompletion, receiveValue: handleFetchValue)
+            .handleEvents(receiveCompletion: { completion in
+                isLoading = false
+                if case let .failure(error) = completion {
+                    print("Failed to fetch vector stores: \(error)")
+                    viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
+                }
+            })
+            .catch { error -> AnyPublisher<[VectorStore], Never> in
+                return Just([]).eraseToAnyPublisher()
+            }
+            .assign(to: \.vectorStores, on: viewModel)
             .store(in: &viewModel.cancellables)
     }
-
-    private func handleFetchCompletion(_ completion: Subscribers.Completion<Error>) {
-        if case let .failure(error) = completion {
-            print("Failed to fetch vector stores: \(error)")
-            viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
-        }
-    }
-
-    private func handleFetchValue(_ vectorStores: [VectorStore]) {
-        viewModel.vectorStores = vectorStores
-    }
-
-    private func deleteVectorStore(at offsets: IndexSet) {
-        offsets.forEach { index in
-            let vectorStore = viewModel.vectorStores[index]
-            viewModel.deleteVectorStore(vectorStoreId: vectorStore.id)
+    
+    private func refreshVectorStores() async {
+        await withCheckedContinuation { continuation in
+            viewModel.fetchVectorStores()
+                .receive(on: DispatchQueue.main)
+                .sink(
+                    receiveCompletion: { _ in
+                        continuation.resume()
+                    },
+                    receiveValue: { [weak viewModel] vectorStores in
+                        viewModel?.vectorStores = vectorStores
+                    }
+                )
+                .store(in: &viewModel.cancellables)
         }
     }
 
     private func createVectorStore() {
         guard !newVectorStoreName.isEmpty else {
-            print("Vector store name cannot be empty.")
+            viewModel.showNotification(message: "Vector store name cannot be empty.")
             return
         }
 
         viewModel.createVectorStore(name: newVectorStoreName)
-            .sink(receiveCompletion: handleCreateCompletion, receiveValue: handleCreateValue)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { completion in
+                    switch completion {
+                    case .finished:
+                        print("Successfully created vector store.")
+                        isShowingCreateAlert = false
+                        newVectorStoreName = ""
+                        loadVectorStores()
+                    case .failure(let error):
+                        print("Error creating vector store: \(error.localizedDescription)")
+                        viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
+                    }
+                },
+                receiveValue: { vectorStoreId in
+                    print("Vector Store Created with ID: \(vectorStoreId)")
+                }
+            )
             .store(in: &viewModel.cancellables)
-    }
-
-    private func handleCreateCompletion(_ completion: Subscribers.Completion<Error>) {
-        switch completion {
-        case .finished:
-            print("Successfully created vector store.")
-            isShowingCreateAlert = false
-            newVectorStoreName = ""
-            loadVectorStores()
-        case .failure(let error):
-            print("Error creating vector store: \(error.localizedDescription)")
-            viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
-        }
-    }
-
-    private func handleCreateValue(_ vectorStoreId: String) {
-        print("Vector Store Created with ID: \(vectorStoreId)")
     }
 }
 
@@ -126,11 +209,40 @@ struct VectorStoreRow: View {
     let vectorStore: VectorStore
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(vectorStore.name ?? "Unnamed Vector Store")
                 .font(.headline)
-            Text("Created at: \(formattedDate(from: vectorStore.createdAt))")
-                .font(.subheadline)
+            
+            HStack(spacing: 12) {
+                fileCountsIndicator
+                
+                Spacer()
+                
+                Text(formattedDate(from: vectorStore.createdAt))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+    
+    private var fileCountsIndicator: some View {
+        HStack(spacing: 8) {
+            Label("\(vectorStore.fileCounts.total)", systemImage: "doc.fill")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            if vectorStore.fileCounts.inProgress > 0 {
+                Label("\(vectorStore.fileCounts.inProgress)", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.caption)
+                    .foregroundColor(.blue)
+            }
+            
+            if vectorStore.fileCounts.failed > 0 {
+                Label("\(vectorStore.fileCounts.failed)", systemImage: "exclamationmark.circle")
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
         }
     }
 
@@ -138,7 +250,7 @@ struct VectorStoreRow: View {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
-        formatter.timeStyle = .short
+        formatter.timeStyle = .none
         return formatter.string(from: date)
     }
 }

@@ -4,8 +4,8 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel: ContentViewModel
-    @StateObject private var messageStore = MessageStore()  // Object handling messages
-    @StateObject private var vectorStoreManagerViewModel = VectorStoreManagerViewModel()  // Add this line
+    @StateObject private var messageStore = MessageStore()
+    @StateObject private var vectorStoreViewModel = VectorStoreManagerViewModel()
 
     init(assistantManagerViewModel: AssistantManagerViewModel) {
         _viewModel = StateObject(wrappedValue: ContentViewModel(assistantManagerViewModel: assistantManagerViewModel))
@@ -13,7 +13,11 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            MainTabView(selectedAssistant: $viewModel.selectedAssistant, viewModel: vectorStoreManagerViewModel, messageStore: messageStore)  // Update this line
+            MainTabView(
+                selectedAssistant: $viewModel.selectedAssistant,
+                vectorStoreViewModel: vectorStoreViewModel,
+                messageStore: messageStore
+            )
             if viewModel.isLoading {
                 LoadingView()
                     .onAppear(perform: viewModel.startLoading)

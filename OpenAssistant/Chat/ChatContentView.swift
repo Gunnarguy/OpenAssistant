@@ -18,3 +18,11 @@ struct ChatContentView: View {
         .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
     }
 }
+
+private struct LoadingProgressView: View {
+    var viewModel: ChatViewModel
+
+    var body: some View {
+        ProgressView() // simple loading indicator representation
+    }
+}

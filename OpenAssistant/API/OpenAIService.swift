@@ -29,52 +29,54 @@ class OpenAIService {
         case put = "PUT"
         case delete = "DELETE"
     }
+    
+    // MARK: - Request Configuration
+    
+    /// Creates a URLRequest with common headers.
+    func makeRequest(endpoint: String, httpMethod: HTTPMethod = .get, body: [String: Any]? = nil, contentType: ContentType = .json) -> URLRequest? {
+        guard let url = URL(string: "\(baseURL)\(endpoint)") else {
+            logError("Invalid URL for endpoint: \(endpoint)")
+            return nil
+        }
         
+        var request = URLRequest(url: url)
+        request.httpMethod = httpMethod.rawValue
+        addCommonHeaders(to: &request, contentType: contentType)
+        
+        if let body = body {
+            do {
+                let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
+                request.httpBody = jsonData
+                logRequestDetails(request, body: body)
+            } catch {
+                logError("Failed to serialize request body: \(error.localizedDescription)")
+                return nil
+            }
+        }
+        
+        return request
+    }
+    
+    /// Adds common headers required for OpenAI requests
+    private func addCommonHeaders(to request: inout URLRequest, contentType: ContentType = .json) {
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: HTTPHeaderField.authorization.rawValue)
+        request.setValue(contentType.rawValue, forHTTPHeaderField: HTTPHeaderField.contentType.rawValue)
+        request.setValue("assistants=v2", forHTTPHeaderField: HTTPHeaderField.openAIBeta.rawValue)
+    }
+    
     // MARK: - HandleResponse
     internal func handleResponse<T: Decodable>(_ data: Data?, _ response: URLResponse?, _ error: Error?, completion: @escaping (Result<T, OpenAIServiceError>) -> Void) {
-        if let error = error {
-            logError("Network error: \(error.localizedDescription)")
-            DispatchQueue.main.async {
-                completion(.failure(.networkError(error)))
-            }
-            return
-        }
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            DispatchQueue.main.async {
-                completion(.failure(.unknownError))
-            }
-            return
-        }
-        
-        logInfo("HTTP Status Code: \(httpResponse.statusCode)")
-        if let data = data {
-            logResponseData(data)
-        }
-        
-        if !(200...299).contains(httpResponse.statusCode) {
-            handleHTTPError(httpResponse, data: data, completion: completion)
-            return
-        }
-        
-        guard let data = data else {
-            logError("No data received")
-            DispatchQueue.main.async {
-                completion(.failure(.noData))
-            }
-            return
-        }
-        
-        do {
-            let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-            DispatchQueue.main.async {
-                completion(.success(decodedResponse))
-            }
-        } catch {
-            logError("Decoding error: \(error.localizedDescription)")
-            logError("Response data: \(String(data: data, encoding: .utf8) ?? "N/A")")
-            DispatchQueue.main.async {
-                completion(.failure(.decodingError(data, error)))
+        handleDataTaskResponse(data: data, response: response, error: error) { (result: Result<T, Error>) in
+            switch result {
+            case .success(let decodedResponse):
+                DispatchQueue.main.async {
+                    completion(.success(decodedResponse))
+                }
+            case .failure(let error):
+                let openAIError = self.mapToOpenAIServiceError(error: error, data: data, response: response)
+                DispatchQueue.main.async {
+                    completion(.failure(openAIError))
+                }
             }
         }
     }
@@ -130,6 +132,37 @@ class OpenAIService {
             completion(.success(()))
         }
     }
+
+    // MARK: - Helper function to map errors
+    private func mapToOpenAIServiceError(error: Error, data: Data?, response: URLResponse?) -> OpenAIServiceError {
+        if let error = error as? OpenAIServiceError {
+            return error
+        }
+        
+        if let urlError = error as? URLError {
+            return .networkError(urlError)
+        }
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            return .unknownError
+        }
+        
+        if httpResponse.statusCode == 429 {
+            let retryAfter = httpResponse.allHeaderFields["Retry-After"] as? Int ?? 1
+            return .rateLimitExceeded(retryAfter)
+        } else if httpResponse.statusCode == 500 {
+            return .internalServerError
+        } else if let data = data {
+            do {
+                let apiError = try JSONDecoder().decode(APIError.self, from: data)
+                return .custom(apiError.error.message) // Changed from .apiError to .custom since apiError case doesn't exist
+            } catch {
+                return .decodingError(data, error)
+            }
+        } else {
+            return .invalidResponse(httpResponse)
+        }
+    }
     
     // MARK: - Logging
     internal func logRequestDetails(_ request: URLRequest, body: [String: Any]?) {
@@ -158,8 +191,8 @@ class OpenAIService {
     
     // MARK: - Fetch Vector Store Files
     func fetchVectorStoreFiles(vectorStoreId: String) -> Future<[File], Error> {
-        return Future { promise in
-            guard let url = URL(string: "https://api.openai.com/v1/vector_stores/\(vectorStoreId)/files") else {
+        return Future { [self] promise in
+            guard let url = URL(string: "\(self.baseURL)vector_stores/\(vectorStoreId)/files") else {
                 promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
                 return
             }
@@ -195,36 +228,35 @@ class OpenAIService {
                 }
             }.resume()
         }
-        
-        
-        // MARK: - Delete File from Vector Store
-        func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
-            return Future { promise in
-                guard let url = URL(string: "\(self.baseURL)/vector_stores/\(vectorStoreId)/files/\(fileId)") else {
-                    promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+    }
+    
+    // MARK: - Delete File from Vector Store
+    func deleteFileFromVectorStore(vectorStoreId: String, fileId: String) -> Future<Void, Error> {
+        return Future { [self] promise in
+            guard let url = URL(string: "\(self.baseURL)vector_stores/\(vectorStoreId)/files/\(fileId)") else {
+                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+                return
+            }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "DELETE"
+            request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
+            
+            self.session.dataTask(with: request) { _, response, error in
+                if let error = error {
+                    promise(.failure(error))
                     return
                 }
                 
-                var request = URLRequest(url: url)
-                request.httpMethod = "DELETE"
-                request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
+                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
+                    promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
+                    return
+                }
                 
-                self.session.dataTask(with: request) { _, response, error in
-                    if let error = error {
-                        promise(.failure(error))
-                        return
-                    }
-                    
-                    guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                        let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                        promise(.failure(NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])))
-                        return
-                    }
-                    
-                    promise(.success(()))
-                }.resume()
-            }
+                promise(.success(()))
+            }.resume()
         }
     }
     

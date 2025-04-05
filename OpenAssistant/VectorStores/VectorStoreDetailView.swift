@@ -13,6 +13,7 @@ struct VectorStoreDetailView: View {
     @State private var cancellables = Set<AnyCancellable>()
     @State private var alert: AlertData?
     @State private var isLoading = false
+    @State private var isRefreshing = false
     
     var body: some View {
         List {
@@ -27,65 +28,144 @@ struct VectorStoreDetailView: View {
                 refreshButton
             }
         }
-        .onAppear(perform: loadFiles)
+        .onAppear {
+            // Delay to prevent UI update conflicts
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                loadFiles()
+            }
+        }
         .sheet(isPresented: $isAddingFile) {
             AddFileView(viewModel: viewModel, vectorStoreId: vectorStore)
-                .onDisappear { loadFiles() }
+                .onDisappear { 
+                    if didDeleteFile {
+                        loadFiles()
+                    }
+                }
         }
         .alert(item: $alert) { alert in
             Alert(title: Text(alert.title), message: Text(alert.message), dismissButton: .default(Text("OK")))
         }
         .searchable(text: $searchText, prompt: "Search files")
+        .refreshable {
+            await refreshFiles()
+        }
     }
     
     // MARK: - Helper Methods
     private func loadFiles() {
+        // Prevent multiple simultaneous loads
+        guard !isLoading else { return }
+        
         isLoading = true
         viewModel.fetchFiles(for: vectorStore)
-            .sink(receiveCompletion: { completion in
+            .receive(on: DispatchQueue.main)
+            .handleEvents(receiveCompletion: { completion in
+                // Always update isLoading first
+                self.isLoading = false
+                
                 if case .failure(let error) = completion {
-                    showAlert(title: "Error", message: "Failed to load files: \(error.localizedDescription)")
+                    // Delay showing alert to prevent presentation conflicts
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        showAlert(title: "Error", message: "Failed to load files: \(error.localizedDescription)")
+                    }
                 }
-                isLoading = false
-            }, receiveValue: { fetchedFiles in
-                self.files = fetchedFiles
+            })
+            .catch { error -> AnyPublisher<[VectorStoreFile], Never> in
+                // Return empty array on error after showing alert
+                return Just([]).eraseToAnyPublisher()
+            }
+            .sink(receiveValue: { newFiles in
+                self.files = newFiles
             })
             .store(in: &cancellables)
     }
     
-    private func deleteFile(at offsets: IndexSet) {
-        offsets.forEach { index in
-            let file = files[index]
-            viewModel.deleteFileFromVectorStore(vectorStoreId: vectorStore.id, fileId: file.id)
-                .sink(receiveCompletion: { completion in
-                    switch completion {
-                    case .finished:
-                        DispatchQueue.main.async { self.files.remove(at: index) }
-                        didDeleteFile = true // Update the binding to indicate a file was deleted
-                    case .failure(let error):
-                        showAlert(title: "Error", message: "Failed to delete file: \(error.localizedDescription)")
+    private func refreshFiles() async {
+        // Prevent multiple simultaneous refreshes
+        guard !isRefreshing && !isLoading else { 
+            return
+        }
+        
+        isRefreshing = true
+        
+        return await withCheckedContinuation { continuation in
+            viewModel.fetchFiles(for: vectorStore)
+                .receive(on: DispatchQueue.main)
+                .sink(
+                    receiveCompletion: { completion in
+                        isRefreshing = false
+                        if case .failure(let error) = completion {
+                            // Delay showing alert to prevent presentation conflicts
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showAlert(title: "Error", message: "Failed to refresh files: \(error.localizedDescription)")
+                            }
+                        }
+                        continuation.resume()
+                    }, 
+                    receiveValue: { fetchedFiles in
+                        self.files = fetchedFiles
                     }
-                }, receiveValue: { _ in })
+                )
+                .store(in: &cancellables)
+        }
+    }
+    
+    private func deleteFile(at offsets: IndexSet) {
+        // Create a local copy of the indices to delete to avoid index changes during deletion
+        let filesToDelete = offsets.map { files[$0] }
+        
+        for file in filesToDelete {
+            viewModel.deleteFileFromVectorStore(vectorStoreId: vectorStore.id, fileId: file.id)
+                .sink(
+                    receiveCompletion: { completion in
+                        if case .failure(let error) = completion {
+                            DispatchQueue.main.async {
+                                showAlert(title: "Error", message: "Failed to delete file: \(error.localizedDescription)")
+                            }
+                        }
+                    }, 
+                    receiveValue: { _ in
+                        DispatchQueue.main.async {
+                            if let index = self.files.firstIndex(where: { $0.id == file.id }) {
+                                self.files.remove(at: index)
+                            }
+                            didDeleteFile = true
+                        }
+                    }
+                )
                 .store(in: &cancellables)
         }
     }
 
     private func showAlert(title: String, message: String) {
-        alert = AlertData(title: title, message: message)
+        // Set alert state in a thread-safe way
+        DispatchQueue.main.async {
+            self.alert = AlertData(title: title, message: message)
+        }
     }
 
     private var filteredFiles: [VectorStoreFile] {
         if searchText.isEmpty {
             return files
         } else {
-            return files.filter { $0.id.contains(searchText) }
+            return files.filter { file in
+                file.id.localizedCaseInsensitiveContains(searchText) || 
+                file.object.localizedCaseInsensitiveContains(searchText)
+            }
         }
     }
     
     private var refreshButton: some View {
         Button(action: loadFiles) {
-            Image(systemName: "arrow.clockwise")
+            if isLoading {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
+                    .scaleEffect(0.7)
+            } else {
+                Image(systemName: "arrow.clockwise")
+            }
         }
+        .disabled(isLoading || isRefreshing)
     }
 }
 

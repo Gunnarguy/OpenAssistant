@@ -7,14 +7,25 @@ struct InputView: View {
 
     var body: some View {
         HStack {
-            NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, assistantId: viewModel.assistant.id)) {
+            // Only show the history button if we have a valid thread ID
+            if let threadId = viewModel.threadId {
+                NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, threadId: threadId)) {
+                    Image(systemName: "clock")
+                        .foregroundColor(.blue)
+                        .padding(14)
+                        .background(Color(UIColor.systemGray5))
+                        .cornerRadius(25)
+                        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
+                }
+            } else {
+                // Disabled state when no thread exists
                 Image(systemName: "clock")
-                    .foregroundColor(.blue)
+                    .foregroundColor(.gray)
                     .padding(14)
                     .background(Color(UIColor.systemGray5))
                     .cornerRadius(25)
-                    .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
             }
+            
             TextField("Type a message", text: $viewModel.inputText, onCommit: viewModel.sendMessage)
                 .padding(16)
                 .background(Color(UIColor.systemGray5))

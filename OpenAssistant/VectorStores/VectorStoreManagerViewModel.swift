@@ -10,6 +10,29 @@ class VectorStoreManagerViewModel: BaseViewModel {
     var cancellables = Set<AnyCancellable>() // Change access level to internal
     @Published var alertMessage: String?
     @Published var showAlert: Bool = false
+    
+    // Standard error handling enum
+    enum VectorStoreError: Error, LocalizedError {
+        case invalidURL
+        case requestFailed(String)
+        case responseError(Int)
+        case decodingError(String)
+        case uploadFailed(String)
+        case serviceNotInitialized
+        case fetchFailed(String)
+        
+        var errorDescription: String? {
+            switch self {
+            case .invalidURL: return "Invalid URL"
+            case .requestFailed(let message): return "Request failed: \(message)"
+            case .responseError(let code): return "Server error: \(code)"
+            case .decodingError(let message): return "Failed to process data: \(message)"
+            case .uploadFailed(let message): return "Upload failed: \(message)"
+            case .serviceNotInitialized: return "Service not initialized"
+            case .fetchFailed(let message): return "Failed to fetch data: \(message)"
+            }
+        }
+    }
 
     override init() {
         self.session = URLSession.shared
@@ -63,35 +86,106 @@ class VectorStoreManagerViewModel: BaseViewModel {
         return request
     }
 
+    // Consolidated method for creating Vector Stores
     func createVectorStore(name: String) -> AnyPublisher<String, Error> {
-        guard let url = URL(string: "\(baseURL)/vector_stores") else {
-            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
+        guard let request = createRequest(endpoint: "vector_stores", method: "POST", body: ["name": name]) else {
+            return Fail(error: VectorStoreError.invalidURL).eraseToAnyPublisher()
         }
-
-        var request = URLRequest(url: url)
-        configureRequest(&request, httpMethod: "POST")
-
-        let json: [String: Any] = ["name": name]
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: json) else {
-            return Fail(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to serialize JSON data."]))
-                .eraseToAnyPublisher()
-        }
-        request.httpBody = jsonData
 
         return session.dataTaskPublisher(for: request)
             .tryMap { data, response -> String in
                 guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
                     let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    let errorDescription = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-                    throw NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorDescription])
+                    throw VectorStoreError.responseError(statusCode)
                 }
                 guard let responseJSON = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
                       let vectorStoreId = responseJSON["id"] as? String else {
-                    throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to parse vector store ID from response."])
+                    throw VectorStoreError.decodingError("Failed to parse vector store ID")
                 }
                 return vectorStoreId
             }
             .eraseToAnyPublisher()
+    }
+
+    // Consolidated method to fetch vector stores
+    func fetchVectorStores() -> AnyPublisher<[VectorStore], Error> {
+        guard let request = createRequest(endpoint: "vector_stores", method: "GET") else {
+            return Fail(error: VectorStoreError.invalidURL).eraseToAnyPublisher()
+        }
+        
+        return session.dataTaskPublisher(for: request)
+            .tryMap { data, response -> [VectorStore] in
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode) else {
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    throw VectorStoreError.responseError(statusCode)
+                }
+                let vectorStoreResponse = try JSONDecoder().decode(VectorStoreResponse.self, from: data)
+                return vectorStoreResponse.data
+            }
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+
+    // Method to get a single vector store by ID
+    func fetchVectorStore(id: String) -> AnyPublisher<VectorStore, Error> {
+        guard let request = createRequest(endpoint: "vector_stores/\(id)", method: "GET") else {
+            return Fail(error: VectorStoreError.invalidURL).eraseToAnyPublisher()
+        }
+        
+        return session.dataTaskPublisher(for: request)
+            .tryMap { data, response -> VectorStore in
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode) else {
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    throw VectorStoreError.responseError(statusCode)
+                }
+                return try JSONDecoder().decode(VectorStore.self, from: data)
+            }
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+
+    // Improved file upload method with better error handling
+    func uploadFile(fileData: Data, fileName: String, vectorStoreId: String) async throws -> String {
+        guard !apiKey.isEmpty else {
+            throw VectorStoreError.serviceNotInitialized
+        }
+        
+        let fileUploadService = FileUploadService(apiKey: apiKey)
+        do {
+            let fileId = try await fileUploadService.uploadFile(fileData: fileData, fileName: fileName)
+            print("Successfully uploaded \(fileName) with ID: \(fileId)")
+            return fileId
+        } catch {
+            print("Upload failed for \(fileName): \(error.localizedDescription)")
+            throw VectorStoreError.uploadFailed(error.localizedDescription)
+        }
+    }
+
+    // Improved method to add file to vector store with better error handling
+    func addFileToVectorStore(vectorStoreId: String, fileId: String) async throws {
+        let endpoint = "vector_stores/\(vectorStoreId)/file_batches"
+        let body: [String: Any] = ["file_ids": [fileId]]
+
+        guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
+            throw VectorStoreError.invalidURL
+        }
+
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                throw VectorStoreError.responseError(statusCode)
+            }
+            
+            // Optionally parse the response to get the batch ID or other details
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                print("File batch created with details: \(json)")
+            }
+        } catch {
+            throw VectorStoreError.requestFailed(error.localizedDescription)
+        }
     }
 
     func fetchAssistants(for vectorStore: VectorStore) -> AnyPublisher<[Assistant], Error> {
@@ -108,52 +202,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
             }
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
-    }
-
-    func fetchVectorStore(id: String) -> AnyPublisher<VectorStore, Error> {
-        guard let url = URL(string: "\(baseURL)/vector_stores/\(id)") else {
-            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
-        }
-
-        var request = URLRequest(url: url)
-        configureRequest(&request, httpMethod: "GET")
-
-        return session.dataTaskPublisher(for: request)
-            .tryMap { data, response -> VectorStore in
-                guard let httpResponse = response as? HTTPURLResponse,
-                      (200...299).contains(httpResponse.statusCode) else {
-                    throw URLError(.badServerResponse)
-                }
-                return try JSONDecoder().decode(VectorStore.self, from: data)
-            }
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
-    }
-
-    func uploadFile(fileData: Data, fileName: String, vectorStoreId: String) async throws -> String {
-        let fileUploadService = FileUploadService(apiKey: apiKey)
-        do {
-            let fileId = try await fileUploadService.uploadFile(fileData: fileData, fileName: fileName)
-            print("Successfully uploaded \(fileName) with ID: \(fileId)")
-            return fileId
-        } catch {
-            print("Upload failed for \(fileName): \(error.localizedDescription)")
-            throw error
-        }
-    }
-
-    func addFileToVectorStore(vectorStoreId: String, fileId: String) async throws {
-        let endpoint = "vector_stores/\(vectorStoreId)/file_batches"
-        let body: [String: Any] = ["file_ids": [fileId]]
-
-        guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
-            throw URLError(.badURL)
-        }
-
-        let (_, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
     }
 
     func updateVectorStore(vectorStoreId: String, parameters: [String: Any], completion: @escaping (Result<VectorStore, Error>) -> Void) {
@@ -177,26 +225,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 self.handleDataTaskResponse(data: data, response: response, error: error, completion: completion)
             }
         }.resume()
-    }
-
-    func fetchVectorStores() -> AnyPublisher<[VectorStore], Error> {
-        let endpoint = "vector_stores"
-        guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
-            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
-        }
-        var request = URLRequest(url: url)
-        configureRequest(&request, httpMethod: "GET")
-        return session.dataTaskPublisher(for: request)
-            .tryMap { data, response -> [VectorStore] in
-                guard let httpResponse = response as? HTTPURLResponse,
-                      (200...299).contains(httpResponse.statusCode) else {
-                    throw URLError(.badServerResponse)
-                }
-                let vectorStoreResponse = try JSONDecoder().decode(VectorStoreResponse.self, from: data)
-                return vectorStoreResponse.data
-            }
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
     }
 
     func listVectorStores() -> AnyPublisher<[VectorStore], Error> {
@@ -236,29 +264,38 @@ class VectorStoreManagerViewModel: BaseViewModel {
         }
 
         return openAIService.fetchFiles(for: vectorStore.id)
-            .map { files -> [VectorStoreFile] in
+            .tryMap { files -> [VectorStoreFile] in
                 files.map { file in
                     VectorStoreFile(
                         id: file.id,
-                        object: file.object ?? "file",
+                        object: file.object ?? "file", // Provide a default if file.object is nil
                         usageBytes: file.bytes ?? 0,
                         createdAt: file.createdAt,
                         vectorStoreId: vectorStore.id,
-                        status: file.status,
-                        lastError: nil,
-                        chunkingStrategy: nil
+                        status: file.status, // Provide a default if file.status is nil
+                        lastError: file.lastError,
+                        chunkingStrategy: file.chunkingStrategy
                     )
                 }
             }
-            .receive(on: DispatchQueue.main)
             .handleEvents(
                 receiveOutput: { [weak self] files in
-                    self?.updateVectorStoreFiles(vectorStore: vectorStore, files: files)
+                    guard let self = self else { return }
+                    DispatchQueue.main.async {
+                        self.updateVectorStoreFiles(vectorStore: vectorStore, files: files)
+                    }
                 },
                 receiveCompletion: { [weak self] completion in
-                    self?.handleFetchFilesCompletion(completion)
+                    guard let self = self else { return }
+                    if case .failure(let error) = completion {
+                        print("Failed to fetch files for vector store \(vectorStore.id): \(error)")
+                        DispatchQueue.main.async {
+                            self.handleFetchFilesCompletion(.failure(error))
+                        }
+                    }
                 }
             )
+            .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
 
@@ -326,25 +363,28 @@ class VectorStoreManagerViewModel: BaseViewModel {
     }
 
     func updateVectorStoreFiles(vectorStore: VectorStore, files: [VectorStoreFile]) {
-        guard let index = vectorStores.firstIndex(where: { $0.id == vectorStore.id }) else {
-            print("VectorStore not found")
-            return
+        // Make sure this isn't called during view updates
+        DispatchQueue.main.async {
+            guard let index = self.vectorStores.firstIndex(where: { $0.id == vectorStore.id }) else {
+                print("VectorStore not found")
+                return
+            }
+            
+            // Create proper vector store files with all required properties
+            let vectorStoreFiles = files.map { file in
+                VectorStoreFile(
+                    id: file.id,
+                    object: file.object,
+                    usageBytes: file.usageBytes,
+                    createdAt: file.createdAt,
+                    vectorStoreId: vectorStore.id,
+                    status: file.status,
+                    lastError: file.lastError,
+                    chunkingStrategy: file.chunkingStrategy
+                )
+            }
+            self.vectorStores[index].files = vectorStoreFiles
         }
-        vectorStores[index].files = files
-
-        let vectorStoreFiles = files.map { file in
-            VectorStoreFile(
-                id: file.id,
-                object: "default_object",
-                usageBytes: 0,
-                createdAt: file.createdAt,
-                vectorStoreId: vectorStore.id,
-                status: "default_status",
-                lastError: nil,
-                chunkingStrategy: nil
-            )
-        }
-        vectorStores[index].files = vectorStoreFiles
     }
 
     func getFileInVectorStore(vectorStoreId: String, fileId: String) -> AnyPublisher<File, Error> {
@@ -429,16 +469,22 @@ class VectorStoreManagerViewModel: BaseViewModel {
         assistant.tool_resources?.fileSearch?.vectorStoreIds?.removeAll { $0 == vectorStoreId }
     }
 
+    // Improved error handling method
     func showNotification(message: String) {
-        alertMessage = message
-        showAlert = true
+        Task { @MainActor in
+            alertMessage = message
+            showAlert = true
+        }
     }
 }
 
+// Extension for async handling of Future
 extension Future where Failure == Error {
     func asyncResult() async throws -> Output {
         try await withCheckedThrowingContinuation { continuation in
-            _ = self.sink(
+            var cancellable: AnyCancellable?
+            
+            cancellable = self.sink(
                 receiveCompletion: { completion in
                     switch completion {
                     case .finished:
@@ -446,12 +492,12 @@ extension Future where Failure == Error {
                     case .failure(let error):
                         continuation.resume(throwing: error)
                     }
+                    _ = cancellable // Retain until completion
                 },
                 receiveValue: { value in
                     continuation.resume(returning: value)
                 }
             )
-            // Store the cancellable if needed to retain the subscription
         }
     }
 }

@@ -17,7 +17,7 @@ struct AssistantFormView: View {
     var body: some View {
         Form {
             assistantDetailsSection
-            //toolsSection
+            toolsSection
             actionButtons
         }
         .onAppear {

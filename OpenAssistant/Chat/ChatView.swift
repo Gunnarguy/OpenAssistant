@@ -16,9 +16,14 @@ struct ChatView: View {
             .navigationTitle(viewModel.assistant.name)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, assistantId: viewModel.assistant.id)) {
+                    if let threadId = viewModel.threadId, !threadId.isEmpty {
+                        NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, threadId: threadId)) {
+                            Image(systemName: "clock")
+                                .foregroundColor(.blue)
+                        }
+                    } else {
                         Image(systemName: "clock")
-                            .foregroundColor(.blue)
+                            .foregroundColor(.gray.opacity(0.5)) // Clearly disabled
                     }
                 }
             }
