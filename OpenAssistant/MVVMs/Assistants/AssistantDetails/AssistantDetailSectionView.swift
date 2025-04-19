@@ -1,5 +1,5 @@
-import SwiftUI
 import Combine
+import SwiftUI
 
 struct AssistantDetailsSection: View {
     @Binding var assistant: Assistant
@@ -11,8 +11,14 @@ struct AssistantDetailsSection: View {
             InstructionsField(instructions: Binding($assistant.instructions, default: ""))
             ModelPicker(model: $assistant.model, availableModels: availableModels)
             DescriptionField(description: Binding($assistant.description, default: ""))
-            TemperatureSlider(temperature: $assistant.temperature)
-            TopPSlider(topP: $assistant.top_p)
+            // Show reasoning controls only for reasoning models
+            if BaseViewModel.isReasoningModel(assistant.model) {
+                Text("Reasoning adjustments (affects creativity and determinism):")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                TemperatureSlider(temperature: $assistant.temperature)
+                TopPSlider(topP: $assistant.top_p)
+            }
         }
     }
 }
@@ -84,8 +90,8 @@ private struct TopPSlider: View {
 
 // MARK: - Extensions
 
-private extension Binding where Value == String {
-    init(_ source: Binding<String?>, default defaultValue: String) {
+extension Binding where Value == String {
+    fileprivate init(_ source: Binding<String?>, default defaultValue: String) {
         self.init(
             get: { source.wrappedValue ?? defaultValue },
             set: { source.wrappedValue = $0 }

@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 @MainActor
@@ -24,13 +24,12 @@ class AssistantDetailViewModel: BaseViewModel {
                 instructions: assistant.instructions,
                 tools: assistant.tools.map { $0.toDictionary() },
                 toolResources: assistant.tool_resources?.toDictionary(),
-                metadata: assistant.metadata,
-                temperature: assistant.temperature,
-                topP: assistant.top_p
-            ) { [weak self] result in
+                metadata: assistant.metadata
+            ) { [weak self] (result: Result<Assistant, OpenAIServiceError>) in
                 self?.handleResult(result) { updatedAssistant in
                     self?.assistant = updatedAssistant
-                    NotificationCenter.default.post(name: .assistantUpdated, object: updatedAssistant)
+                    NotificationCenter.default.post(
+                        name: .assistantUpdated, object: updatedAssistant)
                 }
             }
         }
@@ -39,9 +38,11 @@ class AssistantDetailViewModel: BaseViewModel {
     // Delete the assistant
     func deleteAssistant() {
         performServiceAction { openAIService in
-            openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
-                self?.handleResult(result) {
-                    NotificationCenter.default.post(name: .assistantDeleted, object: self?.assistant)
+            openAIService.deleteAssistant(assistantId: assistant.id) {
+                [weak self] (result: Result<Void, OpenAIServiceError>) in
+                self?.handleResult(result) { (_: Void) in
+                    NotificationCenter.default.post(
+                        name: .assistantDeleted, object: self?.assistant)
                     self?.handleError(IdentifiableError(message: "Assistant deleted successfully"))
                 }
             }
@@ -51,7 +52,8 @@ class AssistantDetailViewModel: BaseViewModel {
     // Save Vector Store ID
     func saveVectorStoreId(_ vectorStoreId: String) {
         guard var toolResources = assistant.tool_resources else {
-            assistant.tool_resources = ToolResources(fileSearch: FileSearchResources(vectorStoreIds: [vectorStoreId]))
+            assistant.tool_resources = ToolResources(
+                fileSearch: FileSearchResources(vectorStoreIds: [vectorStoreId]))
             return
         }
         if toolResources.fileSearch == nil {
@@ -66,7 +68,8 @@ class AssistantDetailViewModel: BaseViewModel {
     // Delete Vector Store ID
     func deleteVectorStoreId(_ vectorStoreId: String) {
         guard var toolResources = assistant.tool_resources,
-              var vectorStoreIds = toolResources.fileSearch?.vectorStoreIds else {
+            var vectorStoreIds = toolResources.fileSearch?.vectorStoreIds
+        else {
             return
         }
         vectorStoreIds.removeAll { $0 == vectorStoreId }
@@ -84,16 +87,23 @@ class AssistantDetailViewModel: BaseViewModel {
                     switch result {
                     case .success(let vectorStore):
                         if self?.assistant.tool_resources == nil {
-                            self?.assistant.tool_resources = ToolResources(fileSearch: FileSearchResources(vectorStoreIds: []))
+                            self?.assistant.tool_resources = ToolResources(
+                                fileSearch: FileSearchResources(vectorStoreIds: []))
                         }
                         if self?.assistant.tool_resources?.fileSearch == nil {
-                            self?.assistant.tool_resources?.fileSearch = FileSearchResources(vectorStoreIds: [])
+                            self?.assistant.tool_resources?.fileSearch = FileSearchResources(
+                                vectorStoreIds: [])
                         }
-                        self?.assistant.tool_resources?.fileSearch?.vectorStoreIds?.append(vectorStore.id)
+                        self?.assistant.tool_resources?.fileSearch?.vectorStoreIds?.append(
+                            vectorStore.id)
                         self?.updateAssistant()
-                        self?.successMessage = SuccessMessage(message: "Vector Store created and associated successfully.")
+                        self?.successMessage = SuccessMessage(
+                            message: "Vector Store created and associated successfully.")
                     case .failure(let error):
-                        self?.handleError(IdentifiableError(message: "Failed to create vector store: \(error.localizedDescription)"))
+                        self?.handleError(
+                            IdentifiableError(
+                                message:
+                                    "Failed to create vector store: \(error.localizedDescription)"))
                     }
                 }
             }

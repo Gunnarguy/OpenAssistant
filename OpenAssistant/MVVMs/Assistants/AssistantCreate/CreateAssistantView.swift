@@ -26,7 +26,7 @@ struct CreateAssistantView: View {
                 topP: $topP,
                 enableFileSearch: $enableFileSearch,
                 enableCodeInterpreter: $enableCodeInterpreter,
-                availableModels: filteredModels, // Change this line
+                availableModels: viewModel.availableModels,
                 isEditing: false,
                 onSave: handleSave
             )
@@ -47,28 +47,17 @@ struct CreateAssistantView: View {
             }
             .onAppear {
                 viewModel.fetchAvailableModels()
-                if filteredModels.contains("gpt-4o") {
-                    model = "gpt-4o"
-                } else if let firstModel = filteredModels.first {
-                    model = firstModel
+                // Default to first available model if none selected
+                if model.isEmpty, let first = viewModel.availableModels.first {
+                    model = first
                 }
             }
-            .onChange(of: viewModel.availableModels) { _ in
-                if !filteredModels.contains(model), let firstModel = filteredModels.first {
-                    model = firstModel
-                    print("Model updated to: \(model)")
+            .onChange(of: viewModel.availableModels) { models in
+                // Reset model if current selection no longer available
+                if !models.contains(model), let first = models.first {
+                    model = first
                 }
             }
-        }
-    }
-
-    private var filteredModels: [String] {
-        let chatModels = [
-            "gpt-4o-mini",
-            "gpt-4o"
-        ]
-        return viewModel.availableModels.filter { model in
-            chatModels.contains(model)
         }
     }
 
@@ -106,10 +95,14 @@ struct CreateAssistantView: View {
     private func createToolResources() -> ToolResources? {
         var toolResources = ToolResources()
         if enableFileSearch {
-            toolResources.fileSearch = FileSearchResources(vectorStoreIds: [Constants.validVectorStoreId])
+            toolResources.fileSearch = FileSearchResources(vectorStoreIds: [
+                Constants.validVectorStoreId
+            ])
         }
         if enableCodeInterpreter {
-            toolResources.codeInterpreter = CodeInterpreterResources(fileIds: [Constants.validFileId])
+            toolResources.codeInterpreter = CodeInterpreterResources(fileIds: [
+                Constants.validFileId
+            ])
         }
         return toolResources
     }

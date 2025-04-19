@@ -1,12 +1,12 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 @MainActor
 class BaseViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var errorMessage: IdentifiableError?
-    
+
     // MARK: - Stored Properties
     @AppStorage("OpenAI_API_Key") private var storedApiKey: String = ""
     private(set) var openAIService: OpenAIService?
@@ -50,7 +50,7 @@ class BaseViewModel: ObservableObject {
             }
             .store(in: &cancellables)
     }
-    
+
     private func handleSettingsUpdated() {
         initializeOpenAIService()
         logMessage("Settings updated notification received.")
@@ -59,8 +59,8 @@ class BaseViewModel: ObservableObject {
     // MARK: - Logging
     nonisolated private func logMessage(_ message: String, isError: Bool = false) {
         #if DEBUG
-        let prefix = isError ? "ERROR: " : "INFO: "
-        print("\(prefix)\(message)")
+            let prefix = isError ? "ERROR: " : "INFO: "
+            print("\(prefix)\(message)")
         #endif
     }
 
@@ -80,6 +80,36 @@ class BaseViewModel: ObservableObject {
         cancellables.removeAll()
         logMessage("BaseViewModel deinitialized. Observers cleared.")
     }
+
+    // MARK: - Model Parameter Support Helper
+
+    /// Checks if a given model identifier typically supports temperature/top_p settings for generation.
+    /// Note: Assistants API itself doesn't use these during creation/update.
+    static func modelSupportsGenerationParameters(_ modelId: String) -> Bool {
+        // Models that should NOT show temperature/top_p controls
+        let unsupportedPrefixes = [
+            "dall-e", "whisper", "tts", "text-embedding", "babbage", "davinci", "omni-moderation",
+            "computer-use",
+        ]
+        // Allow o1, o3, o4 and their variants (reasoning models) to show controls
+        for prefix in unsupportedPrefixes {
+            if modelId.starts(with: prefix) {
+                return false
+            }
+        }
+        // All other models, including o1/o3/o4, support reasoning controls
+        return true
+    }
+
+    /// Returns true if the model is a reasoning model (supports temperature/top_p).
+    /// Reasoning models include GPT-4, GPT-4o, GPT-3.5-turbo, and OpenAI's omni models (o1, o3, o4).
+    static func isReasoningModel(_ modelId: String) -> Bool {
+        let reasoningPrefixes = [
+            "gpt-4", "gpt-4o", "gpt-3.5-turbo", "o1", "o3", "o4"
+        ]
+        // Only show controls for models that start with a reasoning prefix
+        return reasoningPrefixes.contains { modelId.starts(with: $0) }
+    }
 }
 
 // MARK: - Result Handling
@@ -93,7 +123,7 @@ extension BaseViewModel {
             handleError(IdentifiableError(message: errorMessage))
         }
     }
-    
+
     func performServiceAction(_ action: (OpenAIService) -> Void) {
         guard let service = openAIService else {
             handleError(IdentifiableError(message: "OpenAIService is not initialized"))

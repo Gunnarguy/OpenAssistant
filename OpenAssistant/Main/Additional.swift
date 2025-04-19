@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 /// Represents the usage statistics for a particular operation.
@@ -38,10 +38,11 @@ struct ExpiresAfterType: Codable {
     let type: String?
     let staticStrategy: StaticStrategy?
     private enum CodingKeys: String, CodingKey {
-        case type, staticStrategy = "static"
+        case type
+        case staticStrategy = "static"
     }
     func toDictionary() -> [String: Any] {
-        var dict: [String: Any] = ["type": type ?? ""] // Provide a default value if type is nil
+        var dict: [String: Any] = ["type": type ?? ""]  // Provide a default value if type is nil
         if let staticStrategy = staticStrategy {
             dict["static"] = staticStrategy.toDictionary()
         }
@@ -49,9 +50,9 @@ struct ExpiresAfterType: Codable {
     }
 }
 
-// MARK: - ModelResponse
-/// A response structure that contains an array of models.
-struct ModelResponse: Codable {
+// MARK: - ModelsListResponse
+/// A response structure that lists available models.
+struct ModelsListResponse: Codable {
     let data: [Model]
 }
 

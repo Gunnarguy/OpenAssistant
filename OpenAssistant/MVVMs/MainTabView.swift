@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 // MARK: - MainTabView
@@ -8,7 +8,27 @@ struct MainTabView: View {
     @Binding var selectedAssistant: Assistant?
     @ObservedObject var vectorStoreViewModel: VectorStoreManagerViewModel
     @ObservedObject var messageStore: MessageStore
-    
+
+    // Store API key and response VM
+    @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
+    @StateObject private var responseVM: ResponseViewModel
+
+    // Custom init to set up ResponseViewModel
+    init(
+        selectedAssistant: Binding<Assistant?>,
+        vectorStoreViewModel: VectorStoreManagerViewModel,
+        messageStore: MessageStore
+    ) {
+        self._selectedAssistant = selectedAssistant
+        self.vectorStoreViewModel = vectorStoreViewModel
+        self.messageStore = messageStore
+        // Load API key from storage
+        let storedKey = UserDefaults.standard.string(forKey: "OpenAI_API_Key") ?? ""
+        // Initialize ResponseViewModel
+        _responseVM = StateObject(
+            wrappedValue: ResponseViewModel(service: OpenAIService(apiKey: storedKey)))
+    }
+
     // MARK: - Body
     var body: some View {
         TabView {
@@ -18,11 +38,14 @@ struct MainTabView: View {
                         Label(tab.label, systemImage: tab.systemImage)
                     }
                     #if DEBUG
-                    .onAppear {
-                        print("\(tab.label) tab appeared")
-                    }
+                        .onAppear {
+                            print("\(tab.label) tab appeared")
+                        }
                     #endif
             }
+            // Add Responses tab
+            ResponseView(viewModel: responseVM)
+                .tabItem { Label("Responses", systemImage: "doc.text") }
         }
         .sheet(item: $selectedAssistant) { assistant in
             NavigationView {
@@ -39,7 +62,7 @@ private enum Tab: String, CaseIterable {
     case manage
     case vectorStores
     case settings
-    
+
     // MARK: UI Properties
     var label: String {
         switch self {
@@ -49,7 +72,7 @@ private enum Tab: String, CaseIterable {
         case .settings: return "Settings"
         }
     }
-    
+
     var systemImage: String {
         switch self {
         case .assistants: return "person.3"
@@ -58,10 +81,12 @@ private enum Tab: String, CaseIterable {
         case .settings: return "gear"
         }
     }
-    
+
     // MARK: View Builder
     @MainActor @ViewBuilder
-    func view(messageStore: MessageStore, vectorStoreViewModel: VectorStoreManagerViewModel) -> some View {
+    func view(messageStore: MessageStore, vectorStoreViewModel: VectorStoreManagerViewModel)
+        -> some View
+    {
         switch self {
         case .assistants:
             AssistantPickerView(messageStore: messageStore)
