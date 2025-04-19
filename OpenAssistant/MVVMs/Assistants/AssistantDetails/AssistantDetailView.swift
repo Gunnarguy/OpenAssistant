@@ -1,5 +1,5 @@
-import SwiftUI
 import Combine
+import SwiftUI
 
 struct AssistantDetailView: View {
     @StateObject private var viewModel: AssistantDetailViewModel
@@ -60,11 +60,21 @@ struct AssistantDetailView: View {
                 )
             }
             .onAppear(perform: onAppear)
+            .onChange(of: managerViewModel.availableModels) { _ in
+                initializeModel()  // Ensure model bound to current list
+            }
             .onDisappear(perform: onDisappear)
             .navigationDestination(isPresented: $showVectorStoreDetail) {
                 VectorStoreDetailView(
                     viewModel: vectorStoreManagerViewModel,
-                    vectorStore: vectorStore ?? VectorStore(id: "", name: "", description: "", status: "", usageBytes: 0, createdAt: 0, fileCounts: FileCounts(inProgress: 0, completed: 0, failed: 0, cancelled: 0, total: 0), metadata: nil, expiresAfter: nil, expiresAt: nil, lastActiveAt: nil, files: nil),
+                    vectorStore: vectorStore
+                        ?? VectorStore(
+                            id: "", name: "", description: "", status: "", usageBytes: 0,
+                            createdAt: 0,
+                            fileCounts: FileCounts(
+                                inProgress: 0, completed: 0, failed: 0, cancelled: 0, total: 0),
+                            metadata: nil, expiresAfter: nil, expiresAt: nil, lastActiveAt: nil,
+                            files: nil),
                     isAddingFile: $isAddingFile,
                     didDeleteFile: $didDeleteFile
                 )
@@ -79,24 +89,30 @@ struct AssistantDetailView: View {
         }
     }
 
-    private var filteredModels: [String] {
-        let chatModels = ["gpt-4o"]
-        return managerViewModel.availableModels.filter { chatModels.contains($0) }
-    }
-
+    // Save assistant if fields valid
     private func handleSave() {
+        // Validate assistant details before proceeding
         if validateAssistant() {
-            print("Saving assistant with ID: \(viewModel.assistant.id)")
-            viewModel.updateAssistant()
+            print(
+                "Saving assistant with ID: \(viewModel.assistant.id), model: \(viewModel.assistant.model)"
+            )
+            // Call update on the manager view model, which handles API call and completion
             managerViewModel.updateAssistant(assistant: viewModel.assistant) { result in
-                switch result {
-                case .success:
-                    dismissView()
-                case .failure(let error):
-                    showAlert(message: "Failed to update assistant: \(error.localizedDescription)")
+                // Switch to main thread for UI updates
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        // Dismiss the view on successful update
+                        self.dismissView()
+                    case .failure(let error):
+                        // Show an alert if the update fails
+                        self.showAlert(
+                            message: "Failed to update assistant: \(error.localizedDescription)")
+                    }
                 }
             }
         } else {
+            // Show an alert if validation fails
             showAlert(message: "Please fill in all required fields.")
         }
     }
@@ -106,28 +122,31 @@ struct AssistantDetailView: View {
         dismissView()
     }
 
+    // Ensure name and model are non-empty and valid
     private func validateAssistant() -> Bool {
-        let isValidName = !viewModel.assistant.name.trimmingCharacters(in: .whitespaces).isEmpty
-        let isValidModel = filteredModels.contains(viewModel.assistant.model)
-        return isValidName && isValidModel
+        // Only check for non-empty name and model
+        let nameValid = !viewModel.assistant.name.trimmingCharacters(in: .whitespaces).isEmpty
+        let modelValid = !viewModel.assistant.model.isEmpty
+        return nameValid && modelValid
     }
 
     private func dismissView() {
         presentationMode.wrappedValue.dismiss()
     }
 
+    // Initialize model selection to first available if current is invalid
     private func initializeModel() {
-        if !filteredModels.contains(viewModel.assistant.model) {
-            if filteredModels.contains("gpt-4, gpt-3.5") {
-                viewModel.assistant.model = "gpt-4, gpt-3.5"
-            } else if let firstModel = filteredModels.first {
-                viewModel.assistant.model = firstModel
-            }
+        if !managerViewModel.availableModels.contains(viewModel.assistant.model),
+            let first = managerViewModel.availableModels.first
+        {
+            viewModel.assistant.model = first
         }
     }
 
     private func updateVectorStore(with updatedStores: [VectorStore]) {
-        if let store = updatedStores.first(where: { $0.id == viewModel.assistant.tool_resources?.fileSearch?.vectorStoreIds?.first }) {
+        if let store = updatedStores.first(where: {
+            $0.id == viewModel.assistant.tool_resources?.fileSearch?.vectorStoreIds?.first
+        }) {
             vectorStore = store
         }
     }
@@ -192,7 +211,7 @@ struct VectorStoreManagementSection: View {
     @Binding var showVectorStoreDetail: Bool
     @Binding var vectorStoreName: String
     var onCreateVectorStore: () -> Void
-    
+
     @State private var vectorStoreId: String = ""
     @State private var showAlert = false
     @State private var alertMessage = ""
@@ -219,7 +238,7 @@ struct VectorStoreManagementSection: View {
                     Text("No associated vector store.")
                 }
             }
-            
+
             // Create New Vector Store Section
             Section(header: Text("Create New Vector Store")) {
                 TextField("Vector Store Name", text: $vectorStoreName)
@@ -234,7 +253,7 @@ struct VectorStoreManagementSection: View {
                 }
                 .padding(.top, 8)
             }
-            
+
             // Manual Association Section
             Section(header: Text("Manual Association")) {
                 TextField("Vector Store ID", text: $vectorStoreId)
@@ -255,7 +274,9 @@ struct VectorStoreManagementSection: View {
 
             // Associated Vector Store IDs Section
             Section(header: Text("Associated Vector Store IDs")) {
-                if let vectorStoreIds = viewModel.assistant.tool_resources?.fileSearch?.vectorStoreIds, !vectorStoreIds.isEmpty {
+                if let vectorStoreIds = viewModel.assistant.tool_resources?.fileSearch?
+                    .vectorStoreIds, !vectorStoreIds.isEmpty
+                {
                     ForEach(vectorStoreIds, id: \.self) { id in
                         HStack {
                             Text(id)
@@ -286,7 +307,7 @@ struct VectorStoreManagementSection: View {
         alertMessage = message
         showAlert = true
     }
-    
+
     private func formattedDate(from timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         let formatter = DateFormatter()

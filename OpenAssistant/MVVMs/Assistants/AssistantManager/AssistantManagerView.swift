@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 struct AssistantManagerView: View {
@@ -16,20 +16,35 @@ struct AssistantManagerView: View {
         }
         .onAppear {
             viewModel.fetchAssistants()
-            viewModel.setupNotificationObservers() // Ensure observers are set up
+            viewModel.setupNotificationObservers()  // Ensure observers are set up
         }
-        .onReceive(NotificationCenter.default.publisher(for: .assistantCreated), perform: handleAssistantCreated)
         .onReceive(NotificationCenter.default.publisher(for: .settingsUpdated)) { _ in
-            viewModel.fetchAssistants()
+            viewModel.fetchAssistants()  // Refresh on settings change
         }
-        .sheet(isPresented: $showingCreateAssistantSheet) {
+        .onReceive(NotificationCenter.default.publisher(for: .assistantCreated)) { _ in
+            viewModel.fetchAssistants()  // Refresh when an assistant is created
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .assistantUpdated)) { _ in
+            viewModel.fetchAssistants()  // Refresh when an assistant is updated
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .assistantDeleted)) { _ in
+            viewModel.fetchAssistants()  // Refresh when an assistant is deleted
+        }
+        .sheet(
+            isPresented: $showingCreateAssistantSheet,
+            onDismiss: {
+                viewModel.fetchAssistants()  // Refresh list after creating assistant
+            }
+        ) {
             CreateAssistantView(viewModel: viewModel)
         }
     }
 
     private var assistantList: some View {
         List(viewModel.assistants) { assistant in
-            NavigationLink(destination: AssistantDetailView(assistant: assistant, managerViewModel: viewModel)) {
+            NavigationLink(
+                destination: AssistantDetailView(assistant: assistant, managerViewModel: viewModel)
+            ) {
                 Text(assistant.name)
             }
         }
@@ -40,12 +55,6 @@ struct AssistantManagerView: View {
             showingCreateAssistantSheet = true
         }) {
             Image(systemName: "plus")
-        }
-    }
-
-    private func handleAssistantCreated(notification: Notification) {
-        if let createdAssistant = notification.object as? Assistant {
-            viewModel.assistants.append(createdAssistant)
         }
     }
 }
@@ -87,7 +96,7 @@ struct AssistantManagerView_Previews: PreviewProvider {
                 metadata: nil,
                 response_format: nil,
                 file_ids: []
-            )
+            ),
         ]
         return AssistantManagerView()
             .environmentObject(viewModel)

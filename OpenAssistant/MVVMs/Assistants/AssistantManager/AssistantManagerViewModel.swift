@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 @MainActor
@@ -8,7 +8,6 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
     @Published var availableModels: [String] = []
     @Published var vectorStores: [VectorStore] = []
     @Published var isLoading = false
-    
 
     override init() {
         super.init()
@@ -39,13 +38,11 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         }
     }
 
-    // Fetches available models asynchronously
+    // Fetches available models from OpenAI API
     func fetchAvailableModels() {
-        DispatchQueue.global(qos: .background).async {
-            // Simulate fetching available models
-            let models = ["gpt-4o-mini", "gpt-4o"]
-            DispatchQueue.main.async {
-                self.availableModels = models
+        performServiceAction { openAIService in
+            openAIService.fetchAvailableModels { [weak self] result in
+                self?.handleModelsResult(result)
             }
         }
     }
@@ -57,7 +54,9 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
                 self.availableModels = models
                 print("Models fetched successfully: \(models)")
             case .failure(let error):
-                self.handleError(IdentifiableError(message: "Fetch models failed: \(error.localizedDescription)"))
+                self.handleError(
+                    IdentifiableError(message: "Fetch models failed: \(error.localizedDescription)")
+                )
                 print("Error fetching models: \(error.localizedDescription)")
             }
         }
@@ -67,14 +66,21 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
     func fetchVectorStores() {
         performServiceAction { openAIService in
             openAIService.fetchVectorStores()
-                .receive(on: DispatchQueue.main) // Ensure updates happen on the main thread
-                .sink(receiveCompletion: { [weak self] completion in
-                    if case .failure(let error) = completion {
-                        self?.handleError(IdentifiableError(message: "Fetch vector stores failed: \(error.localizedDescription)"))
+                .receive(on: DispatchQueue.main)  // Ensure updates happen on the main thread
+                .sink(
+                    receiveCompletion: { [weak self] completion in
+                        if case .failure(let error) = completion {
+                            self?.handleError(
+                                IdentifiableError(
+                                    message:
+                                        "Fetch vector stores failed: \(error.localizedDescription)")
+                            )
+                        }
+                    },
+                    receiveValue: { [weak self] vectorStores in
+                        self?.vectorStores = vectorStores
                     }
-                }, receiveValue: { [weak self] vectorStores in
-                    self?.vectorStores = vectorStores
-                })
+                )
                 .store(in: &self.cancellables)
         }
     }
@@ -103,10 +109,8 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
                 tools: tools.map { $0.toDictionary() },
                 toolResources: toolResources?.toDictionary(),
                 metadata: metadata,
-                temperature: temperature,
-                topP: topP,
                 responseFormat: responseFormat
-            ) { [weak self] result in
+            ) { [weak self] (result: Result<Assistant, OpenAIServiceError>) in
                 DispatchQueue.main.async {
                     self?.handleResult(result) { assistant in
                         self?.assistants.append(assistant)
@@ -117,8 +121,11 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         }
     }
 
-    func updateAssistant(assistant: Assistant, completion: @escaping (Result<Void, Error>) -> Void) {
+    // Updates an existing assistant
+    func updateAssistant(assistant: Assistant, completion: @escaping (Result<Void, Error>) -> Void)
+    {
         performServiceAction { openAIService in
+            // Call the service method to update the assistant
             openAIService.updateAssistant(
                 assistantId: assistant.id,
                 model: assistant.model,
@@ -128,36 +135,51 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
                 tools: assistant.tools.map { $0.toDictionary() },
                 toolResources: assistant.tool_resources?.toDictionary(),
                 metadata: assistant.metadata,
-                temperature: assistant.temperature,
-                topP: assistant.top_p
-            ) { [weak self] result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .success(let updatedAssistant):
-                        self?.assistants = self?.assistants.map {
-                            $0.id == assistant.id ? updatedAssistant : $0
-                        } ?? []
-                        NotificationCenter.default.post(name: .assistantUpdated, object: updatedAssistant)
-                        completion(.success(()))
-                    case .failure(let error):
-                        completion(.failure(error))
+                // Removed temperature and topP as they might not be direct parameters for update
+                // Pass the completion handler correctly
+                completion: { [weak self] (result: Result<Assistant, OpenAIServiceError>) in  // Explicitly type result
+                    // Ensure UI updates are on the main thread
+                    DispatchQueue.main.async {
+                        switch result {
+                        case .success(let updatedAssistant):
+                            // Update the local assistants array
+                            self?.assistants =
+                                self?.assistants.map {
+                                    $0.id == assistant.id ? updatedAssistant : $0
+                                } ?? []
+                            // Notify other parts of the app about the update
+                            NotificationCenter.default.post(
+                                name: .assistantUpdated, object: updatedAssistant)
+                            // Call the original completion handler passed to updateAssistant
+                            completion(.success(()))
+                        case .failure(let error):
+                            // Handle the error appropriately (e.g., show an alert)
+                            self?.handleError(
+                                IdentifiableError(
+                                    message:
+                                        "Update assistant failed: \(error.localizedDescription)"))
+                            // Call the original completion handler with the error
+                            completion(.failure(error))
+                        }
                     }
                 }
-            }
+            )
         }
     }
 
-    private func makeRequest(endpoint: String, httpMethod: String, body: [String: Any]) -> URLRequest? {
+    private func makeRequest(endpoint: String, httpMethod: String, body: [String: Any])
+        -> URLRequest?
+    {
         guard let url = URL(string: "https://api.openai.com/v1/\(endpoint)") else {
             return nil
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = httpMethod
-        
+
         // Use the OpenAIService instance instead of direct apiKey access
         guard let openAIService = openAIService else { return nil }
-        
+
         request.setValue("Bearer \(openAIService.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
@@ -172,22 +194,25 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
     }
 
     // And fix the decodingError call by providing both required parameters:
-    func handleResponse(data: Data?, response: URLResponse?, error: Error?, completion: (Result<Assistant, OpenAIServiceError>) -> Void) {
+    func handleResponse(
+        data: Data?, response: URLResponse?, error: Error?,
+        completion: (Result<Assistant, OpenAIServiceError>) -> Void
+    ) {
         if let error = error {
             completion(.failure(.networkError(error)))
             return
         }
-        
+
         guard let data = data else {
             completion(.failure(.noData))
             return
         }
-        
+
         do {
             let assistant = try JSONDecoder().decode(Assistant.self, from: data)
             completion(.success(assistant))
         } catch {
-            completion(.failure(.decodingError(data, error))) // Add data parameter
+            completion(.failure(.decodingError(data, error)))  // Add data parameter
         }
     }
 
@@ -197,9 +222,11 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
             openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
                 DispatchQueue.main.async {
                     self?.handleResult(result) {
-                        if let index = self?.assistants.firstIndex(where: { $0.id == assistant.id }) {
+                        if let index = self?.assistants.firstIndex(where: { $0.id == assistant.id })
+                        {
                             self?.assistants.remove(at: index)
-                            NotificationCenter.default.post(name: .assistantDeleted, object: assistant)
+                            NotificationCenter.default.post(
+                                name: .assistantDeleted, object: assistant)
                         }
                     }
                 }
@@ -212,11 +239,13 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
     override func setupNotificationObservers() {
         super.setupNotificationObservers()
         let notificationCenter = NotificationCenter.default
-        let notifications: [Notification.Name] = [.assistantCreated, .assistantUpdated, .assistantDeleted]
+        let notifications: [Notification.Name] = [
+            .assistantCreated, .assistantUpdated, .assistantDeleted,
+        ]
 
         notifications.forEach { notification in
             notificationCenter.publisher(for: notification)
-                .receive(on: DispatchQueue.main) // Ensure updates happen on the main thread
+                .receive(on: DispatchQueue.main)  // Ensure updates happen on the main thread
                 .sink { [weak self] _ in self?.fetchAssistants() }
                 .store(in: &cancellables)
         }

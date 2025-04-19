@@ -1,11 +1,11 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 extension OpenAIService {
-    
+
     // MARK: - Fetch Assistants
-    
+
     func fetchAssistants(completion: @escaping (Result<[Assistant], OpenAIServiceError>) -> Void) {
         let endpoint = "assistants"
         guard let request = makeRequest(endpoint: endpoint) else {
@@ -13,7 +13,8 @@ extension OpenAIService {
             return
         }
         session.dataTask(with: request) { data, response, error in
-            self.handleResponse(data, response, error) { (result: Result<AssistantsResponse, OpenAIServiceError>) in
+            self.handleResponse(data, response, error) {
+                (result: Result<AssistantsResponse, OpenAIServiceError>) in
                 switch result {
                 case .success(let response):
                     completion(.success(response.data))
@@ -23,9 +24,12 @@ extension OpenAIService {
             }
         }.resume()
     }
-    
+
     // MARK: - Fetch Assistant Settings
-    func fetchAssistantSettings(assistantId: String, completion: @escaping (Result<AssistantSettings, OpenAIServiceError>) -> Void) {
+    func fetchAssistantSettings(
+        assistantId: String,
+        completion: @escaping (Result<AssistantSettings, OpenAIServiceError>) -> Void
+    ) {
         guard let request = makeRequest(endpoint: "assistants/\(assistantId)/settings") else {
             completion(.failure(.invalidRequest))
             return
@@ -34,7 +38,7 @@ extension OpenAIService {
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
-    
+
     // MARK: - Create Assistant
     func createAssistant(
         model: String,
@@ -44,8 +48,6 @@ extension OpenAIService {
         tools: [[String: Any]]? = nil,
         toolResources: [String: Any]? = nil,
         metadata: [String: String]? = nil,
-        temperature: Double? = nil,
-        topP: Double? = nil,
         responseFormat: ResponseFormat? = nil,
         completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
@@ -57,11 +59,10 @@ extension OpenAIService {
         if let tools = tools { body["tools"] = tools }
         if let toolResources = toolResources { body["tool_resources"] = toolResources }
         if let metadata = metadata { body["metadata"] = metadata }
-        if let temperature = temperature { body["temperature"] = temperature }
-        if let topP = topP { body["top_p"] = topP }
         if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
 
-        guard let request = makeRequest(endpoint: "assistants", httpMethod: .post, body: body) else {
+        guard let request = makeRequest(endpoint: "assistants", httpMethod: .post, body: body)
+        else {
             completion(.failure(.invalidRequest))
             return
         }
@@ -81,8 +82,6 @@ extension OpenAIService {
         tools: [[String: Any]]? = nil,
         toolResources: [String: Any]? = nil,
         metadata: [String: String]? = nil,
-        temperature: Double? = nil,
-        topP: Double? = nil,
         responseFormat: ResponseFormat? = nil,
         completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
@@ -94,13 +93,14 @@ extension OpenAIService {
         if let tools = tools { body["tools"] = tools }
         if let toolResources = toolResources { body["tool_resources"] = toolResources }
         if let metadata = metadata { body["metadata"] = metadata }
-        if let temperature = temperature { body["temperature"] = temperature }
-        if let topP = topP { body["top_p"] = topP }
         if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
-        
+
         print("Updating assistant with body: \(body)")
 
-        guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: .post, body: body) else {
+        guard
+            let request = makeRequest(
+                endpoint: "assistants/\(assistantId)", httpMethod: .post, body: body)
+        else {
             completion(.failure(.invalidRequest))
             return
         }
@@ -108,11 +108,14 @@ extension OpenAIService {
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
-    
+
     // MARK: - Delete Assistant
-    
-    func deleteAssistant(assistantId: String, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
-        guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: .delete) else {
+
+    func deleteAssistant(
+        assistantId: String, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void
+    ) {
+        guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: .delete)
+        else {
             completion(.failure(.invalidRequest))
             return
         }
@@ -122,7 +125,9 @@ extension OpenAIService {
     }
 
     // New: Fetch Assistant Details
-    func fetchAssistantDetails(assistantId: String, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void) {
+    func fetchAssistantDetails(
+        assistantId: String, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
+    ) {
         let endpoint = "assistants/\(assistantId)"
         guard let request = makeRequest(endpoint: endpoint) else {
             completion(.failure(.custom("Failed to create request")))
@@ -132,8 +137,9 @@ extension OpenAIService {
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
-}
 
+    // Note: To control generation parameters like temperature/top_p, use the `createResponse` endpoint when sending messages to the assistant, since the Assistants API endpoints don't accept those params.
+}
 
 // MARK: - Assistant
 struct Assistant: Identifiable, Codable, Equatable {
@@ -154,12 +160,13 @@ struct Assistant: Identifiable, Codable, Equatable {
     var response_format: ResponseFormat?
     var file_ids: [String]?
 
-    static func ==(lhs: Assistant, rhs: Assistant) -> Bool {
+    static func == (lhs: Assistant, rhs: Assistant) -> Bool {
         return lhs.id == rhs.id
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, object, created_at, name, description, model, instructions, tools, top_p, temperature, tool_resources, metadata, response_format, file_ids
+        case id, object, created_at, name, description, model, instructions, tools, top_p,
+            temperature, tool_resources, metadata, response_format, file_ids
     }
 
     func toAssistantDictionary() -> [String: Any] {
@@ -170,7 +177,7 @@ struct Assistant: Identifiable, Codable, Equatable {
             "top_p": top_p,
             "instructions": instructions ?? "",
             "metadata": metadata ?? [:],
-            "tools": tools.map { $0.toDictionary() }
+            "tools": tools.map { $0.toDictionary() },
         ]
         if let toolResources = tool_resources {
             dict["tool_resources"] = toolResources.toDictionary()
@@ -269,7 +276,8 @@ struct FunctionTool: Codable {
         description = try container.decodeIfPresent(String.self, forKey: .description)
         name = try container.decode(String.self, forKey: .name)
         if let jsonString = try container.decodeIfPresent(String.self, forKey: .parameters),
-           let data = jsonString.data(using: .utf8) {
+            let data = jsonString.data(using: .utf8)
+        {
             parameters = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         } else {
             parameters = nil
@@ -316,7 +324,8 @@ struct RetrievalTool: Codable {
         description = try container.decodeIfPresent(String.self, forKey: .description)
         name = try container.decode(String.self, forKey: .name)
         if let jsonString = try container.decodeIfPresent(String.self, forKey: .options),
-           let data = jsonString.data(using: .utf8) {
+            let data = jsonString.data(using: .utf8)
+        {
             options = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         } else {
             options = nil
