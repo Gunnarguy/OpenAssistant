@@ -1,9 +1,19 @@
 import SwiftUI
+<<<<<<< HEAD
+=======
+import Foundation
+import Combine
+>>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
 
 struct CreateAssistantView: View {
     @ObservedObject var viewModel: AssistantManagerViewModel
     @Environment(\.presentationMode) var presentationMode
+<<<<<<< HEAD
     @State private var showAlert = false
+=======
+    @AppStorage("OpenAI_Default_Model") private var defaultModel: String = ""
+    @State private var showAlert: Bool = false
+>>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
 
     // State variables for the assistant fields
     @State private var name: String = ""
@@ -47,6 +57,7 @@ struct CreateAssistantView: View {
             }
             .onAppear {
                 viewModel.fetchAvailableModels()
+<<<<<<< HEAD
                 // Default to first available model if none selected
                 if model.isEmpty, let first = viewModel.availableModels.first {
                     model = first
@@ -56,6 +67,26 @@ struct CreateAssistantView: View {
                 // Reset model if current selection no longer available
                 if !models.contains(model), let first = models.first {
                     model = first
+=======
+                // After fetching, default to stored defaultModel if valid, otherwise first valid model
+                if model.isEmpty {
+                    // Filter to reasoning models only
+                    let reasoning = viewModel.availableModels.filter { BaseViewModel.isReasoningModel($0) }
+                    if !defaultModel.isEmpty && reasoning.contains(defaultModel) {
+                        model = defaultModel
+                    } else if let first = reasoning.first {
+                        model = first
+                        defaultModel = first  // update stored default to new valid model
+                    }
+                }
+            }
+            .onChange(of: viewModel.availableModels) { models in
+                // When models change, ensure current model is valid reasoning model
+                let reasoning = models.filter { BaseViewModel.isReasoningModel($0) }
+                if !reasoning.contains(model), let first = reasoning.first {
+                    model = first
+                    defaultModel = first
+>>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
                 }
             }
         }

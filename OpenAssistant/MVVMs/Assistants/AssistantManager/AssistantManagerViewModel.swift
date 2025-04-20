@@ -51,8 +51,18 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         DispatchQueue.main.async {
             switch result {
             case .success(let models):
+<<<<<<< HEAD
                 self.availableModels = models
                 print("Models fetched successfully: \(models)")
+=======
+                // Only include models that support reasoning (no embeddings, DALL-E, etc.)
+                let filteredModels = models.filter { modelId in
+                    // Case-insensitive filter against reasoning models
+                    BaseViewModel.isReasoningModel(modelId.lowercased())
+                }
+                self.availableModels = filteredModels.sorted()
+                print("Available reasoning models: \(filteredModels)")
+>>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
             case .failure(let error):
                 self.handleError(
                     IdentifiableError(message: "Fetch models failed: \(error.localizedDescription)")
@@ -135,8 +145,14 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
                 tools: assistant.tools.map { $0.toDictionary() },
                 toolResources: assistant.tool_resources?.toDictionary(),
                 metadata: assistant.metadata,
+<<<<<<< HEAD
                 // Removed temperature and topP as they might not be direct parameters for update
                 // Pass the completion handler correctly
+=======
+                temperature: assistant.temperature,  // persist updated temperature
+                topP: assistant.top_p,              // persist updated top_p
+                responseFormat: assistant.response_format,
+>>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
                 completion: { [weak self] (result: Result<Assistant, OpenAIServiceError>) in  // Explicitly type result
                     // Ensure UI updates are on the main thread
                     DispatchQueue.main.async {

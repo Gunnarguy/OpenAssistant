@@ -86,7 +86,11 @@ class BaseViewModel: ObservableObject {
     /// Checks if a given model identifier typically supports temperature/top_p settings for generation.
     /// Note: Assistants API itself doesn't use these during creation/update.
     static func modelSupportsGenerationParameters(_ modelId: String) -> Bool {
+<<<<<<< HEAD
         // Models that should NOT show temperature/top_p controls
+=======
+        // Models that should NOT show temperature/top_p controls (e.g., embeddings, DALL‑E, etc.)
+>>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
         let unsupportedPrefixes = [
             "dall-e", "whisper", "tts", "text-embedding", "babbage", "davinci", "omni-moderation",
             "computer-use",
@@ -102,10 +106,19 @@ class BaseViewModel: ObservableObject {
     }
 
     /// Returns true if the model is a reasoning model (supports temperature/top_p).
+<<<<<<< HEAD
     /// Reasoning models include GPT-4, GPT-4o, GPT-3.5-turbo, and OpenAI's omni models (o1, o3, o4).
     static func isReasoningModel(_ modelId: String) -> Bool {
         let reasoningPrefixes = [
             "gpt-4", "gpt-4o", "gpt-3.5-turbo", "o1", "o3", "o4"
+=======
+    /// Updated to include GPT-4.1 and GPT-4o variants.
+    static func isReasoningModel(_ modelId: String) -> Bool {
+        let reasoningPrefixes = [
+            "gpt-4", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano",
+            "gpt-4o", "gpt-4o-search-preview", "gpt-4o-mini", "gpt-4o-mini-search-preview",
+            "gpt-3.5-turbo", "o1", "o3", "o4"
+>>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
         ]
         // Only show controls for models that start with a reasoning prefix
         return reasoningPrefixes.contains { modelId.starts(with: $0) }
