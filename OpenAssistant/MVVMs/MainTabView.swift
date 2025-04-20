@@ -95,13 +95,9 @@ private enum Tab: String, CaseIterable {
         case .vectorStores:
             VectorStoreListView(viewModel: vectorStoreViewModel)
         case .settings:
-<<<<<<< HEAD
-            SettingsView()
-=======
             NavigationView {
                 SettingsView()
             }
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
         }
     }
 }

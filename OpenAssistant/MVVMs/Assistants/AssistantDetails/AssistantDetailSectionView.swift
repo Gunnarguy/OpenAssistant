@@ -20,16 +20,6 @@ struct AssistantDetailsSection: View {
                 TopPSlider(topP: $assistant.top_p)
             }
         }
-<<<<<<< HEAD
-=======
-        // Re-evaluate this section when model changes
-        .id(assistant.model)
-        .animation(.default, value: assistant.model)
-        // Debug: log model change in details
-        .onChange(of: assistant.model) { newModel in
-            print("AssistantDetailSection: model changed to \(newModel)")
-        }
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
     }
 }
 

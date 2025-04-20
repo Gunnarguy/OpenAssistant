@@ -82,11 +82,6 @@ extension OpenAIService {
         tools: [[String: Any]]? = nil,
         toolResources: [String: Any]? = nil,
         metadata: [String: String]? = nil,
-<<<<<<< HEAD
-=======
-        temperature: Double? = nil,
-        topP: Double? = nil,
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
         responseFormat: ResponseFormat? = nil,
         completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
@@ -98,11 +93,6 @@ extension OpenAIService {
         if let tools = tools { body["tools"] = tools }
         if let toolResources = toolResources { body["tool_resources"] = toolResources }
         if let metadata = metadata { body["metadata"] = metadata }
-<<<<<<< HEAD
-=======
-        if let temperature = temperature { body["temperature"] = temperature }
-        if let topP = topP { body["top_p"] = topP }
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
         if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
 
         print("Updating assistant with body: \(body)")

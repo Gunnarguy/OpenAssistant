@@ -21,13 +21,6 @@ struct AssistantFormView: View {
             toolsSection
             actionButtons
         }
-<<<<<<< HEAD
-=======
-        // Debug log on model change
-        .onChange(of: model) { newModel in
-            print("AssistantFormView: model changed to \(newModel)")
-        }
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
         .onAppear {
             if model.isEmpty, let firstModel = availableModels.first {
                 model = firstModel
@@ -55,31 +48,21 @@ struct AssistantFormView: View {
                 Text("Reasoning adjustments (affects creativity and determinism):")
                     .font(.caption)
                     .foregroundColor(.secondary)
-<<<<<<< HEAD
                 // Disable sliders if editing an existing assistant
-=======
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
                 TemperatureSlider(temperature: $temperature)
                     .disabled(isEditing)
                 TopPSlider(topP: $topP)
                     .disabled(isEditing)
-<<<<<<< HEAD
                 // Show a hint if editing
-=======
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
                 if isEditing {
-                    Text("Model and reasoning settings can only be set at creation time for reasoning models.")
-                        .font(.caption2)
-                        .foregroundColor(.orange)
+                    Text(
+                        "Model and reasoning settings can only be set at creation time for reasoning models."
+                    )
+                    .font(.caption2)
+                    .foregroundColor(.orange)
                 }
             }
         }
-<<<<<<< HEAD
-=======
-        // Tag this Section to rebuild whenever the selected model changes
-        .id(model)
-        .animation(.default, value: model)
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
     }
 
     // MARK: - Tools Section
@@ -109,11 +92,7 @@ struct AssistantFormView: View {
     // Dropdown menu to select available model
     private var modelPicker: some View {
         Picker("Model", selection: $model) {
-<<<<<<< HEAD
-            ForEach(availableModels, id: \.self) { model in
-=======
             ForEach(availableModels.filter { BaseViewModel.isReasoningModel($0) }, id: \.self) { model in
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
                 Text(model).tag(model)
             }
         }

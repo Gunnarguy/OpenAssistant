@@ -5,27 +5,17 @@ import SwiftUI
 struct SettingsView: View {
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
     @AppStorage("isDarkMode") private var isDarkMode: Bool = false
-<<<<<<< HEAD
-=======
     @AppStorage("OpenAI_Default_Model") private var defaultModel: String = ""
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var isApiKeyValid = true
     @EnvironmentObject var assistantManagerViewModel: AssistantManagerViewModel
-<<<<<<< HEAD
-    @Environment(\.presentationMode) var presentationMode
-=======
     @Environment(\.dismiss) private var dismiss
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
 
     // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-<<<<<<< HEAD
-=======
             modelSelectionSection  // Default model picker
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
             apiKeySection
             darkModeToggle
             saveButton
@@ -41,8 +31,6 @@ struct SettingsView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
-<<<<<<< HEAD
-=======
         // Load models when view appears and ensure defaultModel is valid
         .onAppear {
             assistantManagerViewModel.fetchAvailableModels()
@@ -55,7 +43,6 @@ struct SettingsView: View {
                 defaultModel = reasoningModels.first ?? ""
             }
         }
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
     }
 
     // MARK: - Sections
@@ -82,8 +69,6 @@ struct SettingsView: View {
         .buttonStyle(.borderedProminent)
     }
 
-<<<<<<< HEAD
-=======
     // MARK: - Default Model Section
     private var modelSelectionSection: some View {
         VStack(alignment: .leading) {
@@ -102,7 +87,6 @@ struct SettingsView: View {
         }
     }
 
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
     // MARK: - Helper Methods
 
     private func validateApiKey() {
@@ -120,13 +104,8 @@ struct SettingsView: View {
             // Notify other views to refresh data after API key is saved
             NotificationCenter.default.post(name: .settingsUpdated, object: nil)
 
-<<<<<<< HEAD
-            // Dismiss the settings view if presented modally
-            presentationMode.wrappedValue.dismiss()
-=======
             // Dismiss the settings view
             dismiss()
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
         } else {
             alertMessage = "API Key cannot be empty."
         }
