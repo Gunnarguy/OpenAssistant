@@ -4,6 +4,24 @@ import SwiftUI
 
 extension OpenAIService {
 
+    // MARK: - Model Parameter Support Helper (Internal)
+
+    /// Checks if a given model identifier supports temperature/top_p settings for generation
+    /// at the Assistant level. Reasoning models (o-series) use reasoning_effort instead.
+    /// Renamed for consistency with BaseViewModel.
+    private static func supportsTempTopPAtAssistantLevel(_ modelId: String) -> Bool {
+        // Reasoning models (o-series) do NOT support temp/top_p at the assistant level.
+        let reasoningPrefixes = ["o1", "o3", "o4"]
+
+        for prefix in reasoningPrefixes {
+            if modelId.lowercased().starts(with: prefix) {
+                return false  // Reasoning models use reasoning_effort
+            }
+        }
+        // Assume other models (like gpt-*) DO support temp/top_p.
+        return true
+    }
+
     // MARK: - Fetch Assistants
 
     func fetchAssistants(completion: @escaping (Result<[Assistant], OpenAIServiceError>) -> Void) {
@@ -48,11 +66,15 @@ extension OpenAIService {
         tools: [[String: Any]]? = nil,
         toolResources: [String: Any]? = nil,
         metadata: [String: String]? = nil,
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        reasoningEffort: String? = nil,
         responseFormat: ResponseFormat? = nil,
         completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
         var body: [String: Any] = ["model": model]
 
+        // Add common parameters
         if let name = name { body["name"] = name }
         if let description = description { body["description"] = description }
         if let instructions = instructions { body["instructions"] = instructions }
@@ -60,6 +82,17 @@ extension OpenAIService {
         if let toolResources = toolResources { body["tool_resources"] = toolResources }
         if let metadata = metadata { body["metadata"] = metadata }
         if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
+
+        // Conditionally add parameters based on model type
+        // Use the renamed static helper method
+        if Self.supportsTempTopPAtAssistantLevel(model) {
+            // For models supporting temp/top_p at assistant level
+            if let temperature = temperature { body["temperature"] = temperature }
+            if let topP = topP { body["top_p"] = topP }
+        } else {
+            // For reasoning models (o-series)
+            if let reasoningEffort = reasoningEffort { body["reasoning_effort"] = reasoningEffort }
+        }
 
         guard let request = makeRequest(endpoint: "assistants", httpMethod: .post, body: body)
         else {
@@ -75,7 +108,7 @@ extension OpenAIService {
     // MARK: - Update Assistant
     func updateAssistant(
         assistantId: String,
-        model: String? = nil,
+        // model: String? = nil, // REMOVED model parameter again
         name: String? = nil,
         description: String? = nil,
         instructions: String? = nil,
@@ -86,7 +119,8 @@ extension OpenAIService {
         completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
         var body: [String: Any] = [:]
-        if let model = model { body["model"] = model }
+        // DO NOT include model in the body
+        // if let model = model { body["model"] = model } // REMOVED model logic again
         if let name = name { body["name"] = name }
         if let description = description { body["description"] = description }
         if let instructions = instructions { body["instructions"] = instructions }
@@ -95,8 +129,9 @@ extension OpenAIService {
         if let metadata = metadata { body["metadata"] = metadata }
         if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
 
-        print("Updating assistant with body: \(body)")
+        print("Updating assistant [\(assistantId)] with body: \(body)")  // Log assistant ID for clarity
 
+        // Use the base assistant endpoint for updates
         guard
             let request = makeRequest(
                 endpoint: "assistants/\(assistantId)", httpMethod: .post, body: body)
@@ -104,7 +139,18 @@ extension OpenAIService {
             completion(.failure(.invalidRequest))
             return
         }
+
+        // Log full request details for debugging
+        logRequestDetails(request, body: body)
+
         session.dataTask(with: request) { data, response, error in
+            // Debug: log HTTP status and response data
+            if let httpResponse = response as? HTTPURLResponse {
+                print("Update Assistant HTTP status: \(httpResponse.statusCode)")
+            }
+            if let data = data, let json = String(data: data, encoding: .utf8) {
+                print("Update Assistant response data: \(json)")
+            }
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
@@ -155,6 +201,7 @@ struct Assistant: Identifiable, Codable, Equatable {
     var tools: [Tool]
     var top_p: Double
     var temperature: Double
+    var reasoning_effort: String?  // Optional O-series reasoning effort
     var tool_resources: ToolResources?
     var metadata: [String: String]?
     var response_format: ResponseFormat?
@@ -164,9 +211,74 @@ struct Assistant: Identifiable, Codable, Equatable {
         return lhs.id == rhs.id
     }
 
+    // Explicit CodingKeys including reasoning_effort
     private enum CodingKeys: String, CodingKey {
         case id, object, created_at, name, description, model, instructions, tools, top_p,
-            temperature, tool_resources, metadata, response_format, file_ids
+            temperature, reasoning_effort, tool_resources, metadata, response_format, file_ids,
+            vectorStoreId, threads  // Ensure all properties are covered
+    }
+
+    // Explicit Decodable initializer
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        object = try container.decode(String.self, forKey: .object)
+        created_at = try container.decode(Int.self, forKey: .created_at)
+        name = try container.decode(String.self, forKey: .name)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        model = try container.decode(String.self, forKey: .model)
+        vectorStoreId = try container.decodeIfPresent(String.self, forKey: .vectorStoreId)  // Decode added property
+        instructions = try container.decodeIfPresent(String.self, forKey: .instructions)
+        threads = try container.decodeIfPresent([Thread].self, forKey: .threads)  // Decode added property
+        tools = try container.decode([Tool].self, forKey: .tools)
+        top_p = try container.decode(Double.self, forKey: .top_p)
+        temperature = try container.decode(Double.self, forKey: .temperature)
+        // Decode reasoning_effort, handling potential absence
+        reasoning_effort = try container.decodeIfPresent(String.self, forKey: .reasoning_effort)
+        tool_resources = try container.decodeIfPresent(ToolResources.self, forKey: .tool_resources)
+        metadata = try container.decodeIfPresent([String: String].self, forKey: .metadata)
+        response_format = try container.decodeIfPresent(
+            ResponseFormat.self, forKey: .response_format)
+        file_ids = try container.decodeIfPresent([String].self, forKey: .file_ids)
+    }
+
+    // Explicit memberwise initializer for direct instantiation (e.g., previews)
+    init(
+        id: String,
+        object: String,
+        created_at: Int,
+        name: String,
+        description: String? = nil,
+        model: String,
+        vectorStoreId: String? = nil,
+        instructions: String? = nil,
+        threads: [Thread]? = nil,
+        tools: [Tool],
+        top_p: Double,
+        temperature: Double,
+        reasoning_effort: String? = nil,  // Added reasoning_effort
+        tool_resources: ToolResources? = nil,
+        metadata: [String: String]? = nil,
+        response_format: ResponseFormat? = nil,
+        file_ids: [String]? = nil
+    ) {
+        self.id = id
+        self.object = object
+        self.created_at = created_at
+        self.name = name
+        self.description = description
+        self.model = model
+        self.vectorStoreId = vectorStoreId
+        self.instructions = instructions
+        self.threads = threads
+        self.tools = tools
+        self.top_p = top_p
+        self.temperature = temperature
+        self.reasoning_effort = reasoning_effort  // Assign reasoning_effort
+        self.tool_resources = tool_resources
+        self.metadata = metadata
+        self.response_format = response_format
+        self.file_ids = file_ids
     }
 
     func toAssistantDictionary() -> [String: Any] {
@@ -179,6 +291,9 @@ struct Assistant: Identifiable, Codable, Equatable {
             "metadata": metadata ?? [:],
             "tools": tools.map { $0.toDictionary() },
         ]
+        if let reasoning = reasoning_effort {
+            dict["reasoning_effort"] = reasoning
+        }
         if let toolResources = tool_resources {
             dict["tool_resources"] = toolResources.toDictionary()
         }
@@ -188,6 +303,8 @@ struct Assistant: Identifiable, Codable, Equatable {
         if let fileIds = file_ids {
             dict["file_ids"] = fileIds
         }
+        // Ensure vectorStoreId and threads are handled if needed for dictionary conversion,
+        // though they might not be part of create/update payloads.
         return dict
     }
 }
@@ -213,6 +330,7 @@ struct AssistantSettings: Decodable {
     let tools: [Tool]
     let top_p: Double
     let temperature: Double
+    let reasoning_effort: String?  // Optional O-series reasoning effort
     let tool_resources: ToolResources?
     let metadata: [String: String]?
     let response_format: ResponseFormat?

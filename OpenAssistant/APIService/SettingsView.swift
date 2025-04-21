@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 struct SettingsView: View {
@@ -26,8 +26,8 @@ struct SettingsView: View {
         .preferredColorScheme(isDarkMode ? .dark : .light)
         .alert(isPresented: $showAlert) {
             Alert(
-                title: Text("Settings"), 
-                message: Text(alertMessage), 
+                title: Text("Settings"),
+                message: Text(alertMessage),
                 dismissButton: .default(Text("OK"))
             )
         }
@@ -98,7 +98,7 @@ struct SettingsView: View {
         if isApiKeyValid {
             alertMessage = "Settings saved successfully."
             #if DEBUG
-            print("API Key saved: \(apiKey)")
+                print("API Key saved: \(apiKey)")
             #endif
 
             // Notify other views to refresh data after API key is saved
@@ -111,7 +111,7 @@ struct SettingsView: View {
         }
         showAlert = true
         #if DEBUG
-        print("Dark Mode: \(isDarkMode)")
+            print("Dark Mode: \(isDarkMode)")
         #endif
     }
 }

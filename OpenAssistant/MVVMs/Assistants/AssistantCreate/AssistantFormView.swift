@@ -8,12 +8,16 @@ struct AssistantFormView: View {
     @Binding var description: String
     @Binding var temperature: Double
     @Binding var topP: Double
+    @Binding var reasoningEffort: String  // effort level for reasoning models
     @Binding var enableFileSearch: Bool
     @Binding var enableCodeInterpreter: Bool
     var availableModels: [String]
     var isEditing: Bool
     var onSave: () -> Void
-    var onDelete: (() -> Void)?  // Optional delete action
+    var onDelete: (() -> Void)? = nil  // Optional delete action with default value
+
+    // Available reasoning effort options
+    private let reasoningOptions = ["low", "medium", "high"]
 
     var body: some View {
         Form {
@@ -39,29 +43,52 @@ struct AssistantFormView: View {
         Section(header: Text("Assistant Details")) {
             TextField("Name", text: $name)  // Assistant display name
             TextField("Instructions", text: $instructions)  // System prompt instructions
-            // Disable model picker if editing an existing assistant
+
+            // Model Picker - Only enabled during creation
             modelPicker.disabled(isEditing)
+
             TextField("Description", text: $description)  // Short assistant description
 
-            // Show reasoning controls only for reasoning models
-            if BaseViewModel.modelSupportsGenerationParameters(model) {
-                Text("Reasoning adjustments (affects creativity and determinism):")
+            // Show reasoning controls ONLY for reasoning models during CREATION
+            if BaseViewModel.isReasoningModel(model) {
+                Picker("Reasoning Effort", selection: $reasoningEffort) {
+                    ForEach(reasoningOptions, id: \.self) { effort in
+                        Text(effort.capitalized).tag(effort)
+                    }
+                }
+                .disabled(isEditing)  // Disable if editing (redundant but safe)
+                .pickerStyle(SegmentedPickerStyle())
+
+                Text(
+                    "Reasoning effort affects model behavior (cost, latency, performance). Set at creation."
+                )
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+                // Show hint if editing (though picker is disabled)
+                if isEditing {
+                    Text("Model and reasoning effort can only be set at creation time.")
+                        .font(.caption2)
+                        .foregroundColor(.orange)
+                }
+            } else if BaseViewModel.supportsTempTopPAtAssistantLevel(model) {
+                // Show Temp/TopP controls ONLY for non-reasoning models during CREATION
+                Text("Generation Parameters (Set at creation):")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                // Disable sliders if editing an existing assistant
                 TemperatureSlider(temperature: $temperature)
-                    .disabled(isEditing)
+                    .disabled(isEditing)  // Disable if editing
                 TopPSlider(topP: $topP)
-                    .disabled(isEditing)
-                // Show a hint if editing
+                    .disabled(isEditing)  // Disable if editing
+
+                // Show hint if editing (though sliders are disabled)
                 if isEditing {
-                    Text(
-                        "Model and reasoning settings can only be set at creation time for reasoning models."
-                    )
-                    .font(.caption2)
-                    .foregroundColor(.orange)
+                    Text("Model, Temperature, and Top-P can only be set at creation time.")
+                        .font(.caption2)
+                        .foregroundColor(.orange)
                 }
             }
+            // No controls shown if model supports neither at assistant level
         }
     }
 
@@ -92,8 +119,10 @@ struct AssistantFormView: View {
     // Dropdown menu to select available model
     private var modelPicker: some View {
         Picker("Model", selection: $model) {
-            ForEach(availableModels.filter { BaseViewModel.isReasoningModel($0) }, id: \.self) { model in
-                Text(model).tag(model)
+            // Filter available models based on whether they are reasoning models or support temp/top_p
+            // Let user pick any available model during creation.
+            ForEach(availableModels, id: \.self) { modelId in
+                Text(modelId).tag(modelId)
             }
         }
         .pickerStyle(MenuPickerStyle())

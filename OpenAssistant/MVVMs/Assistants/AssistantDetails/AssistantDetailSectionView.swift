@@ -5,19 +5,64 @@ struct AssistantDetailsSection: View {
     @Binding var assistant: Assistant
     var availableModels: [String]
 
+    // Available reasoning effort options for display
+    private let reasoningOptions = ["low", "medium", "high"]
+
     var body: some View {
         Section(header: Text("Assistant Details")) {
+            // Display Name (Editable)
             NameField(name: $assistant.name)
+            // Instructions (Editable)
             InstructionsField(instructions: Binding($assistant.instructions, default: ""))
-            ModelPicker(model: $assistant.model, availableModels: availableModels)
+
+            // Model (Read-Only)
+            HStack {
+                Text("Model")
+                Spacer()
+                // Display the model name as read-only text
+                Text(assistant.model)
+                    .foregroundColor(.secondary)
+            }
+
+            // Description (Editable)
             DescriptionField(description: Binding($assistant.description, default: ""))
-            // Show reasoning controls only for reasoning models
+
+            // Conditionally show generation parameters based on model type (Read-Only)
             if BaseViewModel.isReasoningModel(assistant.model) {
-                Text("Reasoning adjustments (affects creativity and determinism):")
+                // Display Reasoning Effort for O-series models (read-only)
+                HStack {
+                    Text("Reasoning Effort")
+                    Spacer()
+                    Text(assistant.reasoning_effort?.capitalized ?? "Default")
+                        .foregroundColor(.secondary)
+                }
+                // Clarify immutability
+                Text("Reasoning settings are set at creation and cannot be updated.")
+                    .font(.caption2)
+                    .foregroundColor(.orange)
+            } else if BaseViewModel.supportsTempTopPAtAssistantLevel(assistant.model) {
+                // Display Temp/TopP for other models (read-only)
+                Text("Generation Parameters (Read-Only)")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                // Ensure sliders are explicitly disabled
                 TemperatureSlider(temperature: $assistant.temperature)
+                    .disabled(true)
                 TopPSlider(topP: $assistant.top_p)
+                    .disabled(true)
+                // Clarify immutability
+                Text(
+                    "Temperature/Top-P are set at creation and cannot be updated on the assistant."
+                )
+                .font(.caption2)
+                .foregroundColor(.orange)
+            } else {
+                // Model might not support any generation params at assistant level
+                Text(
+                    "This model does not use specific generation parameters at the assistant level."
+                )
+                .font(.caption)
+                .foregroundColor(.secondary)
             }
         }
     }
@@ -49,20 +94,6 @@ private struct DescriptionField: View {
     var body: some View {
         TextField("Description", text: $description)
             .textFieldStyle(RoundedBorderTextFieldStyle())
-    }
-}
-
-struct ModelPicker: View {
-    @Binding var model: String
-    var availableModels: [String]
-
-    var body: some View {
-        Picker("Model", selection: $model) {
-            ForEach(availableModels, id: \.self) { model in
-                Text(model).tag(model)
-            }
-        }
-        .pickerStyle(MenuPickerStyle())
     }
 }
 

@@ -83,34 +83,18 @@ class BaseViewModel: ObservableObject {
 
     // MARK: - Model Parameter Support Helper
 
-    /// Checks if a given model identifier typically supports temperature/top_p settings for generation.
-    /// Note: Assistants API itself doesn't use these during creation/update.
-    static func modelSupportsGenerationParameters(_ modelId: String) -> Bool {
-        // Models that should NOT show temperature/top_p controls
-        let unsupportedPrefixes = [
-            "dall-e", "whisper", "tts", "text-embedding", "babbage", "davinci", "omni-moderation",
-            "computer-use",
-        ]
-        // Allow o1, o3, o4 and their variants (reasoning models) to show controls
-        for prefix in unsupportedPrefixes {
-            if modelId.starts(with: prefix) {
-                return false
-            }
-        }
-        // All other models, including o1/o3/o4, support reasoning controls
-        return true
+    /// Checks if a model is an O-series reasoning model.
+    static func isReasoningModel(_ modelId: String) -> Bool {
+        let lowercasedModel = modelId.lowercased()
+        return lowercasedModel.starts(with: "o1") || lowercasedModel.starts(with: "o3")
+            || lowercasedModel.starts(with: "o4")
     }
 
-    /// Returns true if the model is a reasoning model (supports temperature/top_p).
-    /// Updated to include GPT-4.1 and GPT-4o variants.
-    static func isReasoningModel(_ modelId: String) -> Bool {
-        let reasoningPrefixes = [
-            "gpt-4", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano",
-            "gpt-4o", "gpt-4o-search-preview", "gpt-4o-mini", "gpt-4o-mini-search-preview",
-            "gpt-3.5-turbo", "o1", "o3", "o4"
-        ]
-        // Only show controls for models that start with a reasoning prefix
-        return reasoningPrefixes.contains { modelId.starts(with: $0) }
+    /// Checks if a model supports temperature/top_p settings at the Assistant level.
+    /// Reasoning models (o-series) use reasoning_effort instead.
+    static func supportsTempTopPAtAssistantLevel(_ modelId: String) -> Bool {
+        // Models that are NOT reasoning models support temp/top_p at this level.
+        return !isReasoningModel(modelId.lowercased())
     }
 }
 

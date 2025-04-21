@@ -51,13 +51,9 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         DispatchQueue.main.async {
             switch result {
             case .success(let models):
-                // Only include models that support reasoning (no embeddings, DALL-E, etc.)
-                let filteredModels = models.filter { modelId in
-                    // Case-insensitive filter against reasoning models
-                    BaseViewModel.isReasoningModel(modelId.lowercased())
-                }
-                self.availableModels = filteredModels.sorted()
-                print("Available reasoning models: \(filteredModels)")
+                // Do NOT filter to only reasoning models. Show all available models.
+                self.availableModels = models.sorted()
+                print("Available models: \(models)")
             case .failure(let error):
                 self.handleError(
                     IdentifiableError(message: "Fetch models failed: \(error.localizedDescription)")
@@ -101,24 +97,34 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         tools: [Tool],
         toolResources: ToolResources?,
         metadata: [String: String]?,
-        temperature: Double,
-        topP: Double,
+        temperature: Double,  // Generation temperature
+        topP: Double,  // Generation top-p
+        reasoningEffort: String?,  // Reasoning effort for O-series models
         responseFormat: ResponseFormat?
     ) {
+        // Ensure service is available before proceeding
         performServiceAction { openAIService in
+            // Call the underlying service method to create the assistant
             openAIService.createAssistant(
                 model: model,
                 name: name,
                 description: description,
                 instructions: instructions,
+                // Convert Tool and ToolResources structs to dictionaries for the API
                 tools: tools.map { $0.toDictionary() },
                 toolResources: toolResources?.toDictionary(),
                 metadata: metadata,
+                temperature: temperature,  // Pass temperature
+                topP: topP,  // Pass topP
+                reasoningEffort: reasoningEffort,  // Pass reasoning effort
                 responseFormat: responseFormat
             ) { [weak self] (result: Result<Assistant, OpenAIServiceError>) in
+                // Handle the result on the main thread for UI updates
                 DispatchQueue.main.async {
                     self?.handleResult(result) { assistant in
+                        // On success, add the new assistant to the local list
                         self?.assistants.append(assistant)
+                        // Notify other parts of the app
                         NotificationCenter.default.post(name: .assistantCreated, object: assistant)
                     }
                 }
@@ -129,36 +135,39 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
     // Updates an existing assistant
     func updateAssistant(assistant: Assistant, completion: @escaping (Result<Void, Error>) -> Void)
     {
+        // Ensure service is available before proceeding
         performServiceAction { openAIService in
             // Call the service method to update the assistant
             openAIService.updateAssistant(
                 assistantId: assistant.id,
-                model: assistant.model,
+                // model: assistant.model, // REMOVED passing model again
                 name: assistant.name,
                 description: assistant.description,
                 instructions: assistant.instructions,
+                // Convert Tool and ToolResources structs to dictionaries for the API
                 tools: assistant.tools.map { $0.toDictionary() },
                 toolResources: assistant.tool_resources?.toDictionary(),
                 metadata: assistant.metadata,
-                // Removed temperature and topP as they might not be direct parameters for update
-                // Pass the completion handler correctly
-                completion: { [weak self] (result: Result<Assistant, OpenAIServiceError>) in  // Explicitly type result
-                    // Ensure UI updates are on the main thread
+                responseFormat: assistant.response_format,  // Pass response format if needed
+                // Pass the completion handler to the service call
+                completion: { [weak self] (result: Result<Assistant, OpenAIServiceError>) in
+                    // Handle the result on the main thread for UI updates
                     DispatchQueue.main.async {
                         switch result {
                         case .success(let updatedAssistant):
-                            // Update the local assistants array
-                            self?.assistants =
-                                self?.assistants.map {
-                                    $0.id == assistant.id ? updatedAssistant : $0
-                                } ?? []
+                            // Update the local assistants array with the modified assistant
+                            if let index = self?.assistants.firstIndex(where: {
+                                $0.id == assistant.id
+                            }) {
+                                self?.assistants[index] = updatedAssistant
+                            }
                             // Notify other parts of the app about the update
                             NotificationCenter.default.post(
                                 name: .assistantUpdated, object: updatedAssistant)
-                            // Call the original completion handler passed to updateAssistant
+                            // Call the original completion handler indicating success
                             completion(.success(()))
                         case .failure(let error):
-                            // Handle the error appropriately (e.g., show an alert)
+                            // Handle the error (e.g., show an alert to the user)
                             self?.handleError(
                                 IdentifiableError(
                                     message:

@@ -15,21 +15,53 @@ class AssistantDetailViewModel: BaseViewModel {
 
     // Update the assistant details
     func updateAssistant() {
+        // Log the model being used just before the update API call
+        let originalModel = assistant.model  // Store original model for comparison
+        print("Attempting to update assistant ID: \(assistant.id) with model: \(originalModel)")
+
+        // Check if it's a restricted model before proceeding
+        guard !isRestrictedModelForUpdate(assistant.model) else {
+            print(
+                "Update blocked: Updates for this model (\(assistant.model)) are disabled due to API limitations."
+            )
+            return
+        }
+
         performServiceAction { openAIService in
             openAIService.updateAssistant(
                 assistantId: assistant.id,
-                model: assistant.model,
+                // model parameter is correctly omitted here
                 name: assistant.name,
                 description: assistant.description,
                 instructions: assistant.instructions,
                 tools: assistant.tools.map { $0.toDictionary() },
                 toolResources: assistant.tool_resources?.toDictionary(),
-                metadata: assistant.metadata
+                metadata: assistant.metadata,
+                responseFormat: assistant.response_format
             ) { [weak self] (result: Result<Assistant, OpenAIServiceError>) in
-                self?.handleResult(result) { updatedAssistant in
-                    self?.assistant = updatedAssistant
-                    NotificationCenter.default.post(
-                        name: .assistantUpdated, object: updatedAssistant)
+                guard let self = self else { return }
+
+                // Handle the result directly
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let updatedAssistant):
+                        print(
+                            "Update successful. Assistant ID: \(updatedAssistant.id), Model: \(updatedAssistant.model)"
+                        )
+                        // Update local state with the response from the POST
+                        self.assistant = updatedAssistant
+                        NotificationCenter.default.post(
+                            name: .assistantUpdated, object: updatedAssistant)
+                        // Optionally show success message
+                        self.successMessage = SuccessMessage(
+                            message: "Assistant updated successfully.")
+
+                    case .failure(let error):
+                        // Handle the error from the POST request
+                        let errorMessage = "Update assistant failed: \(error.localizedDescription)"
+                        print("ERROR: \(errorMessage)")
+                        self.handleError(IdentifiableError(message: errorMessage))
+                    }
                 }
             }
         }
@@ -108,6 +140,13 @@ class AssistantDetailViewModel: BaseViewModel {
                 }
             }
         }
+    }
+
+    // Helper function to check for models restricted from updates
+    private func isRestrictedModelForUpdate(_ modelId: String) -> Bool {
+        let lowercasedModel = modelId.lowercased()
+        return lowercasedModel.starts(with: "o1") || lowercasedModel.starts(with: "o3")
+            || lowercasedModel.starts(with: "o4") || lowercasedModel == "gpt-4o-mini"  // Add gpt-4o-mini
     }
 
     struct SuccessMessage: Identifiable {

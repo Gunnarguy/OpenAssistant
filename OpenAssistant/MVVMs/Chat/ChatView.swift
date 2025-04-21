@@ -1,5 +1,5 @@
-import SwiftUI
 import Combine
+import SwiftUI
 
 struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
@@ -7,7 +7,8 @@ struct ChatView: View {
     @Environment(\.colorScheme) var colorScheme
 
     init(assistant: Assistant, messageStore: MessageStore) {
-        _viewModel = StateObject(wrappedValue: ChatViewModel(assistant: assistant, messageStore: messageStore))
+        _viewModel = StateObject(
+            wrappedValue: ChatViewModel(assistant: assistant, messageStore: messageStore))
         self.messageStore = messageStore
     }
 
@@ -17,18 +18,23 @@ struct ChatView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if let threadId = viewModel.threadId, !threadId.isEmpty {
-                        NavigationLink(destination: ChatHistoryView(messages: messageStore.messages, threadId: threadId)) {
+                        NavigationLink(
+                            destination: ChatHistoryView(
+                                messages: messageStore.messages, threadId: threadId)
+                        ) {
                             Image(systemName: "clock")
                                 .foregroundColor(.blue)
                         }
                     } else {
                         Image(systemName: "clock")
-                            .foregroundColor(.gray.opacity(0.5)) // Clearly disabled
+                            .foregroundColor(.gray.opacity(0.5))  // Clearly disabled
                     }
                 }
             }
             .alert(item: $viewModel.errorMessage) { errorMessage in
-                Alert(title: Text("Error"), message: Text(errorMessage.message), dismissButton: .default(Text("OK")))
+                Alert(
+                    title: Text("Error"), message: Text(errorMessage.message),
+                    dismissButton: .default(Text("OK")))
             }
     }
 }
@@ -42,15 +48,17 @@ struct ChatView_Previews: PreviewProvider {
             name: "Test Assistant",
             description: "This is a test assistant.",
             model: "test-model",
-            instructions: nil,
-            threads: nil,
+            vectorStoreId: nil,  // Explicitly nil
+            instructions: nil,  // Explicitly nil
+            threads: nil,  // Explicitly nil
             tools: [],
             top_p: 1.0,
             temperature: 0.7,
-            tool_resources: nil,
-            metadata: nil,
-            response_format: nil,
-            file_ids: []
+            reasoning_effort: nil,  // Added reasoning_effort
+            tool_resources: nil,  // Explicitly nil
+            metadata: nil,  // Explicitly nil
+            response_format: nil,  // Explicitly nil
+            file_ids: []  // Explicitly empty array
         )
         let messageStore = MessageStore()
         ChatView(assistant: assistant, messageStore: messageStore)

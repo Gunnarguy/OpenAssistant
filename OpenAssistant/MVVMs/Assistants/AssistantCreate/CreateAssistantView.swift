@@ -1,6 +1,6 @@
-import SwiftUI
-import Foundation
 import Combine
+import Foundation
+import SwiftUI
 
 struct CreateAssistantView: View {
     @ObservedObject var viewModel: AssistantManagerViewModel
@@ -17,6 +17,7 @@ struct CreateAssistantView: View {
     @State private var topP: Double = Constants.defaultTopP
     @State private var enableFileSearch: Bool = false
     @State private var enableCodeInterpreter: Bool = false
+    @State private var reasoningEffort: String = Constants.defaultReasoningEffort
 
     var body: some View {
         NavigationView {
@@ -27,6 +28,7 @@ struct CreateAssistantView: View {
                 description: $description,
                 temperature: $temperature,
                 topP: $topP,
+                reasoningEffort: $reasoningEffort,
                 enableFileSearch: $enableFileSearch,
                 enableCodeInterpreter: $enableCodeInterpreter,
                 availableModels: viewModel.availableModels,
@@ -52,20 +54,18 @@ struct CreateAssistantView: View {
                 viewModel.fetchAvailableModels()
                 // After fetching, default to stored defaultModel if valid, otherwise first valid model
                 if model.isEmpty {
-                    // Filter to reasoning models only
-                    let reasoning = viewModel.availableModels.filter { BaseViewModel.isReasoningModel($0) }
-                    if !defaultModel.isEmpty && reasoning.contains(defaultModel) {
+                    // Use all available models, not just reasoning models
+                    if !defaultModel.isEmpty && viewModel.availableModels.contains(defaultModel) {
                         model = defaultModel
-                    } else if let first = reasoning.first {
+                    } else if let first = viewModel.availableModels.first {
                         model = first
                         defaultModel = first  // update stored default to new valid model
                     }
                 }
             }
             .onChange(of: viewModel.availableModels) { models in
-                // When models change, ensure current model is valid reasoning model
-                let reasoning = models.filter { BaseViewModel.isReasoningModel($0) }
-                if !reasoning.contains(model), let first = reasoning.first {
+                // When models change, ensure current model is valid (any model)
+                if !models.contains(model), let first = models.first {
                     model = first
                     defaultModel = first
                 }
@@ -85,6 +85,7 @@ struct CreateAssistantView: View {
                 metadata: nil,
                 temperature: temperature,
                 topP: topP,
+                reasoningEffort: reasoningEffort,
                 responseFormat: nil
             )
             dismissView()
@@ -128,6 +129,7 @@ private struct Constants {
     static let defaultDescription = "You are a helpful assistant."
     static let defaultTemperature: Double = 1.0
     static let defaultTopP: Double = 1.0
+    static let defaultReasoningEffort = "medium"
     static let validVectorStoreId = "valid_vector_store_id"
     static let validFileId = "valid_file_id"
 }

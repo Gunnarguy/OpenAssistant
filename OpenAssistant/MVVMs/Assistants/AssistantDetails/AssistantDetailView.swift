@@ -20,6 +20,13 @@ struct AssistantDetailView: View {
         self.managerViewModel = managerViewModel
     }
 
+    // Computed property to check if the current assistant uses a model where updates are restricted
+    private var isUpdateRestrictedModel: Bool {
+        let modelId = viewModel.assistant.model.lowercased()
+        return modelId.starts(with: "o1") || modelId.starts(with: "o3")
+            || modelId.starts(with: "o4") || modelId == "gpt-4o-mini"  // Add gpt-4o-mini
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -36,6 +43,30 @@ struct AssistantDetailView: View {
                     vectorStoreName: $vectorStoreName,
                     onCreateVectorStore: createVectorStore
                 )
+                Section {
+                    Button("Save Changes") {
+                        viewModel.updateAssistant()
+                    }
+                    // Disable the button if it's a restricted model
+                    .disabled(isUpdateRestrictedModel || viewModel.isLoading)
+
+                    // Show explanation if disabled
+                    if isUpdateRestrictedModel {
+                        Text(
+                            "Note: Assistants using O-series models (o1, o3, o4) or gpt-4o-mini cannot be updated due to current API limitations. The API may change the model unexpectedly. To make changes, please create a new assistant with the desired configuration."
+                        )
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    }
+                }
+
+                Section {
+                    Button("Delete Assistant", role: .destructive) {
+                        viewModel.deleteAssistant()
+                        dismissView()  // Dismiss after initiating delete
+                    }
+                    .disabled(viewModel.isLoading)
+                }
             }
             .onChange(of: vectorStoreManagerViewModel.vectorStores) { updatedStores in
                 updateVectorStore(with: updatedStores)
@@ -47,9 +78,13 @@ struct AssistantDetailView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save", action: handleSave)
+                        // Disable toolbar save button for restricted models as well
+                        .disabled(isUpdateRestrictedModel || viewModel.isLoading)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Delete", action: handleDelete)
+                        // Also disable delete while loading
+                        .disabled(viewModel.isLoading)
                 }
             }
             .alert(isPresented: $showAlert) {

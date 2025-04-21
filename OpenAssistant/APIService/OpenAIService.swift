@@ -28,6 +28,8 @@ class OpenAIService {
         case post = "POST"
         case put = "PUT"
         case delete = "DELETE"
+        // Added PATCH for update assistant endpoint
+        case patch = "PATCH"
     }
 
     // MARK: - Request Configuration

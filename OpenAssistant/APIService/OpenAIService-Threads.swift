@@ -1,9 +1,9 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 extension OpenAIService {
-    
+
     // MARK: - Create Thread
     func createThread(completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
         guard let request = makeRequest(endpoint: "threads", httpMethod: .post) else {
@@ -16,7 +16,10 @@ extension OpenAIService {
     }
 
     // MARK: - Run Assistant on Thread
-    func runAssistantOnThread(threadId: String, assistantId: String, completion: @escaping (Result<Run, OpenAIServiceError>) -> Void) {
+    func runAssistantOnThread(
+        threadId: String, assistantId: String,
+        completion: @escaping (Result<Run, OpenAIServiceError>) -> Void
+    ) {
         let endpoint = "threads/\(threadId)/runs"
         let body: [String: Any] = ["assistant_id": assistantId]
         guard let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body) else {
@@ -31,9 +34,12 @@ extension OpenAIService {
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
-    
+
     // MARK: - Fetch Run Status
-    func fetchRunStatus(threadId: String, runId: String, completion: @escaping (Result<Run, OpenAIServiceError>) -> Void) {
+    func fetchRunStatus(
+        threadId: String, runId: String,
+        completion: @escaping (Result<Run, OpenAIServiceError>) -> Void
+    ) {
         let endpoint = "threads/\(threadId)/runs/\(runId)"
         guard let request = makeRequest(endpoint: endpoint) else {
             completion(.failure(.custom("Failed to create request")))
@@ -43,16 +49,19 @@ extension OpenAIService {
             self.handleResponse(data, response, error, completion: completion)
         }.resume()
     }
-    
+
     // MARK: - Fetch Run Messages
-    func fetchRunMessages(threadId: String, completion: @escaping (Result<[Message], OpenAIServiceError>) -> Void) {
+    func fetchRunMessages(
+        threadId: String, completion: @escaping (Result<[Message], OpenAIServiceError>) -> Void
+    ) {
         let endpoint = "threads/\(threadId)/messages"
         guard let request = makeRequest(endpoint: endpoint) else {
             completion(.failure(.custom("Failed to create request")))
             return
         }
         session.dataTask(with: request) { data, response, error in
-            self.handleResponse(data, response, error) { (result: Result<MessageResponseList, OpenAIServiceError>) in
+            self.handleResponse(data, response, error) {
+                (result: Result<MessageResponseList, OpenAIServiceError>) in
                 switch result {
                 case .success(let responseList):
                     completion(.success(responseList.data))
@@ -62,13 +71,16 @@ extension OpenAIService {
             }
         }.resume()
     }
-    
+
     // MARK: - Add Message to Thread
-    func addMessageToThread(threadId: String, message: Message, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void) {
+    func addMessageToThread(
+        threadId: String, message: Message,
+        completion: @escaping (Result<Void, OpenAIServiceError>) -> Void
+    ) {
         let endpoint = "threads/\(threadId)/messages"
         let body: [String: Any] = [
             "role": message.role.rawValue,
-            "content": message.content.map { $0.toDictionary() }
+            "content": message.content.map { $0.toDictionary() },
         ]
         guard let request = makeRequest(endpoint: endpoint, httpMethod: .post, body: body) else {
             completion(.failure(.custom("Failed to create request")))
@@ -83,22 +95,26 @@ extension OpenAIService {
                 }
                 return
             }
-            
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                (200...299).contains(httpResponse.statusCode)
+            else {
                 DispatchQueue.main.async {
                     completion(.failure(.invalidResponse(response!)))
                 }
                 return
             }
-            
+
             DispatchQueue.main.async {
                 completion(.success(()))
             }
         }.resume()
     }
-    
+
     // MARK: - Fetch Thread Details
-    func fetchThreadDetails(threadId: String, completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
+    func fetchThreadDetails(
+        threadId: String, completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void
+    ) {
         let endpoint = "threads/\(threadId)"
         guard let request = makeRequest(endpoint: endpoint) else {
             completion(.failure(.custom("Failed to create request")))
@@ -109,7 +125,6 @@ extension OpenAIService {
         }.resume()
     }
 }
-
 
 // MARK: - Message
 struct Message: Identifiable, Codable, Equatable {
@@ -153,11 +168,11 @@ struct Message: Identifiable, Codable, Equatable {
         private enum CodingKeys: String, CodingKey {
             case value, annotations
         }
-        
+
         func toDictionary() -> [String: Any] {
             return [
                 "value": value,
-                "annotations": annotations.map { $0.toDictionary() }
+                "annotations": annotations.map { $0.toDictionary() },
             ]
         }
     }
@@ -170,15 +185,18 @@ struct Message: Identifiable, Codable, Equatable {
         let fileCitation: FileCitation?
 
         private enum CodingKeys: String, CodingKey {
-            case type, text, startIndex = "start_index", endIndex = "end_index", fileCitation = "file_citation"
+            case type, text
+            case startIndex = "start_index"
+            case endIndex = "end_index"
+            case fileCitation = "file_citation"
         }
-        
+
         func toDictionary() -> [String: Any] {
             var dict: [String: Any] = [
                 "type": type,
                 "text": text,
                 "start_index": startIndex,
-                "end_index": endIndex
+                "end_index": endIndex,
             ]
             if let fileCitation = fileCitation {
                 dict["file_citation"] = fileCitation.toDictionary()
@@ -193,7 +211,7 @@ struct Message: Identifiable, Codable, Equatable {
         private enum CodingKeys: String, CodingKey {
             case fileId = "file_id"
         }
-        
+
         func toDictionary() -> [String: Any] {
             return [
                 "file_id": fileId
@@ -216,7 +234,8 @@ struct MessageResponse: Codable, Equatable {
     let metadata: [String: String]
 
     private enum CodingKeys: String, CodingKey {
-        case id, object, created_at, assistant_id, thread_id, run_id, role, content, attachments, metadata
+        case id, object, created_at, assistant_id, thread_id, run_id, role, content, attachments,
+            metadata
     }
 }
 
@@ -259,9 +278,13 @@ struct Run: Decodable {
     let tool_choice: String
     let parallel_tool_calls: Bool
     let incomplete_details: String?
-    
+
     private enum CodingKeys: String, CodingKey {
-        case id, object, created_at, assistant_id, thread_id, status, started_at, expires_at, cancelled_at, failed_at, completed_at, required_action, last_error, model, instructions, tools, tool_resources, metadata, temperature, top_p, max_completion_tokens, max_prompt_tokens, truncation_strategy, usage, response_format, tool_choice, parallel_tool_calls, incomplete_details
+        case id, object, created_at, assistant_id, thread_id, status, started_at, expires_at,
+            cancelled_at, failed_at, completed_at, required_action, last_error, model, instructions,
+            tools, tool_resources, metadata, temperature, top_p, max_completion_tokens,
+            max_prompt_tokens, truncation_strategy, usage, response_format, tool_choice,
+            parallel_tool_calls, incomplete_details
     }
 }
 
@@ -275,7 +298,7 @@ struct RunResult: Decodable, Equatable {
 }
 
 // MARK: - Thread
-struct Thread: Identifiable, Decodable, Equatable {
+struct Thread: Identifiable, Codable, Equatable {  // Add Codable (Encodable + Decodable)
     let id: String
     let object: String
     let created_at: Int
@@ -289,7 +312,7 @@ struct Thread: Identifiable, Decodable, Equatable {
         case tool_resources
     }
 
-    static func ==(lhs: Thread, rhs: Thread) -> Bool {
+    static func == (lhs: Thread, rhs: Thread) -> Bool {
         return lhs.id == rhs.id
     }
 }
