@@ -49,44 +49,31 @@ struct AssistantFormView: View {
 
             TextField("Description", text: $description)  // Short assistant description
 
-            // Show reasoning controls ONLY for reasoning models during CREATION
+            // Show reasoning controls ONLY for reasoning models
             if BaseViewModel.isReasoningModel(model) {
                 Picker("Reasoning Effort", selection: $reasoningEffort) {
                     ForEach(reasoningOptions, id: \.self) { effort in
                         Text(effort.capitalized).tag(effort)
                     }
                 }
-                .disabled(isEditing)  // Disable if editing (redundant but safe)
+                // Enable picker during editing for reasoning models
                 .pickerStyle(SegmentedPickerStyle())
 
                 Text(
-                    "Reasoning effort affects model behavior (cost, latency, performance). Set at creation."
+                    "Reasoning effort affects model behavior (cost, latency, performance)."  // Updated text
                 )
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-                // Show hint if editing (though picker is disabled)
-                if isEditing {
-                    Text("Model and reasoning effort can only be set at creation time.")
-                        .font(.caption2)
-                        .foregroundColor(.orange)
-                }
             } else if BaseViewModel.supportsTempTopPAtAssistantLevel(model) {
-                // Show Temp/TopP controls ONLY for non-reasoning models during CREATION
-                Text("Generation Parameters (Set at creation):")
+                // Show Temp/TopP controls ONLY for non-reasoning models
+                Text("Generation Parameters:")  // Updated text
                     .font(.caption)
                     .foregroundColor(.secondary)
                 TemperatureSlider(temperature: $temperature)
-                    .disabled(isEditing)  // Disable if editing
+                // Enable slider during editing for non-reasoning models
                 TopPSlider(topP: $topP)
-                    .disabled(isEditing)  // Disable if editing
-
-                // Show hint if editing (though sliders are disabled)
-                if isEditing {
-                    Text("Model, Temperature, and Top-P can only be set at creation time.")
-                        .font(.caption2)
-                        .foregroundColor(.orange)
-                }
+                // Enable slider during editing for non-reasoning models
             }
             // No controls shown if model supports neither at assistant level
         }

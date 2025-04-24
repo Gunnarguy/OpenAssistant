@@ -20,13 +20,6 @@ struct AssistantDetailView: View {
         self.managerViewModel = managerViewModel
     }
 
-    // Computed property to check if the current assistant uses a model where updates are restricted
-    private var isUpdateRestrictedModel: Bool {
-        let modelId = viewModel.assistant.model.lowercased()
-        return modelId.starts(with: "o1") || modelId.starts(with: "o3")
-            || modelId.starts(with: "o4") || modelId == "gpt-4o-mini"  // Add gpt-4o-mini
-    }
-
     var body: some View {
         NavigationStack {
             Form {
@@ -45,25 +38,14 @@ struct AssistantDetailView: View {
                 )
                 Section {
                     Button("Save Changes") {
-                        viewModel.updateAssistant()
+                        handleSave()
                     }
-                    // Disable the button if it's a restricted model
-                    .disabled(isUpdateRestrictedModel || viewModel.isLoading)
-
-                    // Show explanation if disabled
-                    if isUpdateRestrictedModel {
-                        Text(
-                            "Note: Assistants using O-series models (o1, o3, o4) or gpt-4o-mini cannot be updated due to current API limitations. The API may change the model unexpectedly. To make changes, please create a new assistant with the desired configuration."
-                        )
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    }
+                    .disabled(viewModel.isLoading)
                 }
 
                 Section {
                     Button("Delete Assistant", role: .destructive) {
-                        viewModel.deleteAssistant()
-                        dismissView()  // Dismiss after initiating delete
+                        handleDelete()
                     }
                     .disabled(viewModel.isLoading)
                 }
@@ -78,12 +60,10 @@ struct AssistantDetailView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save", action: handleSave)
-                        // Disable toolbar save button for restricted models as well
-                        .disabled(isUpdateRestrictedModel || viewModel.isLoading)
+                        .disabled(viewModel.isLoading)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Delete", action: handleDelete)
-                        // Also disable delete while loading
                         .disabled(viewModel.isLoading)
                 }
             }
@@ -96,7 +76,7 @@ struct AssistantDetailView: View {
             }
             .onAppear(perform: onAppear)
             .onChange(of: managerViewModel.availableModels) { _ in
-                initializeModel()  // Ensure model bound to current list
+                initializeModel()
             }
             .onDisappear(perform: onDisappear)
             .navigationDestination(isPresented: $showVectorStoreDetail) {
@@ -124,30 +104,13 @@ struct AssistantDetailView: View {
         }
     }
 
-    // Save assistant if fields valid
     private func handleSave() {
-        // Validate assistant details before proceeding
         if validateAssistant() {
             print(
                 "Saving assistant with ID: \(viewModel.assistant.id), model: \(viewModel.assistant.model)"
             )
-            // Call update on the manager view model, which handles API call and completion
-            managerViewModel.updateAssistant(assistant: viewModel.assistant) { result in
-                // Switch to main thread for UI updates
-                DispatchQueue.main.async {
-                    switch result {
-                    case .success:
-                        // Dismiss the view on successful update
-                        self.dismissView()
-                    case .failure(let error):
-                        // Show an alert if the update fails
-                        self.showAlert(
-                            message: "Failed to update assistant: \(error.localizedDescription)")
-                    }
-                }
-            }
+            viewModel.updateAssistant()
         } else {
-            // Show an alert if validation fails
             showAlert(message: "Please fill in all required fields.")
         }
     }
@@ -157,9 +120,7 @@ struct AssistantDetailView: View {
         dismissView()
     }
 
-    // Ensure name and model are non-empty and valid
     private func validateAssistant() -> Bool {
-        // Only check for non-empty name and model
         let nameValid = !viewModel.assistant.name.trimmingCharacters(in: .whitespaces).isEmpty
         let modelValid = !viewModel.assistant.model.isEmpty
         return nameValid && modelValid
@@ -169,7 +130,6 @@ struct AssistantDetailView: View {
         presentationMode.wrappedValue.dismiss()
     }
 
-    // Initialize model selection to first available if current is invalid
     private func initializeModel() {
         if !managerViewModel.availableModels.contains(viewModel.assistant.model),
             let first = managerViewModel.availableModels.first
@@ -198,7 +158,6 @@ struct AssistantDetailView: View {
 
     private func onDisappear() {
         if isAddingFile || didDeleteFile {
-            // Handle any necessary actions on disappear
         }
     }
 
@@ -253,7 +212,6 @@ struct VectorStoreManagementSection: View {
 
     var body: some View {
         Group {
-            // Current Vector Store Info Section
             Section(header: Text("Current Vector Store")) {
                 if let vectorStore = vectorStore {
                     Text("Name: \(vectorStore.name ?? "Unnamed")")
@@ -274,7 +232,6 @@ struct VectorStoreManagementSection: View {
                 }
             }
 
-            // Create New Vector Store Section
             Section(header: Text("Create New Vector Store")) {
                 TextField("Vector Store Name", text: $vectorStoreName)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -289,7 +246,6 @@ struct VectorStoreManagementSection: View {
                 .padding(.top, 8)
             }
 
-            // Manual Association Section
             Section(header: Text("Manual Association")) {
                 TextField("Vector Store ID", text: $vectorStoreId)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -307,7 +263,6 @@ struct VectorStoreManagementSection: View {
                 .padding(.top, 8)
             }
 
-            // Associated Vector Store IDs Section
             Section(header: Text("Associated Vector Store IDs")) {
                 if let vectorStoreIds = viewModel.assistant.tool_resources?.fileSearch?
                     .vectorStoreIds, !vectorStoreIds.isEmpty

@@ -148,6 +148,9 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
                 tools: assistant.tools.map { $0.toDictionary() },
                 toolResources: assistant.tool_resources?.toDictionary(),
                 metadata: assistant.metadata,
+                temperature: assistant.temperature,  // Pass temperature
+                topP: assistant.top_p,  // Pass topP
+                reasoningEffort: assistant.reasoning_effort,  // Pass reasoning effort
                 responseFormat: assistant.response_format,  // Pass response format if needed
                 // Pass the completion handler to the service call
                 completion: { [weak self] (result: Result<Assistant, OpenAIServiceError>) in

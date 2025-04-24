@@ -8,6 +8,14 @@ struct AssistantDetailsSection: View {
     // Available reasoning effort options for display
     private let reasoningOptions = ["low", "medium", "high"]
 
+    // Helper to check if the current model is an O-series model
+    private var isOModel: Bool {
+        let modelId = assistant.model.lowercased()
+        // Define prefixes for O-series models that use reasoning_effort
+        let oPrefixes = ["o1", "o3", "o4"]
+        return oPrefixes.contains { modelId.starts(with: $0) }
+    }
+
     var body: some View {
         Section(header: Text("Assistant Details")) {
             // Display Name (Editable)
@@ -15,54 +23,37 @@ struct AssistantDetailsSection: View {
             // Instructions (Editable)
             InstructionsField(instructions: Binding($assistant.instructions, default: ""))
 
-            // Model (Read-Only)
-            HStack {
-                Text("Model")
-                Spacer()
-                // Display the model name as read-only text
-                Text(assistant.model)
-                    .foregroundColor(.secondary)
+            // Model Picker
+            Picker("Model", selection: $assistant.model) {
+                ForEach(availableModels, id: \.self) { model in
+                    Text(model).tag(model)
+                }
             }
 
             // Description (Editable)
             DescriptionField(description: Binding($assistant.description, default: ""))
 
-            // Conditionally show generation parameters based on model type (Read-Only)
-            if BaseViewModel.isReasoningModel(assistant.model) {
-                // Display Reasoning Effort for O-series models (read-only)
-                HStack {
-                    Text("Reasoning Effort")
-                    Spacer()
-                    Text(assistant.reasoning_effort?.capitalized ?? "Default")
-                        .foregroundColor(.secondary)
+            // Conditional UI based on model type
+            if isOModel {
+                // Reasoning Effort Picker for O-series models
+                Picker("Reasoning Effort", selection: $assistant.reasoning_effort) {
+                    Text("Default (medium)").tag(nil as String?)  // Option for default
+                    ForEach(reasoningOptions, id: \.self) { effort in
+                        Text(effort.capitalized).tag(effort as String?)  // Use optional tag
+                    }
                 }
-                // Clarify immutability
-                Text("Reasoning settings are set at creation and cannot be updated.")
-                    .font(.caption2)
-                    .foregroundColor(.orange)
-            } else if BaseViewModel.supportsTempTopPAtAssistantLevel(assistant.model) {
-                // Display Temp/TopP for other models (read-only)
-                Text("Generation Parameters (Read-Only)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                // Ensure sliders are explicitly disabled
-                TemperatureSlider(temperature: $assistant.temperature)
-                    .disabled(true)
-                TopPSlider(topP: $assistant.top_p)
-                    .disabled(true)
-                // Clarify immutability
-                Text(
-                    "Temperature/Top-P are set at creation and cannot be updated on the assistant."
-                )
-                .font(.caption2)
-                .foregroundColor(.orange)
             } else {
-                // Model might not support any generation params at assistant level
-                Text(
-                    "This model does not use specific generation parameters at the assistant level."
-                )
-                .font(.caption)
-                .foregroundColor(.secondary)
+                // Temperature Slider for non-O models
+                VStack(alignment: .leading) {
+                    Text("Temperature: \(assistant.temperature, specifier: "%.2f")")
+                    Slider(value: $assistant.temperature, in: 0.0...2.0, step: 0.1)
+                }
+
+                // Top P Slider for non-O models
+                VStack(alignment: .leading) {
+                    Text("Top P: \(assistant.top_p, specifier: "%.2f")")
+                    Slider(value: $assistant.top_p, in: 0.0...1.0, step: 0.1)
+                }
             }
         }
     }

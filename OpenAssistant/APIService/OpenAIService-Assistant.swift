@@ -108,19 +108,22 @@ extension OpenAIService {
     // MARK: - Update Assistant
     func updateAssistant(
         assistantId: String,
-        // model: String? = nil, // REMOVED model parameter again
+        model: String? = nil,  // REINSTATED model parameter
         name: String? = nil,
         description: String? = nil,
         instructions: String? = nil,
         tools: [[String: Any]]? = nil,
         toolResources: [String: Any]? = nil,
         metadata: [String: String]? = nil,
+        temperature: Double? = nil,  // Keep temperature
+        topP: Double? = nil,  // Keep topP
+        reasoningEffort: String? = nil,  // Keep reasoningEffort
         responseFormat: ResponseFormat? = nil,
         completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
         var body: [String: Any] = [:]
-        // DO NOT include model in the body
-        // if let model = model { body["model"] = model } // REMOVED model logic again
+        // Include model in the body if provided
+        if let model = model { body["model"] = model }  // ADDED model logic back
         if let name = name { body["name"] = name }
         if let description = description { body["description"] = description }
         if let instructions = instructions { body["instructions"] = instructions }
@@ -128,6 +131,11 @@ extension OpenAIService {
         if let toolResources = toolResources { body["tool_resources"] = toolResources }
         if let metadata = metadata { body["metadata"] = metadata }
         if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
+        // Add modifiable generation parameters if provided
+        if let temperature = temperature { body["temperature"] = temperature }
+        if let topP = topP { body["top_p"] = topP }
+        // Add reasoning effort if provided (API handles validation based on target model)
+        if let reasoningEffort = reasoningEffort { body["reasoning_effort"] = reasoningEffort }
 
         print("Updating assistant [\(assistantId)] with body: \(body)")  // Log assistant ID for clarity
 
