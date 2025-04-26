@@ -8,9 +8,13 @@ extension Notification.Name {
     static let assistantDeleted = Notification.Name("assistantDeleted")
 }
 
+// MARK: - View Extension for Keyboard Dismissal
+
 extension View {
-    func hideKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    /// Dismisses the keyboard.
+    func dismissKeyboard() {
+        // Removed the problematic UIApplication.shared.sendAction call.
+        // Keyboard dismissal should now be handled via @FocusState.
     }
 }
 

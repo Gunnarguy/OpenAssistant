@@ -15,8 +15,6 @@ struct CreateAssistantView: View {
     @State private var description: String = Constants.defaultDescription
     @State private var temperature: Double = Constants.defaultTemperature
     @State private var topP: Double = Constants.defaultTopP
-    @State private var enableFileSearch: Bool = false
-    @State private var enableCodeInterpreter: Bool = false
     @State private var reasoningEffort: String = Constants.defaultReasoningEffort
 
     var body: some View {
@@ -29,8 +27,8 @@ struct CreateAssistantView: View {
                 temperature: $temperature,
                 topP: $topP,
                 reasoningEffort: $reasoningEffort,
-                enableFileSearch: $enableFileSearch,
-                enableCodeInterpreter: $enableCodeInterpreter,
+                enableFileSearch: .constant(false), // Provide dummy constant binding
+                enableCodeInterpreter: .constant(false), // Provide dummy constant binding
                 availableModels: viewModel.availableModels,
                 isEditing: false,
                 onSave: handleSave
@@ -80,8 +78,8 @@ struct CreateAssistantView: View {
                 name: name,
                 description: description.isEmpty ? nil : description,
                 instructions: instructions.isEmpty ? nil : instructions,
-                tools: createTools(),
-                toolResources: createToolResources(),
+                tools: [], // Pass empty array for tools
+                toolResources: nil, // Pass nil for tool resources
                 metadata: nil,
                 temperature: temperature,
                 topP: topP,
@@ -96,28 +94,6 @@ struct CreateAssistantView: View {
 
     private func validateAssistant() -> Bool {
         !name.isEmpty && !model.isEmpty
-    }
-
-    private func createTools() -> [Tool] {
-        var tools: [Tool] = []
-        if enableFileSearch { tools.append(Tool(type: "file_search")) }
-        if enableCodeInterpreter { tools.append(Tool(type: "code_interpreter")) }
-        return tools
-    }
-
-    private func createToolResources() -> ToolResources? {
-        var toolResources = ToolResources()
-        if enableFileSearch {
-            toolResources.fileSearch = FileSearchResources(vectorStoreIds: [
-                Constants.validVectorStoreId
-            ])
-        }
-        if enableCodeInterpreter {
-            toolResources.codeInterpreter = CodeInterpreterResources(fileIds: [
-                Constants.validFileId
-            ])
-        }
-        return toolResources
     }
 
     private func dismissView() {

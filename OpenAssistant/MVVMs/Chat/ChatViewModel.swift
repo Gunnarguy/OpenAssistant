@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 enum LoadingState: Int, CaseIterable {
@@ -10,7 +10,7 @@ enum LoadingState: Int, CaseIterable {
     case processingResponse = 4
     case completingRun = 5
     case sendingMessage = 6
-    
+
     var description: String {
         switch self {
         case .idle: return "Ready"
@@ -31,7 +31,8 @@ class ChatViewModel: BaseViewModel {
     @Published var isLoading = false
     @Published var stepCounter: Int = 0
     @Published var loadingState: LoadingState = .idle
-    
+    @Published var shouldFocusTextField: Bool = false  // Add state to control focus
+
     // Expose the thread ID as a computed property
     var threadId: String? {
         return thread?.id
@@ -48,7 +49,7 @@ class ChatViewModel: BaseViewModel {
         self.assistant = assistant
         self.messageStore = messageStore
         super.init()
-        
+
         if let existingThreads = assistant.threads, !existingThreads.isEmpty {
             self.thread = existingThreads.first
             self.hasCreatedThread = true
@@ -60,7 +61,7 @@ class ChatViewModel: BaseViewModel {
             createThread()
         }
     }
-    
+
     private func fetchMessagesForThread(threadId: String) {
         updateLoadingState(isLoading: true, state: .processingResponse)
         openAIService?.fetchRunMessages(threadId: threadId) { [weak self] result in
@@ -104,14 +105,17 @@ class ChatViewModel: BaseViewModel {
         updateLoadingState(isLoading: true, state: .runningAssistant)
         print("Running assistant on thread: \(thread.id)")
 
-        openAIService?.runAssistantOnThread(threadId: thread.id, assistantId: assistant.id) { [weak self] result in
+        openAIService?.runAssistantOnThread(threadId: thread.id, assistantId: assistant.id) {
+            [weak self] result in
             Task { @MainActor in
                 self?.handleRunAssistantResult(result, threadId: thread.id)
             }
         }
     }
 
-    private func handleRunAssistantResult(_ result: Result<Run, OpenAIServiceError>, threadId: String) {
+    private func handleRunAssistantResult(
+        _ result: Result<Run, OpenAIServiceError>, threadId: String
+    ) {
         updateLoadingState(isLoading: false)
         switch result {
         case .success(let run):
@@ -129,11 +133,17 @@ class ChatViewModel: BaseViewModel {
         let pollingInterval: TimeInterval = 2.0
         updateLoadingState(isLoading: true)
 
-        Timer.scheduledTimer(withTimeInterval: pollingInterval, repeats: true) { [weak self] timer in
+        // Explicitly schedule timer on the main run loop in default mode
+        let timer = Timer(timeInterval: pollingInterval, repeats: true) { [weak self] timer in
+            // Callback still uses Task @MainActor for safety
             Task { @MainActor in
                 self?.checkRunStatus(threadId: threadId, runId: runId, timer: timer)
             }
         }
+        RunLoop.main.add(timer, forMode: .default)
+
+        // Keep a reference to the timer if you need to invalidate it elsewhere later
+        // self.pollingTimer = timer // (Requires adding a 'pollingTimer' property)
     }
 
     private func checkRunStatus(threadId: String, runId: String, timer: Timer) {
@@ -216,17 +226,23 @@ class ChatViewModel: BaseViewModel {
         guard let thread = thread, !inputText.isEmpty else { return }
 
         let userMessage = createUserMessage(threadId: thread.id)
-        
+
         messages.append(userMessage)
         messageStore.addMessage(userMessage)
+        let textToSend = inputText  // Capture text before clearing
         inputText = ""
         updateLoadingState(isLoading: true, state: .sendingMessage)
 
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        // Dismiss keyboard using FocusState, ensuring it happens on the main actor
+        Task { @MainActor in
+            shouldFocusTextField = false
+        }
+        // UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) // Remove old dismissal
 
-        print("Sending message: \(userMessage.content)")
+        print("Sending message: \(userMessage.content)")  // Use captured text if needed for logging
 
-        openAIService?.addMessageToThread(threadId: thread.id, message: userMessage) { [weak self] result in
+        openAIService?.addMessageToThread(threadId: thread.id, message: userMessage) {
+            [weak self] result in
             Task { @MainActor in
                 self?.handleSendMessageResult(result)
             }
@@ -243,7 +259,9 @@ class ChatViewModel: BaseViewModel {
             thread_id: threadId,
             run_id: nil,
             role: .user,
-            content: [Message.Content(type: "text", text: Message.Text(value: inputText, annotations: []))],
+            content: [
+                Message.Content(type: "text", text: Message.Text(value: inputText, annotations: []))
+            ],
             attachments: [],
             metadata: [:]
         )
@@ -255,6 +273,15 @@ class ChatViewModel: BaseViewModel {
             uniqueID = UUID().uuidString
         }
         return uniqueID
+    }
+
+    // Call this method when the text field loses focus in the view
+    func textFieldDidLoseFocus() {
+        // If the view model thought the field should be focused, but it lost focus
+        // (e.g., user tapped outside), update the view model state.
+        if shouldFocusTextField {
+            shouldFocusTextField = false
+        }
     }
 
     private func handleSendMessageResult(_ result: Result<Void, OpenAIServiceError>) {
@@ -271,10 +298,12 @@ class ChatViewModel: BaseViewModel {
     // MARK: - UI Updates
 
     func scrollToLastMessage() {
-        guard let scrollViewProxy = scrollViewProxy, !messages.isEmpty, let lastMessage = messages.last else {
+        guard let scrollViewProxy = scrollViewProxy, !messages.isEmpty,
+            let lastMessage = messages.last
+        else {
             return
         }
-        
+
         // Use a safer way to scroll to the last message with a slight delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             // Remove [weak self] since we're not using 'self' in this closure
@@ -283,7 +312,7 @@ class ChatViewModel: BaseViewModel {
             }
         }
     }
-    
+
     // Add a safe setter method for the scrollViewProxy
     func setScrollViewProxy(_ proxy: ScrollViewProxy?) {
         self.scrollViewProxy = proxy
@@ -298,7 +327,7 @@ class ChatViewModel: BaseViewModel {
             updateLoadingState(isLoading: false)
         }
     }
-    
+
     private func handleError(_ error: OpenAIServiceError) {
         Task { @MainActor in
             self.errorMessage = IdentifiableError(message: error.localizedDescription)

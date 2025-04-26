@@ -4,24 +4,6 @@ import SwiftUI
 
 extension OpenAIService {
 
-    // MARK: - Model Parameter Support Helper (Internal)
-
-    /// Checks if a given model identifier supports temperature/top_p settings for generation
-    /// at the Assistant level. Reasoning models (o-series) use reasoning_effort instead.
-    /// Renamed for consistency with BaseViewModel.
-    private static func supportsTempTopPAtAssistantLevel(_ modelId: String) -> Bool {
-        // Reasoning models (o-series) do NOT support temp/top_p at the assistant level.
-        let reasoningPrefixes = ["o1", "o3", "o4"]
-
-        for prefix in reasoningPrefixes {
-            if modelId.lowercased().starts(with: prefix) {
-                return false  // Reasoning models use reasoning_effort
-            }
-        }
-        // Assume other models (like gpt-*) DO support temp/top_p.
-        return true
-    }
-
     // MARK: - Fetch Assistants
 
     func fetchAssistants(completion: @escaping (Result<[Assistant], OpenAIServiceError>) -> Void) {
@@ -84,8 +66,7 @@ extension OpenAIService {
         if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
 
         // Conditionally add parameters based on model type
-        // Use the renamed static helper method
-        if Self.supportsTempTopPAtAssistantLevel(model) {
+        if ModelCapabilities.supportsTempTopPAtAssistantLevel(model) {
             // For models supporting temp/top_p at assistant level
             if let temperature = temperature { body["temperature"] = temperature }
             if let topP = topP { body["top_p"] = topP }
@@ -108,49 +89,93 @@ extension OpenAIService {
     // MARK: - Update Assistant
     func updateAssistant(
         assistantId: String,
-        model: String? = nil,  // REINSTATED model parameter
+        model: String? = nil,  // Target model ID (used for capability checks, NOT sent in body)
         name: String? = nil,
         description: String? = nil,
         instructions: String? = nil,
         tools: [[String: Any]]? = nil,
         toolResources: [String: Any]? = nil,
         metadata: [String: String]? = nil,
-        temperature: Double? = nil,  // Keep temperature
-        topP: Double? = nil,  // Keep topP
-        reasoningEffort: String? = nil,  // Keep reasoningEffort
+        temperature: Double? = nil,  // Intended temperature for the target model
+        topP: Double? = nil,  // Intended topP for the target model
+        reasoningEffort: String? = nil,  // Intended reasoning effort for the target model
         responseFormat: ResponseFormat? = nil,
         completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
-        var body: [String: Any] = [:]
-        // Include model in the body if provided
-        if let model = model { body["model"] = model }  // ADDED model logic back
-        if let name = name { body["name"] = name }
-        if let description = description { body["description"] = description }
-        if let instructions = instructions { body["instructions"] = instructions }
-        if let tools = tools { body["tools"] = tools }
-        if let toolResources = toolResources { body["tool_resources"] = toolResources }
-        if let metadata = metadata { body["metadata"] = metadata }
-        if let responseFormat = responseFormat { body["response_format"] = responseFormat.toAny() }
-        // Add modifiable generation parameters if provided
-        if let temperature = temperature { body["temperature"] = temperature }
-        if let topP = topP { body["top_p"] = topP }
-        // Add reasoning effort if provided (API handles validation based on target model)
-        if let reasoningEffort = reasoningEffort { body["reasoning_effort"] = reasoningEffort }
+        // Ensure the target model is specified for parameter validation, even if not sent.
+        guard let targetModelId = model else {
+            print(
+                "ERROR: Target model must be provided locally to check capabilities when updating assistant parameters."
+            )
+            completion(.failure(.invalidRequest))
+            return
+        }
 
-        print("Updating assistant [\(assistantId)] with body: \(body)")  // Log assistant ID for clarity
+        // 1. Start with an EMPTY dictionary. Only include parameters that are actually being updated.
+        var updateBody: [String: Any] = [:]
+        if let name = name { updateBody["name"] = name }
+        if let description = description { updateBody["description"] = description }
+        if let instructions = instructions { updateBody["instructions"] = instructions }
+        if let tools = tools { updateBody["tools"] = tools }
+        if let toolResources = toolResources { updateBody["tool_resources"] = toolResources }
+        if let metadata = metadata { updateBody["metadata"] = metadata }
 
-        // Use the base assistant endpoint for updates
+        // 2. Conditionally add supported generation parameters based ONLY on model capabilities and non-nil values
+        //    These parameters *can* be updated if the model supports them.
+        if ModelCapabilities.supportsTempTopPAtAssistantLevel(targetModelId) {
+            // Non-reasoning model: Add temp, top_p, response_format if provided for update
+            if let temp = temperature { updateBody["temperature"] = temp }
+            if let top = topP { updateBody["top_p"] = top }
+            if let format = responseFormat { updateBody["response_format"] = format.toAny() }
+            print(
+                " -> Including temp/top_p/response_format (if provided) for update check based on model \(targetModelId)"
+            )
+            print(" -> Excluding reasoning_effort for update check based on model \(targetModelId)")
+        } else {
+            // Reasoning model (o-series): Add reasoning_effort if provided for update
+            if let effort = reasoningEffort { updateBody["reasoning_effort"] = effort }
+            print(
+                " -> Including reasoning_effort (if provided) for update check based on model \(targetModelId)"
+            )
+            print(
+                " -> Excluding temp/top_p/response_format for update check based on model \(targetModelId)"
+            )
+        }
+
+        // IMPORTANT: The 'model' parameter IS allowed in the update request body according to v2 docs.
+        // However, based on testing, the API might ignore this field or error out when changing model families (e.g., GPT-4 to O-series).
+        // We will include it as per docs, but be aware it might not change the model.
+        if let targetModelId = model {
+            updateBody["model"] = targetModelId
+        }
+
+        // Log the final dictionary *after* any potential removals and *before* serialization
+        print("Final body dictionary for UPDATE before serialization: \(updateBody)")
+        print("Keys in updateBody before serialization: \(updateBody.keys)")  // Add this line for explicit key check
+
+        // Log the actual JSON string that will be sent
+        do {
+            let jsonData = try JSONSerialization.data(
+                withJSONObject: updateBody, options: [.prettyPrinted])
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print("Serialized JSON Body for UPDATE to be sent:\n\(jsonString)")
+            } else {
+                print("Serialized JSON Body for UPDATE: <Could not encode as pretty JSON string>")
+            }
+        } catch {
+            print("Error serializing finalBody for UPDATE logging: \(error)")
+        }
+
+        // Use the base assistant endpoint for updates (POST method)
         guard
             let request = makeRequest(
-                endpoint: "assistants/\(assistantId)", httpMethod: .post, body: body)
+                endpoint: "assistants/\(assistantId)", httpMethod: .post, body: updateBody)  // Use the cleaned updateBody
         else {
             completion(.failure(.invalidRequest))
             return
         }
 
-        // Log full request details for debugging
-        logRequestDetails(request, body: body)
-
+        // ... rest of the function (session.dataTask, handleResponse) ...
         session.dataTask(with: request) { data, response, error in
             // Debug: log HTTP status and response data
             if let httpResponse = response as? HTTPURLResponse {
@@ -316,8 +341,6 @@ struct Assistant: Identifiable, Codable, Equatable {
         return dict
     }
 }
-
-// MARK: - AssistantsResponse
 struct AssistantsResponse: Decodable, Equatable {
     let object: String
     let data: [Assistant]

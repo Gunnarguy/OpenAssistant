@@ -40,13 +40,34 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
 
     // Fetches available models from OpenAI API
     func fetchAvailableModels() {
+        // Use the hardcoded list provided by the user for now.
+        // In a real scenario, you might still fetch from the API and then filter/sort.
+        let allModels = [
+            "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini",
+            "o3-mini-2025-01-31", "o3-mini", "o1-2024-12-17", "o1",
+            "gpt-4o-mini-2024-07-18", "gpt-4o-2024-11-20", "gpt-4o-2024-08-06",
+            "gpt-4o-2024-05-13", "gpt-4.5-preview-2025-02-27", "gpt-4.5-preview",
+            "gpt-4.1-nano-2025-04-14", "gpt-4.1-mini-2025-04-14",
+            "gpt-4.1-2025-04-14", "gpt-4-turbo-preview", "gpt-4-turbo-2024-04-09",
+            "gpt-4-turbo", "gpt-4-1106-preview", "gpt-4-0613", "gpt-4-0125-preview",
+            "gpt-4", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-1106", "gpt-3.5-turbo-0125",
+            "gpt-3.5-turbo",
+        ].sorted()  // Sort the list alphabetically
+
+        self.availableModels = allModels
+        print("Available models set to predefined list: \(allModels)")
+
+        // Keep the API call commented out or remove if not needed
+        /*
         performServiceAction { openAIService in
             openAIService.fetchAvailableModels { [weak self] result in
                 self?.handleModelsResult(result)
             }
         }
+        */
     }
 
+    // Keep handleModelsResult in case you switch back to API fetching later
     private func handleModelsResult(_ result: Result<[String], Error>) {
         DispatchQueue.main.async {
             switch result {

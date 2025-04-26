@@ -28,8 +28,7 @@ class OpenAIService {
         case post = "POST"
         case put = "PUT"
         case delete = "DELETE"
-        // Added PATCH for update assistant endpoint
-        case patch = "PATCH"
+        // Removed PATCH as it's not used for assistant updates per docs
     }
 
     // MARK: - Request Configuration
@@ -50,13 +49,26 @@ class OpenAIService {
 
         if let body = body {
             do {
-                let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
+                // Use prettyPrinted for slightly more readable log output
+                let jsonData = try JSONSerialization.data(
+                    withJSONObject: body, options: [.prettyPrinted])
                 request.httpBody = jsonData
+
+                // Log the raw JSON string being sent
+                if let jsonString = String(data: jsonData, encoding: .utf8) {
+                    print("Serialized JSON Body:\n\(jsonString)")
+                } else {
+                    print("Serialized JSON Body: <Could not decode as UTF-8>")
+                }
+
+                // Keep the original logging as well for context
                 logRequestDetails(request, body: body)
             } catch {
                 logError("Failed to serialize request body: \(error.localizedDescription)")
                 return nil
             }
+        } else {
+            print("Request Body: <None>")  // Log when body is nil
         }
 
         return request

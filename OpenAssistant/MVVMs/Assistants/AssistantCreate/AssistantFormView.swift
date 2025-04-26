@@ -22,7 +22,10 @@ struct AssistantFormView: View {
     var body: some View {
         Form {
             assistantDetailsSection
-            toolsSection
+            // Only show tools section when editing
+            if isEditing {
+                toolsSection
+            }
             actionButtons
         }
         .onAppear {
@@ -81,6 +84,7 @@ struct AssistantFormView: View {
 
     // MARK: - Tools Section
     // Toggles to enable or disable built-in assistant tools
+    // This section is now only shown when isEditing is true
     private var toolsSection: some View {
         Section(header: Text("Tools")) {
             Toggle("Enable File Search", isOn: $enableFileSearch)

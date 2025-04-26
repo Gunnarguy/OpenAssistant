@@ -19,6 +19,7 @@
 		B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */; };
 		B059E6C72CAB8DDD00B1028E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B059E6C62CAB8DDD00B1028E /* Extensions.swift */; };
 		B07E5CDC2CE45D1D00B53135 /* FileUploadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07E5CDB2CE45D1D00B53135 /* FileUploadService.swift */; };
+		B0815C9A2DBBEA42008B0E41 /* ModelCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0815C992DBBEA42008B0E41 /* ModelCapabilities.swift */; };
 		B0AF85152CFE51C2003210BC /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = B0AF85142CFE51C2003210BC /* README.md */; };
 		B0B14F702CB626EC00778895 /* ChatContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B14F6F2CB626EC00778895 /* ChatContentView.swift */; };
 		B0B14F722CB626FF00778895 /* MessageListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B14F712CB626FF00778895 /* MessageListView.swift */; };
@@ -71,6 +72,7 @@
 		B051E5B02CA3304C00C6FF59 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		B059E6C62CAB8DDD00B1028E /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		B07E5CDB2CE45D1D00B53135 /* FileUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileUploadService.swift; sourceTree = "<group>"; };
+		B0815C992DBBEA42008B0E41 /* ModelCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCapabilities.swift; sourceTree = "<group>"; };
 		B0AF85142CFE51C2003210BC /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		B0B14F6F2CB626EC00778895 /* ChatContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatContentView.swift; sourceTree = "<group>"; };
 		B0B14F712CB626FF00778895 /* MessageListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageListView.swift; sourceTree = "<group>"; };
@@ -248,6 +250,7 @@
 				B0DC007F2CC895FB0080C096 /* Additional.swift */,
 				B0EEE7382C99326A0012F2BA /* Errors.swift */,
 				B0EEE7372C99326A0012F2BA /* ResponseFormat.swift */,
+				B0815C992DBBEA42008B0E41 /* ModelCapabilities.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -434,6 +437,7 @@
 				B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */,
 				B0EEE7532C99326A0012F2BA /* AssistantPickerViewModel.swift in Sources */,
 				B0EEE7542C99326A0012F2BA /* AddFileView.swift in Sources */,
+				B0815C9A2DBBEA42008B0E41 /* ModelCapabilities.swift in Sources */,
 				B0EEE7562C99326A0012F2BA /* VectorStoreDetailView.swift in Sources */,
 				B033D41E2CCB0AB000984B82 /* OpenAIService-Threads.swift in Sources */,
 				B0DD9C622C9DFC3A00A0D623 /* OpenAIInitializer.swift in Sources */,
