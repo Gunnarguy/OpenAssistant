@@ -20,7 +20,10 @@ struct ChatView: View {
                     if let threadId = viewModel.threadId, !threadId.isEmpty {
                         NavigationLink(
                             destination: ChatHistoryView(
-                                messages: messageStore.messages, threadId: threadId)
+                                // Pass the messageStore object directly
+                                messageStore: messageStore,
+                                threadId: threadId
+                            )
                         ) {
                             Image(systemName: "clock")
                                 .foregroundColor(.blue)

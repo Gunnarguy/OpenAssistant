@@ -229,7 +229,6 @@ class ChatViewModel: BaseViewModel {
 
         messages.append(userMessage)
         messageStore.addMessage(userMessage)
-        let textToSend = inputText  // Capture text before clearing
         inputText = ""
         updateLoadingState(isLoading: true, state: .sendingMessage)
 
@@ -273,15 +272,6 @@ class ChatViewModel: BaseViewModel {
             uniqueID = UUID().uuidString
         }
         return uniqueID
-    }
-
-    // Call this method when the text field loses focus in the view
-    func textFieldDidLoseFocus() {
-        // If the view model thought the field should be focused, but it lost focus
-        // (e.g., user tapped outside), update the view model state.
-        if shouldFocusTextField {
-            shouldFocusTextField = false
-        }
     }
 
     private func handleSendMessageResult(_ result: Result<Void, OpenAIServiceError>) {

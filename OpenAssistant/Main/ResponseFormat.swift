@@ -173,7 +173,7 @@ struct JSONSchemaDefinition: Codable {
 
     // Converts the JSONSchemaDefinition struct to a dictionary format.
     func toDictionary() -> [String: Any] {
-        var dict: [String: Any] = [
+        let dict: [String: Any] = [  // Use let since dict isn't mutated
             "type": type,
             "properties": properties.mapValues { $0.toDictionary() },
         ]

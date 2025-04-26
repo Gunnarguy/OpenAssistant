@@ -1,30 +1,31 @@
 import SwiftUI
 
 struct SendButton: View {
-    @ObservedObject var viewModel: ChatViewModel
-    @ObservedObject var messageStore: MessageStore
+    // Action to perform when tapped
+    var action: () -> Void
+    // State properties passed from the parent view
+    var isDisabled: Bool
+    var isLoading: Bool
 
     var body: some View {
-        Button(action: sendMessageAction) {
+        Button(action: action) {  // Use the provided action
             Image(systemName: "paperplane.fill")
-                .foregroundColor(canSendMessage ? .white : .gray)
+                .foregroundColor(isDisabled ? .gray : .white)  // Use isDisabled
                 .padding(16)
-                .background(canSendMessage ? Color.blue : Color.gray.opacity(0.6))
+                .background(isDisabled ? Color.gray.opacity(0.6) : Color.blue)  // Use isDisabled
                 .cornerRadius(25)
                 .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
                 .accessibilityLabel("Send Message")
         }
-        .disabled(!canSendMessage)
+        .disabled(isDisabled || isLoading)  // Disable based on props
+        // Add optional progress view for loading state if desired
+        // .overlay {
+        //     if isLoading {
+        //         ProgressView()
+        //             .tint(.white)
+        //     }
+        // }
     }
 
-    private func sendMessageAction() {
-        viewModel.sendMessage()
-        if let lastMessage = viewModel.messages.last {
-            messageStore.addMessage(lastMessage)
-        }
-    }
-
-    private var canSendMessage: Bool {
-        !viewModel.inputText.isEmpty && !viewModel.isLoading
-    }
+    // Removed sendMessageAction and canSendMessage
 }
