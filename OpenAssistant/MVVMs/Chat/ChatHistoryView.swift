@@ -1,48 +1,44 @@
 import SwiftUI
 
 struct ChatHistoryView: View {
-    @ObservedObject var messageStore: MessageStore
-    let threadId: String
-    @Environment(\.colorScheme) var colorScheme  // Access color scheme
+    @EnvironmentObject var messageStore: MessageStore
+    let assistantId: String // Changed from threadId
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        // Use a ScrollView for custom row backgrounds/padding if needed, or List for standard behavior
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {  // Align content leading, no extra spacing
+            LazyVStack(alignment: .leading, spacing: 0) {
                 if filteredMessages.isEmpty {
-                    Text("No messages in this conversation")
-                        .foregroundColor(.secondary)  // Use secondary color
+                    Text("No history found for this assistant")
+                        .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 50)  // Add more padding for empty state
+                        .padding(.vertical, 50)
                 } else {
-                    // Iterate through messages, sorted chronologically (oldest first)
-                    ForEach(filteredMessages.reversed()) { message in
+                    ForEach(filteredMessages) { message in
                         MessageRow(message: message, colorScheme: colorScheme)
-                            .padding(.horizontal)  // Add horizontal padding to the row content
-                            .padding(.vertical, 6)  // Reduced vertical padding
-                        Divider().padding(.leading)  // Add divider, indented
+                            .padding(.horizontal)
+                            .padding(.vertical, 6)
+                        Divider().padding(.leading)
                     }
                 }
             }
         }
-        .navigationTitle("Chat History")
-        // .listStyle(.plain) // Use plain list style for edge-to-edge rows if using List
-        .background(Color(UIColor.systemGroupedBackground))  // Use grouped background for contrast
+        .navigationTitle("Assistant History")
+        .background(Color(UIColor.systemGroupedBackground))
     }
 
-    // Filter and sort messages (most recent first for internal logic)
     private var filteredMessages: [Message] {
-        // Log the filtering process
-        // print("ChatHistoryView: Filtering messages for threadId: \(threadId)")
-        // let allMessagesCount = messageStore.messages.count
-        // print("ChatHistoryView: Total messages in store: \(allMessagesCount)")
+        print("ChatHistoryView: Filtering messages.")
+        print("  - Received assistantId: \(assistantId)")
+        let totalMessagesInStore = messageStore.messages.count
+        print("  - Total messages in MessageStore: \(totalMessagesInStore)")
 
         let filtered = messageStore.messages
-            .filter { $0.thread_id == threadId }
-            .sorted { $0.created_at < $1.created_at }  // Sort oldest first
+            .filter { $0.assistant_id == assistantId }
+            .sorted { $0.created_at < $1.created_at }
 
-        // Log the result of the filtering
-        // print("ChatHistoryView: Found \(filtered.count) messages for this thread.")
+        print("  - Found \(filtered.count) messages matching assistantId \(assistantId).")
+
         return filtered
     }
 }
@@ -52,48 +48,40 @@ struct MessageRow: View {
     let colorScheme: ColorScheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {  // Reduced spacing
+        VStack(alignment: .leading, spacing: 4) {
             HStack {
-                // Role indicator with icon
                 Image(systemName: message.role == .user ? "person.fill" : "brain.head.profile")
-                    .font(.caption2)  // Smaller icon font
+                    .font(.caption2)
                     .foregroundColor(roleColor)
                 Text(message.role == .user ? "You" : "Assistant")
-                    .font(.caption)  // Use regular caption
+                    .font(.caption)
                     .foregroundColor(roleColor)
 
                 Spacer()
 
-                // Timestamp
                 Text(formatDate(message.created_at))
-                    .font(.caption2)  // Keep small
-                    .foregroundColor(.secondary)  // Use secondary color
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
             }
 
-            // Message content
             if let text = message.content.first?.text?.value, !text.isEmpty {
                 Text(text)
-                    .font(.system(size: 15))  // Slightly smaller body font
-                    .foregroundColor(Color(UIColor.label))  // Adapts to light/dark
-                    .lineLimit(nil)  // Allow multiple lines
-                    .fixedSize(horizontal: false, vertical: true)  // Allow vertical expansion
+                    .font(.system(size: 15))
+                    .foregroundColor(Color(UIColor.label))
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             } else {
-                Text("...")  // Placeholder for empty messages
-                    .font(.system(size: 15))  // Match body font
+                Text("...")
+                    .font(.system(size: 15))
                     .foregroundColor(.secondary)
             }
         }
-        // Removed explicit background color from the row itself
-        // .padding(10)
-        // .background(...)
     }
 
-    // Determine color based on role
     private var roleColor: Color {
-        message.role == .user ? .accentColor : .green  // Use accent for user, green for assistant
+        message.role == .user ? .accentColor : .green
     }
 
-    // Format timestamp to a readable date/time string
     private func formatDate(_ timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         let formatter = DateFormatter()

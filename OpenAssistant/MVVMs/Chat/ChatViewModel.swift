@@ -55,9 +55,8 @@ class ChatViewModel: BaseViewModel {
         print("ChatViewModel init: Assistant ID \(assistant.id)")
 
         // Always create a new thread for a new chat session.
-        // Remove the logic that checked assistant.threads
         print("ChatViewModel init: Creating a new thread for this chat session.")
-        createThread()
+        createThread()  // This will eventually call loadMessagesForCurrentThread upon success
     }
 
     private func fetchMessagesForThread(threadId: String) {
@@ -90,22 +89,40 @@ class ChatViewModel: BaseViewModel {
         switch result {
         case .success(let thread):
             self.thread = thread
-            // Set hasCreatedThread after successful creation
             self.hasCreatedThread = true
-            // Add logging here to confirm thread assignment
             print("ChatViewModel: Successfully created and assigned thread ID \(thread.id)")
-            // Don't load messages from the new thread, it will be empty initially
-            // self.messages = thread.messages ?? []
-            // messageStore.addMessages(thread.messages ?? [])
+            // Load any existing messages for this thread from the store
+            loadMessagesForCurrentThread()
             stepCounter = 2
-            print("Thread created successfully: \(thread.id)")  // Keep original log too
+            print("Thread created successfully: \(thread.id)")
         case .failure(let error):
-            // Add logging here to see the failure
             print("ChatViewModel: Failed to create thread - \(error.localizedDescription)")
             handleError(error)
-            // Ensure hasCreatedThread remains false on failure
             self.hasCreatedThread = false
         }
+    }
+
+    // MARK: - Message Loading
+
+    /// Loads messages for the current thread from the MessageStore.
+    private func loadMessagesForCurrentThread() {
+        guard let currentThreadId = self.thread?.id else {
+            print("ChatViewModel: Cannot load messages, threadId is nil.")
+            self.messages = []  // Ensure messages are empty if no thread ID
+            return
+        }
+        print("ChatViewModel: Loading messages from store for thread \(currentThreadId)")
+        // Filter messages from the store that belong to the current thread
+        let threadMessages = messageStore.messages
+            .filter { $0.thread_id == currentThreadId }
+            .sorted { $0.created_at < $1.created_at }  // Sort oldest first
+
+        // Update the local messages array, reversing for UI display (newest first)
+        self.messages = threadMessages.reversed()
+        print("ChatViewModel: Loaded \(self.messages.count) messages for thread \(currentThreadId)")
+
+        // Scroll to the bottom after loading initial messages
+        scrollToLastMessage(animated: false)  // Don't animate initial load scroll
     }
 
     func runAssistantOnThread() {
@@ -216,27 +233,36 @@ class ChatViewModel: BaseViewModel {
     private func handleFetchMessagesResult(_ result: Result<[Message], OpenAIServiceError>) {
         switch result {
         case .success(let fetchedMessages):
-            // Filter only assistant messages from the fetch result
             let assistantMessages = fetchedMessages.filter { $0.role == .assistant }
 
-            // Find messages that are not already present in the local 'messages' array
-            let newMessages = assistantMessages.filter { newMessage in
+            // --- Start Logging ---
+            if !assistantMessages.isEmpty {
+                print(
+                    "ChatViewModel: Adding \(assistantMessages.count) assistant messages to MessageStore."
+                )
+                // Log the thread_id of the first message being added (they should all be the same for a given fetch)
+                print(
+                    "  - Assistant Message Thread ID: \(assistantMessages.first?.thread_id ?? "N/A")"
+                )
+            } else {
+                print("ChatViewModel: No new assistant messages fetched to add.")
+            }
+            // --- End Logging ---
+
+            messageStore.addMessages(assistantMessages)  // Store handles deduplication
+
+            let newLocalMessages = assistantMessages.filter { newMessage in
                 !self.messages.contains(where: { $0.id == newMessage.id })
             }
 
-            // Only append if there are actually new messages
-            if !newMessages.isEmpty {
-                // Prepend new messages because the list is visually reversed
-                self.messages.insert(contentsOf: newMessages, at: 0)
-                // Add to the central store as well
-                messageStore.addMessages(newMessages)
-                // Scroll after adding new messages
+            if !newLocalMessages.isEmpty {
+                let sortedNewMessages = newLocalMessages.sorted { $0.created_at > $1.created_at }
+                self.messages.insert(contentsOf: sortedNewMessages, at: 0)
                 scrollToLastMessage(animated: true)
             }
         case .failure(let error):
             handleError(error)
         }
-        // Ensure loading state is updated regardless of success/failure or new messages found
         updateLoadingState(isLoading: false)
     }
 
@@ -249,9 +275,20 @@ class ChatViewModel: BaseViewModel {
 
         let userMessage = createUserMessage(threadId: thread.id, content: textToSend)
 
-        // Prepend user message because the list is visually reversed
-        messages.insert(userMessage, at: 0)
-        messageStore.addMessage(userMessage)  // Add to central store
+        // --- Start Logging ---
+        print("ChatViewModel: Adding user message to MessageStore.")
+        print("  - User Message Thread ID: \(userMessage.thread_id)")
+        // --- End Logging ---
+
+        // Add to central store first (store handles deduplication)
+        messageStore.addMessage(userMessage)
+
+        // Prepend user message to local array because the list is visually reversed
+        // Check if it's already added locally (e.g., if store add triggered a reload somehow)
+        if !messages.contains(where: { $0.id == userMessage.id }) {
+            messages.insert(userMessage, at: 0)
+        }
+
         updateLoadingState(isLoading: true, state: .sendingMessage)
         scrollToLastMessage(animated: true)  // Scroll to show the new user message
 

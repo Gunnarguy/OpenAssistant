@@ -1,22 +1,27 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel: ContentViewModel
-    @StateObject private var messageStore = MessageStore()
-    @StateObject private var vectorStoreViewModel = VectorStoreManagerViewModel()
+    @EnvironmentObject private var messageStore: MessageStore  // Access from environment
+    @EnvironmentObject private var vectorStoreViewModel: VectorStoreManagerViewModel  // Assuming this is also in environment
+
+    // Removed local vectorStoreViewModel initialization
+    // Removed local messageStore initialization
 
     init(assistantManagerViewModel: AssistantManagerViewModel) {
-        _viewModel = StateObject(wrappedValue: ContentViewModel(assistantManagerViewModel: assistantManagerViewModel))
+        _viewModel = StateObject(
+            wrappedValue: ContentViewModel(assistantManagerViewModel: assistantManagerViewModel))
     }
 
     var body: some View {
         ZStack {
+            // Pass the environment messageStore explicitly to MainTabView's initializer
             MainTabView(
                 selectedAssistant: $viewModel.selectedAssistant,
-                vectorStoreViewModel: vectorStoreViewModel,
-                messageStore: messageStore
+                vectorStoreViewModel: vectorStoreViewModel,  // Pass from environment
+                messageStore: messageStore  // Pass the environment object here
             )
             if viewModel.isLoading {
                 LoadingView()
@@ -33,6 +38,10 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
+        // Preview needs the environment objects
         ContentView(assistantManagerViewModel: AssistantManagerViewModel())
+            .environmentObject(MessageStore())  // Provide dummy store for preview
+            .environmentObject(VectorStoreManagerViewModel())  // Provide dummy store for preview
+            .environmentObject(AssistantManagerViewModel())  // Provide dummy manager for preview
     }
 }

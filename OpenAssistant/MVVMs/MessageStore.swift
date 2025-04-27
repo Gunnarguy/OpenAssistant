@@ -15,24 +15,43 @@ class MessageStore: ObservableObject {
 
     // MARK: - Public Methods
 
-    /// Adds a single message to the store and saves the updated list of messages.
+    /// Adds a single message to the store if it doesn't already exist and saves the updated list.
     /// - Parameter message: The message to be added.
     func addMessage(_ message: Message) {
+        // Check if a message with the same ID already exists
+        guard !messages.contains(where: { $0.id == message.id }) else {
+            print("MessageStore: Message ID \(message.id) already exists. Skipping add.")
+            return
+        }
         // Log adding a single message with its thread ID
         print("MessageStore: Adding message ID \(message.id) for thread \(message.thread_id)")
         messages.append(message)
         saveMessages()
     }
 
-    /// Adds multiple messages to the store and saves the updated list of messages.
+    /// Adds multiple messages to the store, filtering out duplicates, and saves the updated list.
     /// - Parameter newMessages: The messages to be added.
     func addMessages(_ newMessages: [Message]) {
+        // Filter out messages that already exist in the store based on ID
+        let messagesToAdd = newMessages.filter { newMessage in
+            !self.messages.contains(where: { $0.id == newMessage.id })
+        }
+
+        guard !messagesToAdd.isEmpty else {
+            print(
+                "MessageStore: All \(newMessages.count) messages already exist or input was empty. Skipping add."
+            )
+            return
+        }
+
         // Log adding multiple messages and their thread IDs
-        print("MessageStore: Adding \(newMessages.count) messages.")
-        for message in newMessages {
+        print(
+            "MessageStore: Adding \(messagesToAdd.count) new messages (filtered from \(newMessages.count))."
+        )
+        for message in messagesToAdd {
             print("  - Adding message ID \(message.id) for thread \(message.thread_id)")
         }
-        messages.append(contentsOf: newMessages)
+        messages.append(contentsOf: messagesToAdd)
         saveMessages()
     }
 
