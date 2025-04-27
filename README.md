@@ -22,11 +22,6 @@ OpenAssistant
 - [✨ Key Features](#-key-features)
 - [📂 Project Structure](#-project-structure)
 - [🌊 Application Flow](#-application-flow)
-- [🧩 Modules](#modules)
-- [🚀 Getting Started](#-getting-started)
-- [🗺 Roadmap](#-roadmap)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
 - [👏 Acknowledgments](#-acknowledgments)
 
 ---
