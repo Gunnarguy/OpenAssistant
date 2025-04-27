@@ -35,7 +35,10 @@ class ChatViewModel: BaseViewModel {
 
     // Expose the thread ID as a computed property
     var threadId: String? {
-        return thread?.id
+        // Add logging here to see what the computed property returns
+        let id = thread?.id
+        print("ChatViewModel: Computed threadId is \(id ?? "nil")")
+        return id
     }
 
     // Remove 'weak' keyword as ScrollViewProxy is not a class type
@@ -49,17 +52,12 @@ class ChatViewModel: BaseViewModel {
         self.assistant = assistant
         self.messageStore = messageStore
         super.init()
+        print("ChatViewModel init: Assistant ID \(assistant.id)")
 
-        if let existingThreads = assistant.threads, !existingThreads.isEmpty {
-            self.thread = existingThreads.first
-            self.hasCreatedThread = true
-            // Fetch messages for the existing thread
-            if let threadId = thread?.id {
-                fetchMessagesForThread(threadId: threadId)
-            }
-        } else {
-            createThread()
-        }
+        // Always create a new thread for a new chat session.
+        // Remove the logic that checked assistant.threads
+        print("ChatViewModel init: Creating a new thread for this chat session.")
+        createThread()
     }
 
     private func fetchMessagesForThread(threadId: String) {
@@ -75,7 +73,8 @@ class ChatViewModel: BaseViewModel {
     // MARK: - Thread Management
 
     func createThread() {
-        guard !hasCreatedThread else { return }
+        // Remove the guard check, as we always want to create one now on init
+        // guard !hasCreatedThread else { return }
         updateLoadingState(isLoading: true, state: .creatingThread)
         print("Creating thread...")
 
@@ -91,12 +90,21 @@ class ChatViewModel: BaseViewModel {
         switch result {
         case .success(let thread):
             self.thread = thread
-            self.messages = thread.messages ?? []
-            messageStore.addMessages(thread.messages ?? [])
+            // Set hasCreatedThread after successful creation
+            self.hasCreatedThread = true
+            // Add logging here to confirm thread assignment
+            print("ChatViewModel: Successfully created and assigned thread ID \(thread.id)")
+            // Don't load messages from the new thread, it will be empty initially
+            // self.messages = thread.messages ?? []
+            // messageStore.addMessages(thread.messages ?? [])
             stepCounter = 2
-            print("Thread created successfully: \(thread.id)")
+            print("Thread created successfully: \(thread.id)")  // Keep original log too
         case .failure(let error):
+            // Add logging here to see the failure
+            print("ChatViewModel: Failed to create thread - \(error.localizedDescription)")
             handleError(error)
+            // Ensure hasCreatedThread remains false on failure
+            self.hasCreatedThread = false
         }
     }
 
@@ -320,6 +328,8 @@ class ChatViewModel: BaseViewModel {
 
     private func handleError(_ error: OpenAIServiceError) {
         Task { @MainActor in
+            // Add logging here
+            print("ChatViewModel: Handling OpenAI Service Error - \(error.localizedDescription)")
             self.errorMessage = IdentifiableError(message: error.localizedDescription)
             self.hasCreatedThread = false
             updateLoadingState(isLoading: false)

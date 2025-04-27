@@ -24,12 +24,21 @@ struct ChatHistoryView: View {
     }
 
     private var filteredMessages: [Message] {
-        // Access messages from the messageStore
-        messageStore.messages.filter { $0.thread_id == threadId }
+        // Log the filtering process
+        print("ChatHistoryView: Filtering messages for threadId: \(threadId)")
+        let allMessagesCount = messageStore.messages.count
+        print("ChatHistoryView: Total messages in store: \(allMessagesCount)")
+
+        // Perform the filtering and sorting
+        let filtered = messageStore.messages.filter { $0.thread_id == threadId }
             .sorted {
                 // Remove the nil coalescing since created_at is not optional
                 $0.created_at > $1.created_at
             }
+
+        // Log the result of the filtering
+        print("ChatHistoryView: Found \(filtered.count) messages for this thread.")
+        return filtered
     }
 }
 
