@@ -213,7 +213,7 @@ flowchart TD
     J --> X{User Action};
     X -- Create --> Y[Show Create Vector Store UI];
     X -- View/Edit --> Z[Show VectorStoreDetailView];
-    Z --> AA[Manage Files (Add/Remove)];
+    Z --> AA[Manage Files Add/Remove];
 
     style A fill:#lightgrey,stroke:#333
     style F fill:#lightblue,stroke:#333
