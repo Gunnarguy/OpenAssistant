@@ -215,38 +215,52 @@ class ChatViewModel: BaseViewModel {
 
     private func handleFetchMessagesResult(_ result: Result<[Message], OpenAIServiceError>) {
         switch result {
-        case .success(let messages):
-            let assistantMessages = messages.filter { $0.role == .assistant }
+        case .success(let fetchedMessages):
+            // Filter only assistant messages from the fetch result
+            let assistantMessages = fetchedMessages.filter { $0.role == .assistant }
+
+            // Find messages that are not already present in the local 'messages' array
             let newMessages = assistantMessages.filter { newMessage in
                 !self.messages.contains(where: { $0.id == newMessage.id })
             }
-            self.messages.append(contentsOf: newMessages)
-            messageStore.addMessages(newMessages)
-            scrollToLastMessage()
+
+            // Only append if there are actually new messages
+            if !newMessages.isEmpty {
+                // Prepend new messages because the list is visually reversed
+                self.messages.insert(contentsOf: newMessages, at: 0)
+                // Add to the central store as well
+                messageStore.addMessages(newMessages)
+                // Scroll after adding new messages
+                scrollToLastMessage(animated: true)
+            }
         case .failure(let error):
             handleError(error)
         }
+        // Ensure loading state is updated regardless of success/failure or new messages found
+        updateLoadingState(isLoading: false)
     }
 
     // MARK: - Sending Messages
 
     func sendMessage() {
         guard let thread = thread, !inputText.isEmpty else { return }
+        let textToSend = inputText  // Capture text before clearing
+        inputText = ""  // Clear input field immediately
 
-        let userMessage = createUserMessage(threadId: thread.id)
+        let userMessage = createUserMessage(threadId: thread.id, content: textToSend)
 
-        messages.append(userMessage)
-        messageStore.addMessage(userMessage)
-        inputText = ""
+        // Prepend user message because the list is visually reversed
+        messages.insert(userMessage, at: 0)
+        messageStore.addMessage(userMessage)  // Add to central store
         updateLoadingState(isLoading: true, state: .sendingMessage)
+        scrollToLastMessage(animated: true)  // Scroll to show the new user message
 
-        // Dismiss keyboard using FocusState, ensuring it happens on the main actor
+        // Dismiss keyboard
         Task { @MainActor in
             shouldFocusTextField = false
         }
-        // UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) // Remove old dismissal
 
-        print("Sending message: \(userMessage.content)")  // Use captured text if needed for logging
+        print("Sending message: \(userMessage.content.first?.text?.value ?? "empty")")
 
         openAIService?.addMessageToThread(threadId: thread.id, message: userMessage) {
             [weak self] result in
@@ -256,7 +270,8 @@ class ChatViewModel: BaseViewModel {
         }
     }
 
-    private func createUserMessage(threadId: String) -> Message {
+    // Updated to accept content directly
+    private func createUserMessage(threadId: String, content: String) -> Message {
         let uniqueID = generateUniqueMessageID()
         return Message(
             id: uniqueID,
@@ -267,7 +282,7 @@ class ChatViewModel: BaseViewModel {
             run_id: nil,
             role: .user,
             content: [
-                Message.Content(type: "text", text: Message.Text(value: inputText, annotations: []))
+                Message.Content(type: "text", text: Message.Text(value: content, annotations: []))  // Use passed content
             ],
             attachments: [],
             metadata: [:]
@@ -295,18 +310,25 @@ class ChatViewModel: BaseViewModel {
 
     // MARK: - UI Updates
 
-    func scrollToLastMessage() {
-        guard let scrollViewProxy = scrollViewProxy, !messages.isEmpty,
-            let lastMessage = messages.last
-        else {
+    // Updated scrollToLastMessage to handle reversed list and animation
+    func scrollToLastMessage(animated: Bool = true) {
+        guard let scrollViewProxy = scrollViewProxy, let firstMessage = messages.first else {
+            // If no messages, maybe scroll to a bottom anchor if one exists
+            // Or if proxy exists, scroll to the "bottomSpacer" ID
+            if let proxy = scrollViewProxy {
+                DispatchQueue.main.async {  // Ensure UI updates on main thread
+                    withAnimation(animated ? .spring() : nil) {
+                        proxy.scrollTo("bottomSpacer", anchor: .bottom)
+                    }
+                }
+            }
             return
         }
 
-        // Use a safer way to scroll to the last message with a slight delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Remove [weak self] since we're not using 'self' in this closure
-            withAnimation {
-                scrollViewProxy.scrollTo(lastMessage.id, anchor: .bottom)
+        // Scroll to the ID of the *first* message in the array (which is visually the last)
+        DispatchQueue.main.async {  // Ensure UI updates on main thread
+            withAnimation(animated ? .spring() : nil) {  // Use spring animation or none
+                scrollViewProxy.scrollTo(firstMessage.id, anchor: .bottom)  // Anchor to bottom
             }
         }
     }

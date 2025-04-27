@@ -16,6 +16,13 @@ extension View {
         // Removed the problematic UIApplication.shared.sendAction call.
         // Keyboard dismissal should now be handled via @FocusState.
     }
+
+    /// Applies a transformation to the view only if the specified condition is met,
+    /// often used for applying modifiers based on OS version availability.
+    @ViewBuilder
+    func ifAvailable<Content: View>(@ViewBuilder transform: (Self) -> Content) -> some View {
+        transform(self)
+    }
 }
 
 extension Color {

@@ -5,12 +5,11 @@ struct AssistantPickerView: View {
     @ObservedObject var messageStore: MessageStore
 
     var body: some View {
+        // Use NavigationView for push navigation
         NavigationView {
             content
                 .navigationTitle("Select Assistant")
-                .sheet(item: $viewModel.selectedAssistant) { assistant in
-                    ChatView(assistant: assistant, messageStore: messageStore)
-                }
+            // Removed .sheet modifier
         }
         .onAppear {
             viewModel.fetchAssistants()
@@ -22,8 +21,13 @@ struct AssistantPickerView: View {
 
     @ViewBuilder
     private var content: some View {
+        // Center the ProgressView
         if viewModel.isLoading {
-            ProgressView("Loading...")
+            VStack {  // Wrap in VStack to allow centering
+                Spacer()
+                ProgressView("Loading Assistants...")
+                Spacer()
+            }
         } else if let error = viewModel.errorMessage {
             ErrorView(message: error.message, retryAction: viewModel.fetchAssistants)
         } else {
@@ -32,44 +36,54 @@ struct AssistantPickerView: View {
     }
 
     private var assistantList: some View {
-        List(viewModel.assistants) { assistant in
-            Button(action: { viewModel.selectAssistant(assistant) }) {
-                HStack {
-                    Text(assistant.name)
-                        .font(.headline)
-                        .padding(.vertical, 6)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.gray)
+        List {  // Removed explicit type List(viewModel.assistants) for cleaner NavigationLink usage
+            ForEach(viewModel.assistants) { assistant in
+                // Use NavigationLink for direct navigation
+                NavigationLink(
+                    destination: ChatView(assistant: assistant, messageStore: messageStore)
+                ) {
+                    // Use Label for semantic content (icon + text)
+                    Label {
+                        Text(assistant.name)
+                            .font(.headline)  // Keep headline font
+                    } icon: {
+                        // Add a relevant icon
+                        Image(systemName: "brain.head.profile")  // Example icon
+                            .foregroundColor(.accentColor)  // Use accent color for the icon
+                    }
+                    .padding(.vertical, 8)  // Adjust vertical padding for better spacing
                 }
-                .padding(.horizontal, 8)
-                .contentShape(Rectangle())
+                .accessibilityLabel("Select \(assistant.name)")  // Keep accessibility
             }
-            .buttonStyle(PlainButtonStyle())
-            .accessibilityLabel("Select \(assistant.name)")
         }
-        .listStyle(InsetGroupedListStyle())
+        .listStyle(InsetGroupedListStyle())  // Keep the list style
     }
 }
 
+// ErrorView remains largely the same, could be further styled if desired
 struct ErrorView: View {
     let message: String
     let retryAction: () -> Void
-    
+
     var body: some View {
-        VStack {
-            Image(systemName: "exclamationmark.triangle.fill")
+        VStack(spacing: 15) {  // Add spacing
+            Image(systemName: "exclamationmark.icloud.fill")  // Example of a potentially more modern icon
                 .resizable()
+                .scaledToFit()
                 .frame(width: 50, height: 50)
-                .foregroundColor(.red)
-                .padding(.bottom, 10)
-            Text(message)
-                .font(.body)
-                .foregroundColor(.red)
-                .padding()
+                .foregroundColor(.orange)  // Softer color than red
+            Text("Failed to Load Assistants")  // More user-friendly title
+                .font(.headline)
+            Text(message)  // Keep the specific error message
+                .font(.callout)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
             Button("Retry", action: retryAction)
-                .padding(.top, 10)
+                .buttonStyle(.borderedProminent)  // More prominent button style
         }
+        .padding()  // Add padding around the VStack
+        .frame(maxWidth: .infinity, maxHeight: .infinity)  // Center the error view
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Error: \(message). Retry button.")
     }

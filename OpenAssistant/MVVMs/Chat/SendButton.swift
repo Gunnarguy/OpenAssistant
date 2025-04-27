@@ -8,24 +8,29 @@ struct SendButton: View {
     var isLoading: Bool
 
     var body: some View {
-        Button(action: action) {  // Use the provided action
-            Image(systemName: "paperplane.fill")
-                .foregroundColor(isDisabled ? .gray : .white)  // Use isDisabled
-                .padding(16)
-                .background(isDisabled ? Color.gray.opacity(0.6) : Color.blue)  // Use isDisabled
-                .cornerRadius(25)
-                .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
+        Button(action: action) {
+            // Use a capsule shape for the background
+            Image(systemName: "arrow.up")  // Changed icon to arrow.up for a cleaner look
+                .font(.system(size: 16, weight: .medium))  // Reduced size/weight
+                .foregroundColor(isDisabled ? .gray : .white)
+                .padding(10)  // Reduced padding
+                .background(isDisabled ? Color.gray.opacity(0.4) : Color.accentColor)  // Adjusted disabled background
+                .clipShape(Circle())  // Use Circle shape for a compact button
+                .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 1)  // Reduced shadow
                 .accessibilityLabel("Send Message")
+                // Overlay ProgressView when loading
+                .overlay {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .padding(10)  // Match reduced padding
+                            .background(Color.accentColor)  // Ensure background matches
+                            .clipShape(Circle())  // Match button shape
+                    }
+                }
         }
         .disabled(isDisabled || isLoading)  // Disable based on props
-        // Add optional progress view for loading state if desired
-        // .overlay {
-        //     if isLoading {
-        //         ProgressView()
-        //             .tint(.white)
-        //     }
-        // }
+        .animation(.easeInOut(duration: 0.15), value: isLoading)  // Faster animation
+        .animation(.easeInOut(duration: 0.15), value: isDisabled)  // Faster animation
     }
-
-    // Removed sendMessageAction and canSendMessage
 }
