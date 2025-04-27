@@ -8,11 +8,12 @@ struct InputView: View {
 
     // Define constants for font size and padding for easier adjustment
     private let inputFontSize: CGFloat = 15
-    private let verticalPadding: CGFloat = 8
+    // private let verticalPadding: CGFloat = 8 // No longer directly used for TextEditor padding
     private let horizontalPadding: CGFloat = 10
+    private let inputAreaHeight: CGFloat = 36  // Fixed height matching SendButton
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {  // Reduced spacing
+        HStack(alignment: .center, spacing: 8) {  // Align items vertically center
             // Message Input Text Field Area
             inputFieldArea
 
@@ -24,11 +25,9 @@ struct InputView: View {
                 isDisabled: viewModel.inputText.isEmpty || viewModel.isLoading,
                 isLoading: viewModel.isLoading
             )
-            // Apply consistent padding/sizing if needed, or rely on SendButton's internal padding
+            // SendButton height is approx. 16 (icon) + 2*10 (padding) = 36
         }
         // Padding is now applied in ChatContentView
-        // .padding(.horizontal)
-        // .padding(.bottom, 10)
         // Sync focus state from ViewModel
         .onChange(of: viewModel.shouldFocusTextField) { shouldFocus in
             isTextFieldFocused = shouldFocus
@@ -50,25 +49,27 @@ struct InputView: View {
     @ViewBuilder
     private var inputFieldArea: some View {
         // Use a custom TextEditor for multi-line input, wrapped in a shape
-        HStack(alignment: .bottom, spacing: 0) {  // Align text editor and potential placeholder
+        HStack(alignment: .center, spacing: 0) {  // Center align content vertically
             ZStack(alignment: .leading) {
                 // Placeholder text shown when input is empty
                 if viewModel.inputText.isEmpty {
                     Text("Type a message...")
                         .font(.system(size: inputFontSize))  // Use constant
                         .foregroundColor(Color(UIColor.placeholderText))
-                        .padding(.horizontal, horizontalPadding + 2)  // Adjust placeholder padding slightly
-                        .padding(.vertical, verticalPadding)
+                        .padding(.horizontal, horizontalPadding + 2)  // Keep horizontal padding
+                        // Vertical padding calculated to center in fixed height
+                        .padding(.vertical, (inputAreaHeight - inputFontSize) / 2)
                 }
 
                 // Use TextEditor for multi-line support
                 TextEditor(text: $viewModel.inputText)
                     .focused($isTextFieldFocused)  // Bind focus state
                     .font(.system(size: inputFontSize))  // Use constant
-                    // Adjust frame: Start small (1 line), grow to ~3 lines max
-                    .frame(minHeight: 24, maxHeight: 70)  // Adjusted heights
-                    .padding(.horizontal, horizontalPadding - 3)  // Inner padding for text
-                    .padding(.vertical, verticalPadding - 3)  // Reduced inner vertical padding
+                    // Remove min/max height, let it fill the container
+                    // .frame(minHeight: 24, maxHeight: 70)
+                    .padding(.horizontal, horizontalPadding - 3)  // Inner horizontal padding for text
+                    // Vertical padding calculated to center in fixed height
+                    .padding(.vertical, (inputAreaHeight - inputFontSize) / 2)
                     .foregroundColor(colorScheme == .dark ? .white : .black)
                     .background(Color.clear)  // Make TextEditor background transparent
                     .scrollContentBackground(.hidden)  // Hide default scroll view background (iOS 16+)
@@ -77,11 +78,15 @@ struct InputView: View {
                             isTextFieldFocused = viewModel.shouldFocusTextField
                         }
                     }
+                    // Allow vertical scrolling if text exceeds the height
+                    .scrollDisabled(false)
 
             }
         }
         .padding(.horizontal, 3)  // Reduced padding around ZStack
-        .padding(.vertical, 3)  // Reduced padding around ZStack
+        // Remove outer vertical padding
+        // .padding(.vertical, 3)
+        .frame(height: inputAreaHeight)  // Apply fixed height to the container
         .background(Color(UIColor.systemGray6))  // Use slightly lighter gray
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))  // Slightly smaller radius
         .overlay(
