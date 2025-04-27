@@ -207,7 +207,7 @@ flowchart TD
     P --> Q[APIService returns response];
     Q --> R[ChatVM updates Messages];
     R --> S[MessageListView Updates];
-    S --> N; // Loop back for more messages
+    S --> N; %% Loop back for more messages
 
     I --> T{User Action};
     T -- Create --> U[Show CreateAssistantView];
