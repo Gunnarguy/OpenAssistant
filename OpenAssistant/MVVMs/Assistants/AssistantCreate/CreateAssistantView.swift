@@ -16,6 +16,9 @@ struct CreateAssistantView: View {
     @State private var temperature: Double = Constants.defaultTemperature
     @State private var topP: Double = Constants.defaultTopP
     @State private var reasoningEffort: String = Constants.defaultReasoningEffort
+    // Add state for tool toggles
+    @State private var enableFileSearch: Bool = false
+    @State private var enableCodeInterpreter: Bool = false
 
     var body: some View {
         NavigationView {
@@ -27,11 +30,13 @@ struct CreateAssistantView: View {
                 temperature: $temperature,
                 topP: $topP,
                 reasoningEffort: $reasoningEffort,
-                enableFileSearch: .constant(false), // Provide dummy constant binding
-                enableCodeInterpreter: .constant(false), // Provide dummy constant binding
+                // Pass actual bindings for tools
+                enableFileSearch: $enableFileSearch,
+                enableCodeInterpreter: $enableCodeInterpreter,
                 availableModels: viewModel.availableModels,
-                isEditing: false,
+                isEditing: false, // Explicitly false for creation
                 onSave: handleSave
+                // onDelete is nil by default, appropriate for creation
             )
             .navigationTitle("Create Assistant")
             .toolbar {
@@ -73,17 +78,32 @@ struct CreateAssistantView: View {
 
     private func handleSave() {
         if validateAssistant() {
+            // Construct the tools array based on the toggle states
+            var tools: [Tool] = []
+            if enableFileSearch {
+                tools.append(Tool(type: "file_search"))
+            }
+            if enableCodeInterpreter {
+                tools.append(Tool(type: "code_interpreter"))
+            }
+
+            // Determine parameters based on model type
+            let isOModel = BaseViewModel.isReasoningModel(model)
+            let tempToSend = isOModel ? Constants.defaultTemperature : temperature // Use default if O-model
+            let topPToSend = isOModel ? Constants.defaultTopP : topP // Use default if O-model
+            let reasoningToSend = isOModel ? reasoningEffort : nil // Use state if O-model, else nil
+
             viewModel.createAssistant(
                 model: model,
                 name: name,
                 description: description.isEmpty ? nil : description,
                 instructions: instructions.isEmpty ? nil : instructions,
-                tools: [], // Pass empty array for tools
-                toolResources: nil, // Pass nil for tool resources
+                tools: tools, // Pass the constructed tools array
+                toolResources: nil, // Tool resources are managed later
                 metadata: nil,
-                temperature: temperature,
-                topP: topP,
-                reasoningEffort: reasoningEffort,
+                temperature: tempToSend,
+                topP: topPToSend,
+                reasoningEffort: reasoningToSend,
                 responseFormat: nil
             )
             dismissView()

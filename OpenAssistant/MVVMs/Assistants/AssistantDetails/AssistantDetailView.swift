@@ -23,11 +23,15 @@ struct AssistantDetailView: View {
     var body: some View {
         NavigationStack {
             Form {
+                // Core Details & Generation Settings
                 AssistantDetailsSection(
                     assistant: $viewModel.assistant,
                     availableModels: managerViewModel.availableModels
                 )
+                // Capabilities (Tools)
                 AssistantToolsSection(assistant: $viewModel.assistant)
+
+                // Vector Store Management (Refined)
                 VectorStoreManagementSection(
                     viewModel: viewModel,
                     vectorStore: vectorStore,
@@ -36,19 +40,30 @@ struct AssistantDetailView: View {
                     vectorStoreName: $vectorStoreName,
                     onCreateVectorStore: createVectorStore
                 )
-                Section {
-                    Button("Save Changes") {
-                        handleSave()
-                    }
-                    .disabled(viewModel.isLoading)
-                }
 
-                Section {
-                    Button("Delete Assistant", role: .destructive) {
-                        handleDelete()
+                // Main Action Buttons (Save/Delete)
+                Section {  // Keep in separate section for visual separation
+                    HStack {
+                        Spacer()
+                        Button {
+                            handleSave()
+                        } label: {
+                            Label("Save Changes", systemImage: "checkmark.circle.fill")
+                        }
+                        .buttonStyle(.borderedProminent).tint(.blue)
+                        .disabled(viewModel.isLoading)
+
+                        Button(role: .destructive) {
+                            handleDelete()
+                        } label: {
+                            Label("Delete Assistant", systemImage: "trash.fill")
+                        }
+                        .buttonStyle(.borderedProminent).tint(.red)
+                        .disabled(viewModel.isLoading)
+                        Spacer()
                     }
-                    .disabled(viewModel.isLoading)
                 }
+                .listRowBackground(Color.clear)
             }
             .onChange(of: vectorStoreManagerViewModel.vectorStores) { updatedStores in
                 updateVectorStore(with: updatedStores)
@@ -57,14 +72,6 @@ struct AssistantDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel", action: dismissView)
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save", action: handleSave)
-                        .disabled(viewModel.isLoading)
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Delete", action: handleDelete)
-                        .disabled(viewModel.isLoading)
                 }
             }
             .alert(isPresented: $showAlert) {
@@ -165,13 +172,18 @@ struct AssistantDetailView: View {
         viewModel.createAndAssociateVectorStore(name: vectorStoreName)
     }
 
+    // MARK: - Assistant Tools Section (Refined)
     struct AssistantToolsSection: View {
         @Binding var assistant: Assistant
 
         var body: some View {
-            Section(header: Text("Tools")) {
-                Toggle("Enable File Search", isOn: toolBinding(for: "file_search"))
-                Toggle("Enable Code Interpreter", isOn: toolBinding(for: "code_interpreter"))
+            Section(header: Text("Capabilities")) {  // Consistent header
+                Toggle(isOn: toolBinding(for: "file_search")) {
+                    Label("Enable File Search", systemImage: "doc.text.magnifyingglass")
+                }
+                Toggle(isOn: toolBinding(for: "code_interpreter")) {
+                    Label("Enable Code Interpreter", systemImage: "curlybraces.square")
+                }
             }
         }
 
@@ -198,106 +210,200 @@ struct AssistantDetailView: View {
     }
 }
 
+// MARK: - Vector Store Management Section (Refined)
 struct VectorStoreManagementSection: View {
     @ObservedObject var viewModel: AssistantDetailViewModel
-    var vectorStore: VectorStore?
-    @ObservedObject var vectorStoreManagerViewModel: VectorStoreManagerViewModel
+    var vectorStore: VectorStore?  // The primary associated vector store details
+    @ObservedObject var vectorStoreManagerViewModel: VectorStoreManagerViewModel  // For listing/creating
     @Binding var showVectorStoreDetail: Bool
-    @Binding var vectorStoreName: String
+    @Binding var vectorStoreName: String  // For creating new
     var onCreateVectorStore: () -> Void
 
-    @State private var vectorStoreId: String = ""
-    @State private var showAlert = false
-    @State private var alertMessage = ""
+    @State private var vectorStoreIdToAssociate: String = ""  // For manual association
+    @State private var showAssociationOptions = false  // To toggle create/manual section
+
+    // Computed property to get the primary associated ID (if any)
+    private var primaryVectorStoreId: String? {
+        viewModel.assistant.tool_resources?.fileSearch?.vectorStoreIds?.first
+    }
 
     var body: some View {
-        Group {
-            Section(header: Text("Current Vector Store")) {
-                if let vectorStore = vectorStore {
-                    Text("Name: \(vectorStore.name ?? "Unnamed")")
-                    Text("ID: \(vectorStore.id)")
-                    Text("Created At: \(formattedDate(from: vectorStore.createdAt))")
-                    Button(action: {
-                        showVectorStoreDetail = true
-                    }) {
-                        Text("View Details")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
-                } else {
-                    Text("No associated vector store.")
-                }
-            }
+        Section(header: Label("File Search Vector Store", systemImage: "folder.fill")) {
 
-            Section(header: Text("Create New Vector Store")) {
-                TextField("Vector Store Name", text: $vectorStoreName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                Button(action: onCreateVectorStore) {
-                    Text("Create and Associate Vector Store")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                }
-                .padding(.top, 8)
-            }
+            // --- Display Current Association ---
+            VStack(alignment: .leading, spacing: 10) {
+                if let currentId = primaryVectorStoreId {
+                    Text("Currently Associated Store").font(.headline)
+                    if let store = vectorStore, store.id == currentId {
+                        // Display details if we have the fetched VectorStore object
+                        InfoRow(label: "Name", value: store.name ?? "Unnamed", icon: "tag")
+                        InfoRow(label: "ID", value: store.id, icon: "number", truncate: .middle)
+                        InfoRow(
+                            label: "Created", value: formattedDate(from: store.createdAt),
+                            icon: "calendar")
 
-            Section(header: Text("Manual Association")) {
-                TextField("Vector Store ID", text: $vectorStoreId)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                Button(action: {
-                    viewModel.saveVectorStoreId(vectorStoreId)
-                    showAlert(message: "Vector Store ID saved successfully.")
-                }) {
-                    Text("Save Vector Store ID")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                }
-                .padding(.top, 8)
-            }
-
-            Section(header: Text("Associated Vector Store IDs")) {
-                if let vectorStoreIds = viewModel.assistant.tool_resources?.fileSearch?
-                    .vectorStoreIds, !vectorStoreIds.isEmpty
-                {
-                    ForEach(vectorStoreIds, id: \.self) { id in
+                        // Actions for the current store
                         HStack {
-                            Text(id)
-                            Spacer()
-                            Button(action: {
-                                viewModel.deleteVectorStoreId(id)
-                            }) {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
+                            // View Details Button
+                            Button {
+                                showVectorStoreDetail = true
+                            } label: {
+                                Label("View Files", systemImage: "doc.richtext")
                             }
+                            .buttonStyle(.bordered).tint(.accentColor)
+
+                            Spacer()  // Pushes buttons apart
+
+                            // Remove Association Button
+                            Button(role: .destructive) {
+                                viewModel.deleteVectorStoreId(currentId)
+                            } label: {
+                                Label("Remove", systemImage: "xmark.bin")
+                            }
+                            .buttonStyle(.bordered).tint(.red)
                         }
+                        .padding(.top, 5)
+
+                    } else {
+                        // Fallback if VectorStore object isn't loaded yet, just show ID
+                        InfoRow(label: "ID", value: currentId, icon: "number", truncate: .middle)
+                        Text("Loading details...")
+                            .font(.caption).foregroundColor(.secondary)
+                        // Add remove button here too
+                        Button(role: .destructive) {
+                            viewModel.deleteVectorStoreId(currentId)
+                        } label: {
+                            Label("Remove Association", systemImage: "xmark.bin")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered).tint(.red)
+                        .padding(.top, 5)
                     }
                 } else {
-                    Text("No associated vector store IDs.")
+                    // --- No Store Associated ---
+                    Text("No vector store associated for File Search.")
+                        .foregroundColor(.secondary)
+                        .italic()
+                    // Button to reveal association options
+                    Button {
+                        showAssociationOptions.toggle()
+                    } label: {
+                        Label("Associate a Vector Store", systemImage: "plus.circle.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent).tint(.blue)
                 }
             }
+            .padding(.vertical, 8)
+
+            // --- Association Options (Conditional) ---
+            // Show if no store is associated OR if user explicitly wants to change
+            if primaryVectorStoreId == nil || showAssociationOptions {
+                // Create New Store Section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Create & Associate New").font(.subheadline).bold()
+                    HStack {
+                        Image(systemName: "square.and.pencil").foregroundColor(.secondary)
+                        TextField("New Vector Store Name", text: $vectorStoreName)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
+                    Button(action: onCreateVectorStore) {
+                        Label("Create and Associate", systemImage: "plus.app.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered).tint(.green)  // Less prominent than primary action
+                    .disabled(vectorStoreName.isEmpty)
+                }
+                .padding(.vertical, 8)
+
+                // Manual Association Section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Associate Existing by ID").font(.subheadline).bold()
+                    HStack {
+                        Image(systemName: "link").foregroundColor(.secondary)
+                        TextField("Existing Vector Store ID", text: $vectorStoreIdToAssociate)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
+                    Button {
+                        viewModel.saveVectorStoreId(vectorStoreIdToAssociate)
+                        vectorStoreIdToAssociate = ""  // Clear field after associating
+                        showAssociationOptions = false  // Hide options after associating
+                    } label: {
+                        Label("Associate This ID", systemImage: "link.badge.plus")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered).tint(.orange)  // Different color for distinction
+                    .disabled(vectorStoreIdToAssociate.isEmpty)
+                }
+                .padding(.vertical, 8)
+            }
+            // Optionally add a button to explicitly show/hide association options if one is already set
+            else if primaryVectorStoreId != nil {
+                Button {
+                    showAssociationOptions.toggle()
+                } label: {
+                    Label(
+                        showAssociationOptions
+                            ? "Hide Association Options" : "Associate Different Store",
+                        systemImage: showAssociationOptions
+                            ? "chevron.up.square" : "chevron.down.square"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .padding(.top, 5)
+            }
+
+            // --- List All Associated IDs (Optional - maybe for debug/advanced) ---
+            // Consider hiding this behind another toggle if it gets noisy
+            // if let vectorStoreIds = viewModel.assistant.tool_resources?.fileSearch?.vectorStoreIds, vectorStoreIds.count > 1 {
+            //     Divider()
+            //     VStack(alignment: .leading) {
+            //         Text("All Associated IDs (\(vectorStoreIds.count))").font(.caption).foregroundColor(.secondary)
+            //         ForEach(vectorStoreIds, id: \.self) { id in
+            //             HStack {
+            //                 Text(id)
+            //                     .font(.caption2)
+            //                     .truncationMode(.middle)
+            //                 Spacer()
+            //                 if id != primaryVectorStoreId { // Don't show delete for the primary one here
+            //                     Button { viewModel.deleteVectorStoreId(id) } label: {
+            //                         Image(systemName: "trash.circle").foregroundColor(.red)
+            //                     }
+            //                     .buttonStyle(.plain)
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     .padding(.vertical, 8)
+            // }
         }
-        .alert(isPresented: $showAlert) {
-            Alert(
-                title: Text("Notification"),
-                message: Text(alertMessage),
-                dismissButton: .default(Text("OK"))
-            )
+        // Removed the local alert as success/error handling is managed by the ViewModel's alerts
+    }
+
+    // ... Helper View InfoRow and formattedDate ...
+    // Helper View for Info Rows
+    private struct InfoRow: View {
+        let label: String
+        let value: String
+        let icon: String
+        var truncate: Text.TruncationMode = .tail
+
+        var body: some View {
+            HStack {
+                Label(label, systemImage: icon)
+                    .foregroundColor(.secondary)
+                    .frame(width: 80, alignment: .leading)  // Adjusted width slightly
+                Text(value)
+                    .lineLimit(1)
+                    .truncationMode(truncate)
+                Spacer()
+            }
+            .font(.subheadline)
         }
     }
 
-    private func showAlert(message: String) {
-        alertMessage = message
-        showAlert = true
-    }
-
+    // Formats timestamp to a readable date string
     private func formattedDate(from timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         let formatter = DateFormatter()

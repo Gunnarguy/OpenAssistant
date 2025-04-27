@@ -27,29 +27,38 @@ class AssistantDetailViewModel: BaseViewModel {
         var reasoningToSend: String? = nil
 
         // Check model type using the static helper from the superclass
-        // Explicitly call the superclass's static method to resolve ambiguity
         if BaseViewModel.supportsTempTopPAtAssistantLevel(modelToSave) {
             tempToSend = assistant.temperature
             topPToSend = assistant.top_p
-            // Use nil-coalescing for safer printing of optionals
+            reasoningToSend = nil  // Explicitly set reasoning to nil for non-O models
             print(" -> Sending temp: \(tempToSend ?? 0.0), top_p: \(topPToSend ?? 0.0)")
-        } else {
-            reasoningToSend = assistant.reasoning_effort
-            // Use nil-coalescing for safer printing of optionals
+        } else if BaseViewModel.isReasoningModel(modelToSave) {
+            tempToSend = nil  // Explicitly set temp to nil for O models
+            topPToSend = nil  // Explicitly set topP to nil for O models
+            reasoningToSend = assistant.reasoning_effort  // Use value from state
             print(" -> Sending reasoning_effort: \(reasoningToSend ?? "default")")
+        } else {
+            // Handle cases where model supports neither (future-proofing)
+            tempToSend = nil
+            topPToSend = nil
+            reasoningToSend = nil
+            print(
+                " -> Model type does not support temp/topP or reasoning effort at assistant level.")
         }
 
-        // Log the parameters being sent with default values for nil
-        // Use nil-coalescing for safer printing of optionals
+        // Log the parameters being sent
         print(
-            "Parameters to send - Temp: \(tempToSend ?? 0.0), TopP: \(topPToSend ?? 0.0), Reasoning: \(reasoningToSend ?? "default")"
+            "Parameters to send - Temp: \(tempToSend?.description ?? "nil"), TopP: \(topPToSend?.description ?? "nil"), Reasoning: \(reasoningToSend ?? "nil")"
         )
 
         // Perform the API call
         performServiceAction { openAIService in
+            // Ensure isLoading is managed if needed
+            // self.isLoading = true
             openAIService.updateAssistant(
                 assistantId: assistant.id,
-                model: modelToSave,  // Always pass the model selected in the UI
+                // Pass the potentially updated model. The API might restrict changing between families (e.g., GPT-4 to O-series).
+                model: modelToSave,
                 name: assistant.name,
                 description: assistant.description,
                 instructions: assistant.instructions,
@@ -62,29 +71,27 @@ class AssistantDetailViewModel: BaseViewModel {
                 responseFormat: assistant.response_format
             ) { [weak self] (result: Result<Assistant, OpenAIServiceError>) in
                 guard let self = self else { return }
+                // self.isLoading = false // Manage loading state
 
                 // Handle the result directly
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let updatedAssistant):
-                        // Use nil-coalescing for safer printing of optionals in success message
+                        // ... existing success handling ...
                         print(
-                            "Update successful. Assistant ID: \(updatedAssistant.id), Model: \(updatedAssistant.model), Temp: \(updatedAssistant.temperature), TopP: \(updatedAssistant.top_p), Reasoning: \(updatedAssistant.reasoning_effort ?? "default")"
+                            "Update successful. Assistant ID: \(updatedAssistant.id), Model: \(updatedAssistant.model), Temp: \(updatedAssistant.temperature), TopP: \(updatedAssistant.top_p), Reasoning: \(updatedAssistant.reasoning_effort ?? "nil")"
                         )
-                        // Update local state with the response from the POST
-                        self.assistant = updatedAssistant  // Update with the full response
+                        self.assistant = updatedAssistant
                         NotificationCenter.default.post(
                             name: .assistantUpdated, object: updatedAssistant)
-                        // Optionally show success message
                         self.successMessage = SuccessMessage(
                             message: "Assistant updated successfully.")
 
                     case .failure(let error):
-                        // Handle the error from the POST request
+                        // ... existing error handling ...
                         let errorMessage = "Update assistant failed: \(error.localizedDescription)"
                         print("ERROR: \(errorMessage)")
-                        // Attempt to fetch the assistant again to revert local state if update failed
-                        self.fetchAssistantDetails()  // Call the newly defined function
+                        self.fetchAssistantDetails()  // Revert local state
                         self.handleError(IdentifiableError(message: errorMessage))
                     }
                 }

@@ -21,11 +21,58 @@ struct AssistantFormView: View {
 
     var body: some View {
         Form {
-            assistantDetailsSection
-            // Only show tools section when editing
-            if isEditing {
-                toolsSection
+            // Section for core details
+            Section(header: Text("Core Details")) {
+                // Use HStacks for labels with icons and text fields
+                HStack {
+                    Image(systemName: "textformat.abc")
+                        .foregroundColor(.secondary)
+                    TextField("Name", text: $name)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+
+                HStack {
+                    Image(systemName: "doc.text")
+                        .foregroundColor(.secondary)
+                    // Use TextEditor for potentially longer instructions
+                    TextEditor(text: $instructions)
+                        .frame(height: 100)  // Set a reasonable initial height
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.5)))  // Add border
+                }
+
+                HStack {
+                    Image(systemName: "info.circle")
+                        .foregroundColor(.secondary)
+                    // Use TextEditor for potentially longer descriptions
+                    TextEditor(text: $description)
+                        .frame(height: 60)  // Set a reasonable initial height
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.5)))  // Add border
+                }
+
+                // Model Picker - Only enabled during creation
+                HStack {
+                    Image(systemName: "cpu")
+                        .foregroundColor(.secondary)
+                    modelPicker
+                        .disabled(isEditing)  // Disable model changes after creation
+                }
+                // Add info text explaining the restriction if editing
+                if isEditing {
+                    Text(
+                        "Model cannot be changed between GPT and O-series families after creation."
+                    )
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                }
             }
+
+            // Section for Generation Parameters (Conditional)
+            generationParametersSection
+
+            // Section for Tools
+            toolsSection
+
+            // Section for Action Buttons
             actionButtons
         }
         .onAppear {
@@ -40,83 +87,99 @@ struct AssistantFormView: View {
         }
     }
 
-    // MARK: - Assistant Details Section
-    // Contains fields for name, instructions, model selection, description, and optional generation parameters.
-    private var assistantDetailsSection: some View {
-        Section(header: Text("Assistant Details")) {
-            TextField("Name", text: $name)  // Assistant display name
-            TextField("Instructions", text: $instructions)  // System prompt instructions
-
-            // Model Picker - Only enabled during creation
-            modelPicker.disabled(isEditing)
-
-            TextField("Description", text: $description)  // Short assistant description
-
-            // Show reasoning controls ONLY for reasoning models
-            if BaseViewModel.isReasoningModel(model) {
-                Picker("Reasoning Effort", selection: $reasoningEffort) {
-                    ForEach(reasoningOptions, id: \.self) { effort in
-                        Text(effort.capitalized).tag(effort)
+    // MARK: - Generation Parameters Section (Extracted)
+    // Conditionally displays relevant parameters based on the selected model.
+    @ViewBuilder  // Use ViewBuilder for conditional content
+    private var generationParametersSection: some View {
+        // Only show the section if there are parameters to display
+        if BaseViewModel.isReasoningModel(model)
+            || BaseViewModel.supportsTempTopPAtAssistantLevel(model)
+        {
+            Section(header: Text("Generation Settings")) {
+                if BaseViewModel.isReasoningModel(model) {
+                    // Reasoning Effort Picker
+                    VStack(alignment: .leading) {
+                        Label("Reasoning Effort", systemImage: "brain.head.profile")
+                        Picker("Reasoning Effort", selection: $reasoningEffort) {
+                            ForEach(reasoningOptions, id: \.self) { effort in
+                                Text(effort.capitalized).tag(effort)
+                            }
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        Text("Affects model behavior (cost, latency, performance).")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
+                    .padding(.vertical, 4)  // Add padding
+
+                } else if BaseViewModel.supportsTempTopPAtAssistantLevel(model) {
+                    // Temperature Slider
+                    TemperatureSlider(temperature: $temperature)
+                        .padding(.vertical, 4)  // Add vertical padding
+                    // Top P Slider
+                    TopPSlider(topP: $topP)
+                        .padding(.vertical, 4)  // Add vertical padding
                 }
-                // Enable picker during editing for reasoning models
-                .pickerStyle(SegmentedPickerStyle())
-
-                Text(
-                    "Reasoning effort affects model behavior (cost, latency, performance)."  // Updated text
-                )
-                .font(.caption)
-                .foregroundColor(.secondary)
-
-            } else if BaseViewModel.supportsTempTopPAtAssistantLevel(model) {
-                // Show Temp/TopP controls ONLY for non-reasoning models
-                Text("Generation Parameters:")  // Updated text
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                TemperatureSlider(temperature: $temperature)
-                // Enable slider during editing for non-reasoning models
-                TopPSlider(topP: $topP)
-                // Enable slider during editing for non-reasoning models
             }
-            // No controls shown if model supports neither at assistant level
         }
+        // Implicitly returns EmptyView if conditions are not met
     }
 
     // MARK: - Tools Section
-    // Toggles to enable or disable built-in assistant tools
-    // This section is now only shown when isEditing is true
+    // Toggles to enable or disable built-in assistant tools.
     private var toolsSection: some View {
-        Section(header: Text("Tools")) {
-            Toggle("Enable File Search", isOn: $enableFileSearch)
-            Toggle("Enable Code Interpreter", isOn: $enableCodeInterpreter)
+        Section(header: Text("Capabilities")) {  // Renamed header for clarity
+            Toggle(isOn: $enableFileSearch) {
+                Label("Enable File Search", systemImage: "doc.text.magnifyingglass")
+            }
+            Toggle(isOn: $enableCodeInterpreter) {
+                Label("Enable Code Interpreter", systemImage: "curlybraces.square")
+            }
         }
     }
 
     // MARK: - Action Buttons
     // Save or update assistant, with optional delete action when editing
     private var actionButtons: some View {
-        HStack {
-            Button(isEditing ? "Update" : "Save", action: onSave)
-                .foregroundColor(.blue)
-            if isEditing, let onDelete = onDelete {
-                Button("Delete", action: onDelete)
-                    .foregroundColor(.red)
+        Section {
+            HStack {
+                Spacer()
+                // Save/Update Button with Icon
+                Button {
+                    onSave()
+                } label: {
+                    Label(isEditing ? "Update" : "Save", systemImage: "checkmark.circle.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+
+                // Delete Button with Icon (if editing)
+                if isEditing, let onDelete = onDelete {
+                    Button(role: .destructive) {
+                        onDelete()
+                    } label: {
+                        Label("Delete", systemImage: "trash.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                }
+                Spacer()
             }
         }
-        .buttonStyle(BorderlessButtonStyle())  // Keeps buttons styled in form context
+        .listRowBackground(Color.clear)
     }
 
     // MARK: - Model Picker
     // Dropdown menu to select available model
     private var modelPicker: some View {
         Picker("Model", selection: $model) {
-            // Filter available models based on whether they are reasoning models or support temp/top_p
-            // Let user pick any available model during creation.
+            // Let user pick any available model.
             ForEach(availableModels, id: \.self) { modelId in
                 Text(modelId).tag(modelId)
             }
         }
         .pickerStyle(MenuPickerStyle())
+        // The .disabled(isEditing) modifier is applied higher up where modelPicker is used.
     }
 }
 
@@ -127,7 +190,11 @@ private struct TemperatureSlider: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Temperature: \(temperature, specifier: "%.2f")")
+            // Use Label for consistency
+            Label(
+                "Temperature: \(temperature, specifier: "%.2f")",
+                systemImage: "thermometer.medium"
+            )
             Slider(value: $temperature, in: 0.0...2.0, step: 0.01)
         }
     }
@@ -140,7 +207,8 @@ private struct TopPSlider: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Top P: \(topP, specifier: "%.2f")")
+            // Use Label for consistency
+            Label("Top P: \(topP, specifier: "%.2f")", systemImage: "chart.pie")
             Slider(value: $topP, in: 0.0...1.0, step: 0.01)
         }
     }

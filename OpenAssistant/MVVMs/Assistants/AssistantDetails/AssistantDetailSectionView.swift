@@ -27,53 +27,100 @@ struct AssistantDetailsSection: View {
     }
 
     var body: some View {
-        Section(header: Text("Assistant Details")) {
-            // Display Name (Editable)
-            NameField(name: $assistant.name)
-            // Instructions (Editable)
-            InstructionsField(instructions: Binding($assistant.instructions, default: ""))
+        Section(header: Text("Core Details")) {  // Consistent header
+            // Display Name (Editable) - Use HStack with icon
+            HStack {
+                Image(systemName: "textformat.abc")
+                    .foregroundColor(.secondary)
+                NameField(name: $assistant.name)
+            }
 
-            // Model Picker - Filtered based on original model type
-            Picker("Model", selection: $assistant.model) {
-                // Iterate over the filtered list
-                ForEach(filteredAvailableModels, id: \.self) { model in
-                    Text(model).tag(model)
+            // Instructions (Editable) - Use HStack with icon and TextEditor
+            HStack(alignment: .top) {  // Align icon to top
+                Image(systemName: "doc.text")
+                    .foregroundColor(.secondary)
+                    .padding(.top, 8)  // Adjust icon position slightly
+                InstructionsField(instructions: Binding($assistant.instructions, default: ""))
+            }
+
+            // Model Picker - Filtered based on original model type - Use HStack with icon
+            HStack {
+                Image(systemName: "cpu")
+                    .foregroundColor(.secondary)
+                Picker("Model", selection: $assistant.model) {
+                    ForEach(filteredAvailableModels, id: \.self) { model in
+                        Text(model).tag(model)
+                    }
                 }
+                // REMOVED: .disabled(true) - Allow model selection
             }
             // Add info text explaining the restriction
             Text("Model cannot be changed between GPT and O-series families after creation.")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            // Description (Editable)
-            DescriptionField(description: Binding($assistant.description, default: ""))
-
-            // Conditional UI based on *current* model selection type
-            if isCurrentSelectionOModel {
-                // Reasoning Effort Picker for O-series models
-                Picker("Reasoning Effort", selection: $assistant.reasoning_effort) {
-                    Text("Default (medium)").tag(nil as String?)  // Option for default
-                    ForEach(reasoningOptions, id: \.self) { effort in
-                        Text(effort.capitalized).tag(effort as String?)  // Use optional tag
-                    }
-                }
-            } else {
-                // Temperature Slider for non-O models
-                VStack(alignment: .leading) {
-                    Text("Temperature: \(assistant.temperature, specifier: "%.2f")")
-                    Slider(value: $assistant.temperature, in: 0.0...2.0, step: 0.1)
-                }
-
-                // Top P Slider for non-O models
-                VStack(alignment: .leading) {
-                    Text("Top P: \(assistant.top_p, specifier: "%.2f")")
-                    Slider(value: $assistant.top_p, in: 0.0...1.0, step: 0.1)
-                }
+            // Description (Editable) - Use HStack with icon and TextEditor
+            HStack(alignment: .top) {  // Align icon to top
+                Image(systemName: "info.circle")
+                    .foregroundColor(.secondary)
+                    .padding(.top, 8)  // Adjust icon position slightly
+                DescriptionField(description: Binding($assistant.description, default: ""))
             }
         }
         .onAppear {
-            // Determine the original model type when the view appears
             self.originalModelIsOseries = BaseViewModel.isReasoningModel(assistant.model)
+        }
+
+        // Section for Generation Parameters (Conditional) - Extracted for clarity
+        generationParametersSection
+    }
+
+    // MARK: - Generation Parameters Section (Extracted)
+    @ViewBuilder
+    private var generationParametersSection: some View {
+        // Only show the section if there are parameters to display
+        if isCurrentSelectionOModel
+            || BaseViewModel.supportsTempTopPAtAssistantLevel(assistant.model)
+        {
+            Section(header: Text("Generation Settings")) {  // Consistent header
+                if isCurrentSelectionOModel {
+                    // Reasoning Effort Picker
+                    VStack(alignment: .leading) {
+                        Label("Reasoning Effort", systemImage: "brain.head.profile")
+                        Picker("Reasoning Effort", selection: $assistant.reasoning_effort) {
+                            Text("Default (medium)").tag(nil as String?)
+                            ForEach(reasoningOptions, id: \.self) { effort in
+                                Text(effort.capitalized).tag(effort as String?)
+                            }
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        Text("Affects model behavior (cost, latency, performance).")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+
+                } else {
+                    // Temperature Slider
+                    VStack(alignment: .leading) {
+                        Label(
+                            "Temperature: \(assistant.temperature, specifier: "%.2f")",
+                            systemImage: "thermometer.medium"
+                        )
+                        Slider(value: $assistant.temperature, in: 0.0...2.0, step: 0.1)
+                    }
+                    .padding(.vertical, 4)
+
+                    // Top P Slider
+                    VStack(alignment: .leading) {
+                        Label(
+                            "Top P: \(assistant.top_p, specifier: "%.2f")", systemImage: "chart.pie"
+                        )
+                        Slider(value: $assistant.top_p, in: 0.0...1.0, step: 0.1)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
         }
     }
 }
@@ -93,8 +140,10 @@ private struct InstructionsField: View {
     @Binding var instructions: String
 
     var body: some View {
-        TextField("Instructions", text: $instructions)
-            .textFieldStyle(RoundedBorderTextFieldStyle())
+        // Use TextEditor for consistency and better multi-line editing
+        TextEditor(text: $instructions)
+            .frame(height: 100)  // Set a reasonable initial height
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.5)))  // Add border
     }
 }
 
@@ -102,32 +151,15 @@ private struct DescriptionField: View {
     @Binding var description: String
 
     var body: some View {
-        TextField("Description", text: $description)
-            .textFieldStyle(RoundedBorderTextFieldStyle())
+        // Use TextEditor for consistency
+        TextEditor(text: $description)
+            .frame(height: 60)  // Set a reasonable initial height
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.5)))  // Add border
     }
 }
 
-private struct TemperatureSlider: View {
-    @Binding var temperature: Double
-
-    var body: some View {
-        VStack {
-            Text("Temperature: \(temperature, specifier: "%.2f")")
-            Slider(value: $temperature, in: 0.0...2.0, step: 0.01)
-        }
-    }
-}
-
-private struct TopPSlider: View {
-    @Binding var topP: Double
-
-    var body: some View {
-        VStack {
-            Text("Top P: \(topP, specifier: "%.2f")")
-            Slider(value: $topP, in: 0.0...1.0, step: 0.01)
-        }
-    }
-}
+// Remove slider definitions if they are handled by AssistantFormView's definitions
+// ...
 
 // MARK: - Extensions
 
