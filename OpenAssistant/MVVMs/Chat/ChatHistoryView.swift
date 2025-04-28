@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ChatHistoryView: View {
     @EnvironmentObject var messageStore: MessageStore
-    let assistantId: String // Changed from threadId
+    let assistantId: String  // Changed from threadId
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {

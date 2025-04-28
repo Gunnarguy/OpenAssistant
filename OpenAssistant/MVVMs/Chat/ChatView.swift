@@ -21,14 +21,15 @@ struct ChatView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     // Use assistant ID for the history link
                     let assistantId = viewModel.assistant.id
-                    let _ = print("ChatView Toolbar: Using assistantId \(assistantId) for NavigationLink")
+                    let _ = print(
+                        "ChatView Toolbar: Using assistantId \(assistantId) for NavigationLink")
 
                     // Enable link if assistantId is valid
                     if !assistantId.isEmpty {
                         NavigationLink(
                             // Pass assistantId to ChatHistoryView
                             destination: ChatHistoryView(
-                                assistantId: assistantId // Pass assistantId
+                                assistantId: assistantId  // Pass assistantId
                             )
                         ) {
                             Image(systemName: "clock")
@@ -36,7 +37,8 @@ struct ChatView: View {
                         }
                     } else {
                         // Disable if assistantId is somehow empty
-                        let _ = print("ChatView Toolbar: Disabling NavigationLink (assistantId is empty)")
+                        let _ = print(
+                            "ChatView Toolbar: Disabling NavigationLink (assistantId is empty)")
                         Image(systemName: "clock")
                             .foregroundColor(.gray.opacity(0.5))
                     }
