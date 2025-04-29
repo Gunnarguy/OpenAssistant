@@ -356,7 +356,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
                         usageBytes: file.bytes ?? 0,  // Provide default
                         createdAt: file.createdAt,
                         vectorStoreId: vectorStore.id,  // Ensure this is set correctly
-                        status: file.status ?? "unknown",  // Provide default
+                        status: file.status,  // Provide default
                         lastError: file.lastError,
                         chunkingStrategy: file.chunkingStrategy
                     )

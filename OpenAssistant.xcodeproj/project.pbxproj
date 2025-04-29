@@ -31,6 +31,9 @@
 		B0BFE4442C9BDC8800EB6D81 /* AssistantFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */; };
 		B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */; };
 		B0DC00802CC895FB0080C096 /* Additional.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC007F2CC895FB0080C096 /* Additional.swift */; };
+		B0DC0B362DC0524C00160A74 /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC0B352DC0524800160A74 /* Appearance.swift */; };
+		B0DC0B382DC07CF000160A74 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC0B372DC07CE800160A74 /* AppearanceMode.swift */; };
+		B0DC0B3A2DC07D4000160A74 /* AssistantIconManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC0B392DC07D3B00160A74 /* AssistantIconManager.swift */; };
 		B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */; };
 		B0DD9C5E2C9DFA7000A0D623 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */; };
 		B0DD9C602C9DFAB100A0D623 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */; };
@@ -84,6 +87,9 @@
 		B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantFormView.swift; sourceTree = "<group>"; };
 		B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
 		B0DC007F2CC895FB0080C096 /* Additional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Additional.swift; sourceTree = "<group>"; };
+		B0DC0B352DC0524800160A74 /* Appearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
+		B0DC0B372DC07CE800160A74 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
+		B0DC0B392DC07D3B00160A74 /* AssistantIconManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantIconManager.swift; sourceTree = "<group>"; };
 		B0DD9C572C9DE4B800A0D623 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B0DD9C592C9DE90000A0D623 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		B0DD9C5A2C9DE91B00A0D623 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
@@ -244,6 +250,9 @@
 		B0DD9C652C9E09A000A0D623 /* Main */ = {
 			isa = PBXGroup;
 			children = (
+				B0DC0B392DC07D3B00160A74 /* AssistantIconManager.swift */,
+				B0DC0B372DC07CE800160A74 /* AppearanceMode.swift */,
+				B0DC0B352DC0524800160A74 /* Appearance.swift */,
 				B0815C9B2DBC8126008B0E41 /* ModelCapabilities.swift */,
 				B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */,
 				B059E6C62CAB8DDD00B1028E /* Extensions.swift */,
@@ -398,6 +407,7 @@
 			files = (
 				B0DC00802CC895FB0080C096 /* Additional.swift in Sources */,
 				B0EEE73F2C99326A0012F2BA /* OpenAIService.swift in Sources */,
+				B0DC0B382DC07CF000160A74 /* AppearanceMode.swift in Sources */,
 				B0815C9C2DBC813A008B0E41 /* ModelCapabilities.swift in Sources */,
 				B0EEE7402C99326A0012F2BA /* VectorStoreManagerViewModel.swift in Sources */,
 				B0EEE7412C99326A0012F2BA /* ChatView.swift in Sources */,
@@ -424,6 +434,7 @@
 				B0EEE74C2C99326A0012F2BA /* SettingsView.swift in Sources */,
 				B0EEE74D2C99326A0012F2BA /* AssistantManagerView.swift in Sources */,
 				B0EEE74E2C99326A0012F2BA /* VectorStoreListView.swift in Sources */,
+				B0DC0B3A2DC07D4000160A74 /* AssistantIconManager.swift in Sources */,
 				B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */,
 				B0EEE74F2C99326A0012F2BA /* Errors.swift in Sources */,
 				B0EEE7502C99326A0012F2BA /* AssistantDetailViewModel.swift in Sources */,
@@ -439,6 +450,7 @@
 				B0EEE7532C99326A0012F2BA /* AssistantPickerViewModel.swift in Sources */,
 				B0EEE7542C99326A0012F2BA /* AddFileView.swift in Sources */,
 				B0EEE7562C99326A0012F2BA /* VectorStoreDetailView.swift in Sources */,
+				B0DC0B362DC0524C00160A74 /* Appearance.swift in Sources */,
 				B033D41E2CCB0AB000984B82 /* OpenAIService-Threads.swift in Sources */,
 				B0DD9C622C9DFC3A00A0D623 /* OpenAIInitializer.swift in Sources */,
 				B051E5B12CA3304C00C6FF59 /* FeatureFlags.swift in Sources */,

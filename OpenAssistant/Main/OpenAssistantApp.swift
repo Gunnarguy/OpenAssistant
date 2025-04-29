@@ -10,6 +10,9 @@ struct OpenAssistantApp: App {
     @StateObject private var messageStore = MessageStore()  // Create the single instance here
     @State private var selectedAssistant: Assistant?
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
+    // Read the stored appearance mode preference
+    @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode.RawValue =
+        AppearanceMode.system.rawValue
     @State private var showSettingsView = false
 
     // MARK: - Body
@@ -19,12 +22,22 @@ struct OpenAssistantApp: App {
                 .environmentObject(assistantManagerViewModel)
                 .environmentObject(vectorStoreViewModel)
                 .environmentObject(messageStore)  // Inject into the environment
+                // Apply the preferred color scheme globally based on settings
+                .preferredColorScheme(
+                    (AppearanceMode(rawValue: appearanceMode) ?? .system).colorScheme
+                )
                 .onAppear(perform: handleOnAppear)
                 .sheet(isPresented: $showSettingsView) {
-                    SettingsView()
-                        .environmentObject(assistantManagerViewModel)
-                    // Inject messageStore into SettingsView if needed
-                    // .environmentObject(messageStore)
+                    // Wrap SettingsView in NavigationView to show title and Done button
+                    NavigationView {
+                        SettingsView()
+                            .environmentObject(assistantManagerViewModel)
+                        // Inject messageStore into SettingsView if needed
+                        // .environmentObject(messageStore)
+                    }
+                    // Apply preferred color scheme to the sheet as well
+                    .preferredColorScheme(
+                        (AppearanceMode(rawValue: appearanceMode) ?? .system).colorScheme)
                 }
         }
     }

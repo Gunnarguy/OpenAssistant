@@ -239,16 +239,17 @@ struct Assistant: Identifiable, Codable, Equatable {
     var metadata: [String: String]?
     var response_format: ResponseFormat?
     var file_ids: [String]?
+    var iconName: String?  // Added property for icon name
 
     static func == (lhs: Assistant, rhs: Assistant) -> Bool {
         return lhs.id == rhs.id
     }
 
-    // Explicit CodingKeys including reasoning_effort
+    // Explicit CodingKeys including reasoning_effort and iconName
     private enum CodingKeys: String, CodingKey {
         case id, object, created_at, name, description, model, instructions, tools, top_p,
             temperature, reasoning_effort, tool_resources, metadata, response_format, file_ids,
-            vectorStoreId, threads  // Ensure all properties are covered
+            vectorStoreId, threads, iconName  // Ensure all properties are covered
     }
 
     // Explicit Decodable initializer
@@ -273,6 +274,8 @@ struct Assistant: Identifiable, Codable, Equatable {
         response_format = try container.decodeIfPresent(
             ResponseFormat.self, forKey: .response_format)
         file_ids = try container.decodeIfPresent([String].self, forKey: .file_ids)
+        // Decode iconName, handling potential absence
+        iconName = try container.decodeIfPresent(String.self, forKey: .iconName)
     }
 
     // Explicit memberwise initializer for direct instantiation (e.g., previews)
@@ -293,7 +296,8 @@ struct Assistant: Identifiable, Codable, Equatable {
         tool_resources: ToolResources? = nil,
         metadata: [String: String]? = nil,
         response_format: ResponseFormat? = nil,
-        file_ids: [String]? = nil
+        file_ids: [String]? = nil,
+        iconName: String? = nil  // Added iconName parameter
     ) {
         self.id = id
         self.object = object
@@ -312,6 +316,7 @@ struct Assistant: Identifiable, Codable, Equatable {
         self.metadata = metadata
         self.response_format = response_format
         self.file_ids = file_ids
+        self.iconName = iconName  // Assign iconName
     }
 
     func toAssistantDictionary() -> [String: Any] {
@@ -336,6 +341,7 @@ struct Assistant: Identifiable, Codable, Equatable {
         if let fileIds = file_ids {
             dict["file_ids"] = fileIds
         }
+        // iconName is not part of the OpenAI API, so it's not included here
         // Ensure vectorStoreId and threads are handled if needed for dictionary conversion,
         // though they might not be part of create/update payloads.
         return dict

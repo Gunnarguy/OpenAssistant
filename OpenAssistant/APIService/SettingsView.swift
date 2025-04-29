@@ -4,12 +4,14 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
-    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
-    @AppStorage("OpenAI_Default_Model") private var defaultModel: String = ""
+    // Use AppearanceMode enum for storing preference
+    @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode.RawValue =
+        AppearanceMode.system.rawValue
+    // Removed defaultModel AppStorage
     @State private var showAlert = false
     @State private var alertMessage = ""
     // Removed isApiKeyValid state as validation happens on save
-    @EnvironmentObject var assistantManagerViewModel: AssistantManagerViewModel
+    @EnvironmentObject var assistantManagerViewModel: AssistantManagerViewModel  // Keep if needed elsewhere, otherwise consider removing if only used for models
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) var openURL  // Environment value to open URLs
 
@@ -17,46 +19,43 @@ struct SettingsView: View {
     var body: some View {
         // Use Form for standard settings layout
         Form {
-            apiKeySection
-            modelSelectionSection
-            appearanceSection
+            apiKeySection  // Section for API Key
+            appearanceSection  // Section for Appearance
         }
         .navigationBarTitle("Settings", displayMode: .inline)
-        .preferredColorScheme(isDarkMode ? .dark : .light)
-        // Add a Done button to save and dismiss
-        .navigationBarItems(trailing: Button("Done", action: saveSettings))
+        // Apply preferred color scheme based on selection using the global enum's helper
+        .preferredColorScheme((AppearanceMode(rawValue: appearanceMode) ?? .system).colorScheme)
+        // Removed the Done button from navigationBarItems
+        // .navigationBarItems(trailing: Button("Done", action: saveSettings))
         .alert(isPresented: $showAlert) {
             Alert(
                 title: Text("Settings"),
                 message: Text(alertMessage),
                 dismissButton: .default(Text("OK")) {
                     // Dismiss only if API key is valid after showing the alert
-                    if !apiKey.isEmpty {
+                    // This ensures the view stays if the key was invalid,
+                    // or dismisses after confirming a successful save.
+                    // Check if the save was successful before dismissing
+                    if alertMessage == "Settings saved successfully." {
                         dismiss()
                     }
                 }
             )
         }
-        // Load models when view appears and ensure defaultModel is valid
-        .onAppear {
-            assistantManagerViewModel.fetchAvailableModels()
-        }
-        .onChange(of: assistantManagerViewModel.availableModels) { models in
-            // Filter for reasoning-capable models
-            let reasoningModels = models.filter { BaseViewModel.isReasoningModel($0) }
-            // Update default model if the current one is not in the filtered list
-            if !reasoningModels.contains(defaultModel) || defaultModel.isEmpty {
-                defaultModel = reasoningModels.first ?? ""
-            }
-        }
+        // Removed model loading logic from onAppear and onChange
+        // .onAppear { ... } // Removed fetchAvailableModels call
+        // .onChange(of: assistantManagerViewModel.availableModels) { ... } // Removed entire onChange block
     }
 
     // MARK: - Sections
 
-    // Section for API Key settings
+    // Section for API Key settings with an icon and save button
     private var apiKeySection: some View {
-        Section(header: Text("API Key")) {
+        // Use Label in the Section header for text and icon
+        Section(header: Label("API Key", systemImage: "key.fill")) {
             SecureField("Enter OpenAI API Key", text: $apiKey)
+                .textContentType(.password)  // Helps with password managers
+
             // Link to OpenAI API key page
             Link(
                 "Get your API key here",
@@ -64,41 +63,30 @@ struct SettingsView: View {
                     string: "https://platform.openai.com/settings/organization/api-keys")!
             )
             .foregroundColor(.blue)  // Standard link color
+            .padding(.bottom)  // Add some space before the button
+
+            // Button to save the API Key and other settings
+            Button("Save Settings", action: saveSettings)
+                .frame(maxWidth: .infinity, alignment: .center)  // Center the button
+            // Optionally apply a prominent style
+            // .buttonStyle(.borderedProminent)
         }
     }
 
-    // Section for selecting the default model
-    private var modelSelectionSection: some View {
-        Section(header: Text("Default Model")) {
-            if assistantManagerViewModel.availableModels.isEmpty {
-                // Show progress indicator while loading models
-                HStack {
-                    Text("Loading models...")
-                    ProgressView()
-                }
-                .onAppear { assistantManagerViewModel.fetchAvailableModels() }
-            } else {
-                // Picker for model selection
-                Picker("Model", selection: $defaultModel) {
-                    // Iterate over available reasoning models
-                    ForEach(
-                        assistantManagerViewModel.availableModels.filter {
-                            BaseViewModel.isReasoningModel($0)
-                        }, id: \.self
-                    ) { model in
-                        Text(model).tag(model)
-                    }
-                }
-                // Use MenuPickerStyle for dropdown appearance
-                .pickerStyle(MenuPickerStyle())
-            }
-        }
-    }
+    // Removed modelSelectionSection view
 
     // Section for appearance settings like Dark Mode
     private var appearanceSection: some View {
-        Section(header: Text("Appearance")) {
-            Toggle("Dark Mode", isOn: $isDarkMode)
+        // Use Label in the Section header for text and icon
+        Section(header: Label("Appearance", systemImage: "paintbrush.fill")) {
+            // Picker to select the appearance mode
+            Picker("Theme", selection: $appearanceMode) {
+                ForEach(AppearanceMode.allCases) { mode in
+                    Text(mode.rawValue).tag(mode.rawValue)
+                }
+            }
+            // Use MenuPickerStyle for dropdown appearance
+            .pickerStyle(MenuPickerStyle())
         }
     }
 
@@ -111,14 +99,15 @@ struct SettingsView: View {
         return !apiKey.isEmpty
     }
 
-    // Save settings function triggered by the Done button
+    // Save settings function triggered by the button
     private func saveSettings() {
         if validateApiKey() {
             alertMessage = "Settings saved successfully."
             #if DEBUG
                 print("API Key saved: \(apiKey)")
-                print("Default Model saved: \(defaultModel)")
-                print("Dark Mode: \(isDarkMode)")
+                // Removed default model print statement
+                // Log the selected appearance mode
+                print("Appearance Mode: \(appearanceMode)")
             #endif
 
             // Notify other parts of the app that settings have been updated
