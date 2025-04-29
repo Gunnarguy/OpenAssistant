@@ -34,9 +34,9 @@ struct CreateAssistantView: View {
                 enableFileSearch: $enableFileSearch,
                 enableCodeInterpreter: $enableCodeInterpreter,
                 availableModels: viewModel.availableModels,
-                isEditing: false, // Explicitly false for creation
+                isEditing: false,  // Explicitly false for creation
                 onSave: handleSave
-                // onDelete is nil by default, appropriate for creation
+                    // onDelete is nil by default, appropriate for creation
             )
             .navigationTitle("Create Assistant")
             .toolbar {
@@ -62,7 +62,6 @@ struct CreateAssistantView: View {
                         model = defaultModel
                     } else if let first = viewModel.availableModels.first {
                         model = first
-                        defaultModel = first  // update stored default to new valid model
                     }
                 }
             }
@@ -70,7 +69,6 @@ struct CreateAssistantView: View {
                 // When models change, ensure current model is valid (any model)
                 if !models.contains(model), let first = models.first {
                     model = first
-                    defaultModel = first
                 }
             }
         }
@@ -89,17 +87,17 @@ struct CreateAssistantView: View {
 
             // Determine parameters based on model type
             let isOModel = BaseViewModel.isReasoningModel(model)
-            let tempToSend = isOModel ? Constants.defaultTemperature : temperature // Use default if O-model
-            let topPToSend = isOModel ? Constants.defaultTopP : topP // Use default if O-model
-            let reasoningToSend = isOModel ? reasoningEffort : nil // Use state if O-model, else nil
+            let tempToSend = isOModel ? Constants.defaultTemperature : temperature  // Use default if O-model
+            let topPToSend = isOModel ? Constants.defaultTopP : topP  // Use default if O-model
+            let reasoningToSend = isOModel ? reasoningEffort : nil  // Use state if O-model, else nil
 
             viewModel.createAssistant(
                 model: model,
                 name: name,
                 description: description.isEmpty ? nil : description,
                 instructions: instructions.isEmpty ? nil : instructions,
-                tools: tools, // Pass the constructed tools array
-                toolResources: nil, // Tool resources are managed later
+                tools: tools,  // Pass the constructed tools array
+                toolResources: nil,  // Tool resources are managed later
                 metadata: nil,
                 temperature: tempToSend,
                 topP: topPToSend,
