@@ -191,3 +191,5 @@ struct VectorStoreManagementView: View {
         return formatter.string(from: date)
     }
 }
+
+
