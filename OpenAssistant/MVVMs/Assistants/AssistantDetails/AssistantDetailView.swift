@@ -176,3 +176,44 @@ struct AssistantDetailView: View {
         viewModel.createAndAssociateVectorStore(name: vectorStoreName)
     }
 }
+
+// MARK: - Preview
+/// Renders AssistantDetailView with sample data in Xcode canvas
+struct AssistantDetailView_Previews: PreviewProvider {
+    // Sample assistant for preview
+    static let sampleAssistant = Assistant(
+        id: "preview-1",
+        object: "assistant",
+        created_at: Int(Date().timeIntervalSince1970),
+        name: "Preview Assistant",
+        description: "This is a preview assistant for testing UI.",
+        model: "gpt-3.5-turbo",
+        vectorStoreId: nil,
+        instructions: "",
+        threads: nil,
+        tools: [],
+        top_p: 1.0,
+        temperature: 1.0,
+        reasoning_effort: nil,
+        tool_resources: nil,
+        metadata: nil,
+        response_format: nil,
+        file_ids: []
+    )
+    // Manager view model with available models
+    static let managerVM: AssistantManagerViewModel = {
+        let vm = AssistantManagerViewModel()
+        vm.availableModels = ["gpt-3.5-turbo", "o1"]
+        return vm
+    }()
+
+    static var previews: some View {
+        // Embed in NavigationStack to display navigation bar
+        NavigationStack {
+            AssistantDetailView(
+                assistant: sampleAssistant,
+                managerViewModel: managerVM
+            )
+        }
+    }
+}

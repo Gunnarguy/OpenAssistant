@@ -34,3 +34,50 @@ struct SendButton: View {
         .animation(.easeInOut(duration: 0.15), value: isDisabled)  // Faster animation
     }
 }
+
+// MARK: - Previews
+#if DEBUG
+    struct SendButton_Previews: PreviewProvider {
+        static var previews: some View {
+            Group {
+                // Enabled state
+                SendButton(action: {}, isDisabled: false, isLoading: false)
+                    .padding()
+                    .previewLayout(.sizeThatFits)
+                    .previewDisplayName("Enabled")
+
+                // Disabled state (e.g., empty input)
+                SendButton(action: {}, isDisabled: true, isLoading: false)
+                    .padding()
+                    .previewLayout(.sizeThatFits)
+                    .previewDisplayName("Disabled")
+
+                // Loading state
+                SendButton(action: {}, isDisabled: false, isLoading: true)
+                    .padding()
+                    .previewLayout(.sizeThatFits)
+                    .previewDisplayName("Loading")
+
+                // Disabled while Loading state (should look same as Loading)
+                SendButton(action: {}, isDisabled: true, isLoading: true)
+                    .padding()
+                    .previewLayout(.sizeThatFits)
+                    .previewDisplayName("Disabled & Loading")
+
+                // Enabled state (Dark Mode)
+                SendButton(action: {}, isDisabled: false, isLoading: false)
+                    .padding()
+                    .background(Color.black)
+                    .previewLayout(.sizeThatFits)
+                    .previewDisplayName("Enabled (Dark)")
+
+                // Disabled state (Dark Mode)
+                SendButton(action: {}, isDisabled: true, isLoading: false)
+                    .padding()
+                    .background(Color.black)
+                    .previewLayout(.sizeThatFits)
+                    .previewDisplayName("Disabled (Dark)")
+            }
+        }
+    }
+#endif

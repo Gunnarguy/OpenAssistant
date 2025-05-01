@@ -15,7 +15,12 @@ class AssistantPickerViewModel: BaseAssistantViewModel {
     // MARK: - Public Methods
     func fetchAssistants() {
         guard let openAIService = openAIService else {
-            handleError(IdentifiableError(message: "OpenAIService is not initialized."))
+            // Stop loading and show error if service isn't initialized (e.g., missing API key).
+            isLoading = false
+            handleError(
+                IdentifiableError(
+                    message:
+                        "OpenAIService is not initialized. Please set your API key in Settings."))
             return
         }
 

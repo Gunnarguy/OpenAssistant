@@ -113,49 +113,36 @@ struct AssistantManagerView: View {
     }
 }
 
+// Removed initial duplicate AssistantManagerView_Previews block
+
+// MARK: - Preview
+/// Provides a preview of AssistantManagerView with sample data
 struct AssistantManagerView_Previews: PreviewProvider {
     static var previews: some View {
+        // Create and configure a sample view model
         let viewModel = AssistantManagerViewModel()
         viewModel.assistants = [
             Assistant(
                 id: "1",
                 object: "assistant",
                 created_at: Int(Date().timeIntervalSince1970),
-                name: "Test Assistant 1",
-                description: "This is a test assistant 1.",
-                model: "test-model",
-                vectorStoreId: nil,  // Explicitly nil
-                instructions: nil,  // Explicitly nil
-                threads: nil,  // Explicitly nil
+                name: "Preview Assistant 1",
+                description: "A preview assistant example.",
+                model: "preview-model",
+                vectorStoreId: nil,
+                instructions: nil,
+                threads: nil,
                 tools: [],
                 top_p: 1.0,
                 temperature: 0.7,
-                reasoning_effort: nil,  // Added reasoning_effort
-                tool_resources: nil,  // Explicitly nil
-                metadata: nil,  // Explicitly nil
-                response_format: nil,  // Explicitly nil
-                file_ids: []  // Explicitly empty array
-            ),
-            Assistant(
-                id: "2",
-                object: "assistant",
-                created_at: Int(Date().timeIntervalSince1970),
-                name: "Test Assistant 2",
-                description: "This is a test assistant 2.",
-                model: "test-model",
-                vectorStoreId: nil,  // Explicitly nil
-                instructions: nil,  // Explicitly nil
-                threads: nil,  // Explicitly nil
-                tools: [],
-                top_p: 1.0,
-                temperature: 0.7,
-                reasoning_effort: nil,  // Added reasoning_effort
-                tool_resources: nil,  // Explicitly nil
-                metadata: nil,  // Explicitly nil
-                response_format: nil,  // Explicitly nil
-                file_ids: []  // Explicitly empty array
-            ),
+                reasoning_effort: nil,
+                tool_resources: nil,
+                metadata: nil,
+                response_format: nil,
+                file_ids: []
+            )
         ]
+        // Return the view with sample data environment
         return AssistantManagerView()
             .environmentObject(viewModel)
     }

@@ -1,4 +1,5 @@
 import Combine
+import Foundation
 import SwiftUI
 
 struct AssistantDetailsSection: View {
@@ -169,5 +170,26 @@ extension Binding where Value == String {
             get: { source.wrappedValue ?? defaultValue },
             set: { source.wrappedValue = $0 }
         )
+    }
+}
+
+// MARK: - Previews
+struct AssistantDetailsSection_Previews: PreviewProvider {
+    // Mock assistant for previewing the section
+    static let mockAssistant = Assistant(
+        id: "1", object: "assistant", created_at: 0,
+        name: "Sample Assistant", model: "gpt-3.5-turbo",
+        tools: [], top_p: 1.0, temperature: 1.0
+    )
+
+    static var previews: some View {
+        // Display the section with padding and size fitting
+        AssistantDetailsSection(
+            assistant: Binding.constant(mockAssistant),
+            availableModels: ["gpt-3.5-turbo", "o1"]
+        )
+        .previewLayout(PreviewLayout.sizeThatFits)
+        .padding()
+        .previewDisplayName("Details Section")
     }
 }

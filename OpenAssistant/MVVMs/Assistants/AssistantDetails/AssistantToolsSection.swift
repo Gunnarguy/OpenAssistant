@@ -7,7 +7,7 @@ struct AssistantToolsSectionView: View {
     @Binding var assistant: Assistant
 
     var body: some View {
-        Section(header: Text("Capabilities")) { // Consistent header
+        Section(header: Text("Capabilities")) {  // Consistent header
             // Toggle for enabling/disabling File Search capability.
             Toggle(isOn: toolBinding(for: "file_search")) {
                 Label("Enable File Search", systemImage: "doc.text.magnifyingglass")
@@ -48,6 +48,36 @@ struct AssistantToolsSectionView: View {
         } else {
             // If disabled, remove the tool.
             assistant.tools.removeAll { $0.type == type }
+        }
+    }
+}
+
+// MARK: - Previews
+struct AssistantToolsSectionView_Previews: PreviewProvider {
+    // Mock assistants for preview
+    static let noTools = Assistant(
+        id: "1", object: "assistant", created_at: 0,
+        name: "Sample", model: "gpt-3.5-turbo",
+        tools: [], top_p: 1.0, temperature: 1.0
+    )
+    static let allTools = Assistant(
+        id: "2", object: "assistant", created_at: 0,
+        name: "With Tools", model: "gpt-3.5-turbo",
+        tools: [Tool(type: "file_search"), Tool(type: "code_interpreter")],
+        top_p: 1.0, temperature: 1.0
+    )
+
+    static var previews: some View {
+        Group {
+            AssistantToolsSectionView(assistant: .constant(noTools))
+                .previewLayout(.sizeThatFits)
+                .padding()
+                .previewDisplayName("No Tools Enabled")
+
+            AssistantToolsSectionView(assistant: .constant(allTools))
+                .previewLayout(.sizeThatFits)
+                .padding()
+                .previewDisplayName("All Tools Enabled")
         }
     }
 }

@@ -101,3 +101,14 @@ private enum Tab: String, CaseIterable {
         }
     }
 }
+
+// MARK: - Preview
+struct MainTabView_Previews: PreviewProvider {
+    static var previews: some View {
+        MainTabView(
+            selectedAssistant: .constant(nil),
+            vectorStoreViewModel: VectorStoreManagerViewModel(),
+            messageStore: MessageStore()
+        )
+    }
+}

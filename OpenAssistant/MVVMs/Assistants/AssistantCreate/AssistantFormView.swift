@@ -213,3 +213,46 @@ private struct TopPSlider: View {
         }
     }
 }
+
+// MARK: - Preview
+struct AssistantFormView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            // Create Mode Preview
+            AssistantFormView(
+                name: .constant("Sample Assistant"),
+                instructions: .constant("These are example instructions."),
+                model: .constant("gpt-3.5-turbo"),
+                description: .constant("An example assistant description."),
+                temperature: .constant(1.0),
+                topP: .constant(1.0),
+                reasoningEffort: .constant("medium"),
+                enableFileSearch: .constant(true),
+                enableCodeInterpreter: .constant(false),
+                availableModels: ["gpt-3.5-turbo", "o1"],
+                isEditing: false,
+                onSave: {},
+                onDelete: nil
+            )
+            .previewDisplayName("Create Mode")
+
+            // Edit Mode Preview
+            AssistantFormView(
+                name: .constant("Existing Assistant"),
+                instructions: .constant("Updated instructions."),
+                model: .constant("o1"),
+                description: .constant("Existing description."),
+                temperature: .constant(1.0),
+                topP: .constant(1.0),
+                reasoningEffort: .constant("high"),
+                enableFileSearch: .constant(false),
+                enableCodeInterpreter: .constant(true),
+                availableModels: ["gpt-3.5-turbo", "o1"],
+                isEditing: true,
+                onSave: {},
+                onDelete: {}
+            )
+            .previewDisplayName("Edit Mode")
+        }
+    }
+}

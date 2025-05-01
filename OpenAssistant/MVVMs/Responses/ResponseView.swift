@@ -12,7 +12,7 @@ struct ResponseView: View {
                         .font(.subheadline)
                     TextField("Model", text: $viewModel.model)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .autocapitalization(.none)
+                        .autocapitalization(.none)  // Correct placement
                 }
                 // Input text editor
                 TextEditor(text: $viewModel.inputText)
@@ -69,8 +69,59 @@ struct ResponseView: View {
 }
 
 struct ResponseView_Previews: PreviewProvider {
+    // Define mock structures outside the 'previews' property
+    // to avoid issues with the ViewBuilder result builder.
+    struct MockContent: Codable { let text: String? }
+    struct MockOutput: Codable {
+        let type: String
+        let content: [MockContent]?
+    }
+    struct MockResponse: Codable {
+        let id: String
+        let output: [MockOutput]
+    }
+
     static var previews: some View {
-        let vm = ResponseViewModel(service: OpenAIService(apiKey: "test_key"))
-        ResponseView(viewModel: vm)
+        // Wrap previews in a Group to satisfy ViewBuilder requirements
+        Group {
+            // Preview for the default empty state
+            // Initialize VM directly within the View constructor
+            ResponseView(viewModel: ResponseViewModel(service: OpenAIService(apiKey: "test_key")))
+                .previewDisplayName("Empty State")
+
+            // Preview for the loading state
+            // Create and configure the VM before passing it to the View
+            let loadingVM: ResponseViewModel = {
+                let vm = ResponseViewModel(service: OpenAIService(apiKey: "test_key"))
+                vm.isLoading = true  // Set loading state
+                return vm
+            }()  // Immediately execute the closure to get the configured VM
+            ResponseView(viewModel: loadingVM)
+                .previewDisplayName("Loading State")
+
+            // Preview for the state with a response (using mock data)
+            // Create and configure the VM before passing it to the View
+            let simpleResponseVM: ResponseViewModel = {
+                let vm = ResponseViewModel(service: OpenAIService(apiKey: "test_key"))
+                vm.inputText = "User input text"  // Set some input text
+                // TODO: Assign a mock ResponseModel object to vm.response here
+                // This part still needs adjustment based on your actual ResponseModel.
+                // Example (needs adaptation):
+                /*
+                let mockResponse = MockResponse(
+                    id: "resp_12345",
+                    output: [
+                        MockOutput(type: "message", content: [MockContent(text: "This is a sample response message.")]),
+                        MockOutput(type: "tool_call", content: nil)
+                    ]
+                )
+                // Convert MockResponse to your actual ResponseModel if possible
+                // vm.response = convertMockToActualResponseModel(mockResponse)
+                */
+                return vm
+            }()  // Immediately execute the closure
+            ResponseView(viewModel: simpleResponseVM)
+                .previewDisplayName("With Response (Mock)")
+        }
     }
 }
