@@ -16,7 +16,8 @@ class AssistantDetailViewModel: BaseViewModel {
     // MARK: - Update Assistant
 
     // Updates the assistant's details via the API service.
-    func updateAssistant() {
+    // Added completion handler for asynchronous feedback.
+    func updateAssistant(completion: ((Result<Void, Error>) -> Void)? = nil) {
         // Determine the model being saved
         let modelToSave = assistant.model
         print("Attempting to update assistant ID: \(assistant.id) with model: \(modelToSave)")
@@ -48,7 +49,7 @@ class AssistantDetailViewModel: BaseViewModel {
 
         // Log the parameters being sent
         print(
-            "Parameters to send - Temp: \(tempToSend?.description ?? "nil"), TopP: \(topPToSend?.description ?? "nil"), Reasoning: \(reasoningToSend ?? "nil")"
+            "Parameters to send - Temp: \(tempToSend?.description ?? "nil"), TopP: \(topPToSend?.description ?? "nil"), Reasoning: \(reasoningToSend?.description ?? "nil")"
         )
 
         // Perform the API call
@@ -84,8 +85,14 @@ class AssistantDetailViewModel: BaseViewModel {
                         self.assistant = updatedAssistant
                         NotificationCenter.default.post(
                             name: .assistantUpdated, object: updatedAssistant)
-                        self.successMessage = SuccessMessage(
-                            message: "Assistant updated successfully.")
+                        // Only set generic success message if no completion handler is provided
+                        // or if the completion handler doesn't handle specific messages.
+                        if completion == nil {
+                            self.successMessage = SuccessMessage(
+                                message: "Assistant updated successfully.")
+                        }
+                        // Call completion handler on success
+                        completion?(.success(()))
 
                     case .failure(let error):
                         // ... existing error handling ...
@@ -93,6 +100,8 @@ class AssistantDetailViewModel: BaseViewModel {
                         print("ERROR: \(errorMessage)")
                         self.fetchAssistantDetails()  // Revert local state
                         self.handleError(IdentifiableError(message: errorMessage))
+                        // Call completion handler on failure
+                        completion?(.failure(error))
                     }
                 }
             }
@@ -160,7 +169,21 @@ class AssistantDetailViewModel: BaseViewModel {
         }
 
         // Persist the change by calling updateAssistant
-        updateAssistant()
+        // Pass a completion handler to set a specific success message
+        updateAssistant { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.successMessage = SuccessMessage(
+                        message: "Vector Store associated successfully.",
+                        didAssociateVectorStore: true  // Indicate VS association
+                    )
+                case .failure:
+                    // Error is handled within updateAssistant, just don't show success
+                    break
+                }
+            }
+        }
     }
 
     // Deletes a vector store ID from the assistant's tool resources and updates the assistant.
@@ -174,7 +197,21 @@ class AssistantDetailViewModel: BaseViewModel {
         assistant.tool_resources?.fileSearch?.vectorStoreIds?.removeAll { $0 == vectorStoreId }
 
         // Persist the change by calling updateAssistant
-        updateAssistant()
+        // Pass a completion handler to set a specific success message
+        updateAssistant { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.successMessage = SuccessMessage(
+                        message: "Vector Store association removed successfully.",
+                        didAssociateVectorStore: true  // Indicate VS change
+                    )
+                case .failure:
+                    // Error is handled within updateAssistant
+                    break
+                }
+            }
+        }
     }
 
     // Creates a new vector store and associates it with the assistant.
@@ -184,7 +221,8 @@ class AssistantDetailViewModel: BaseViewModel {
             openAIService.createVectorStore(name: name) { [weak self] result in
                 DispatchQueue.main.async {
                     guard let self = self else { return }  // Ensure self is available
-                    self.isLoading = false
+                    self.isLoading = false  // Stop loading indicator regardless of outcome
+
                     switch result {
                     case .success(let vectorStore):
                         // Ensure tool_resources and fileSearch exist before appending
@@ -205,9 +243,29 @@ class AssistantDetailViewModel: BaseViewModel {
                             vectorStore.id)
 
                         // Update the assistant to save the association
-                        self.updateAssistant()
-                        self.successMessage = SuccessMessage(
-                            message: "Vector Store created and associated successfully.")
+                        // Use the completion handler to set the success message *after* update confirms
+                        self.updateAssistant { [weak self] updateResult in
+                            DispatchQueue.main.async {
+                                switch updateResult {
+                                case .success:
+                                    self?.successMessage = SuccessMessage(
+                                        message:
+                                            "Vector Store created and associated successfully.",
+                                        didAssociateVectorStore: true  // Set the flag
+                                    )
+                                // Optionally notify VectorStoreManagerViewModel directly or rely on view's onChange
+                                // NotificationCenter.default.post(name: .vectorStoreCreated, object: vectorStore)
+                                case .failure(let updateError):
+                                    // Handle the update failure specifically if needed,
+                                    // otherwise the general error handling in updateAssistant might suffice.
+                                    print(
+                                        "Failed to update assistant after creating vector store: \(updateError.localizedDescription)"
+                                    )
+                                // Error is already handled by updateAssistant's failure case
+                                }
+                            }
+                        }
+
                     case .failure(let error):
                         self.handleError(
                             IdentifiableError(
@@ -222,8 +280,10 @@ class AssistantDetailViewModel: BaseViewModel {
     // MARK: - Success Message Struct
 
     // Structure for displaying success messages to the user.
-    struct SuccessMessage: Identifiable {
+    // Conforms to Equatable to be used with onChange.
+    struct SuccessMessage: Identifiable, Equatable {  // Add Equatable conformance
         let id = UUID()
         let message: String
+        var didAssociateVectorStore: Bool = false  // Flag for VS association
     }
 }

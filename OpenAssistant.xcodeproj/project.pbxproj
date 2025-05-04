@@ -31,8 +31,6 @@
 		B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */; };
 		B0DC00802CC895FB0080C096 /* Additional.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC007F2CC895FB0080C096 /* Additional.swift */; };
 		B0DC0B362DC0524C00160A74 /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC0B352DC0524800160A74 /* Appearance.swift */; };
-		B0DC0B382DC07CF000160A74 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC0B372DC07CE800160A74 /* AppearanceMode.swift */; };
-		B0DC0B3A2DC07D4000160A74 /* AssistantIconManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC0B392DC07D3B00160A74 /* AssistantIconManager.swift */; };
 		B0DC0B3C2DC1B54A00160A74 /* AssistantToolsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC0B3B2DC1B54A00160A74 /* AssistantToolsSection.swift */; };
 		B0DC0B3E2DC1B61300160A74 /* VectorStoreManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC0B3D2DC1B61300160A74 /* VectorStoreManagementView.swift */; };
 		B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DD9C5B2C9DFA5300A0D623 /* ContentViewModel.swift */; };
@@ -88,8 +86,6 @@
 		B0C2907C2CA7A65B00163FE5 /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
 		B0DC007F2CC895FB0080C096 /* Additional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Additional.swift; sourceTree = "<group>"; };
 		B0DC0B352DC0524800160A74 /* Appearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
-		B0DC0B372DC07CE800160A74 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
-		B0DC0B392DC07D3B00160A74 /* AssistantIconManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantIconManager.swift; sourceTree = "<group>"; };
 		B0DC0B3B2DC1B54A00160A74 /* AssistantToolsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantToolsSection.swift; sourceTree = "<group>"; };
 		B0DC0B3D2DC1B61300160A74 /* VectorStoreManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorStoreManagementView.swift; sourceTree = "<group>"; };
 		B0DD9C572C9DE4B800A0D623 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -136,6 +132,38 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B0113FF82DC7110D00C980C9 /* ChatParts */ = {
+			isa = PBXGroup;
+			children = (
+				B0EEE7282C99326A0012F2BA /* MessageStore.swift */,
+				B0B14F712CB626FF00778895 /* MessageListView.swift */,
+				B0B14F732CB6271300778895 /* InputView.swift */,
+				B0B14F752CB6273B00778895 /* SendButton.swift */,
+				B0B14F792CB6276B00778895 /* MessageView.swift */,
+				B0B14F7B2CB6279900778895 /* ChatHistoryView.swift */,
+				B0B14F6F2CB626EC00778895 /* ChatContentView.swift */,
+			);
+			path = ChatParts;
+			sourceTree = "<group>";
+		};
+		B0113FF92DC7116300C980C9 /* AssistantDetailParts */ = {
+			isa = PBXGroup;
+			children = (
+				B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */,
+				B0DC0B3B2DC1B54A00160A74 /* AssistantToolsSection.swift */,
+			);
+			path = AssistantDetailParts;
+			sourceTree = "<group>";
+		};
+		B0113FFA2DC711B500C980C9 /* AssistantManagerParts */ = {
+			isa = PBXGroup;
+			children = (
+				B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */,
+				B0EEE71D2C99326A0012F2BA /* CreateAssistantView.swift */,
+			);
+			path = AssistantManagerParts;
+			sourceTree = "<group>";
+		};
 		B01974C12DB31AE40022AF6D /* Responses */ = {
 			isa = PBXGroup;
 			children = (
@@ -182,7 +210,6 @@
 				B07E218C2DA1EB6400C59A23 /* AssistantPicker */,
 				B07E218D2DA1EB7700C59A23 /* AssistantDetails */,
 				B07E218E2DA1EB8200C59A23 /* AssistantManager */,
-				B07E218F2DA1EBE000C59A23 /* AssistantCreate */,
 			);
 			path = Assistants;
 			sourceTree = "<group>";
@@ -200,9 +227,8 @@
 			isa = PBXGroup;
 			children = (
 				B0EEE71F2C99326A0012F2BA /* AssistantDetailViewModel.swift */,
-				B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */,
 				B0BFE4412C9BDC3E00EB6D81 /* AssistantDetailView.swift */,
-				B0DC0B3B2DC1B54A00160A74 /* AssistantToolsSection.swift */,
+				B0113FF92DC7116300C980C9 /* AssistantDetailParts */,
 			);
 			path = AssistantDetails;
 			sourceTree = "<group>";
@@ -212,17 +238,9 @@
 			children = (
 				B0EEE7222C99326A0012F2BA /* AssistantManagerViewModel.swift */,
 				B0EEE7212C99326A0012F2BA /* AssistantManagerView.swift */,
+				B0113FFA2DC711B500C980C9 /* AssistantManagerParts */,
 			);
 			path = AssistantManager;
-			sourceTree = "<group>";
-		};
-		B07E218F2DA1EBE000C59A23 /* AssistantCreate */ = {
-			isa = PBXGroup;
-			children = (
-				B0BFE4432C9BDC8800EB6D81 /* AssistantFormView.swift */,
-				B0EEE71D2C99326A0012F2BA /* CreateAssistantView.swift */,
-			);
-			path = AssistantCreate;
 			sourceTree = "<group>";
 		};
 		B07E21902DA1EC0D00C59A23 /* Files */ = {
@@ -238,14 +256,9 @@
 		B07E21912DA1EC6C00C59A23 /* Chat */ = {
 			isa = PBXGroup;
 			children = (
-				B0B14F712CB626FF00778895 /* MessageListView.swift */,
-				B0B14F732CB6271300778895 /* InputView.swift */,
-				B0B14F752CB6273B00778895 /* SendButton.swift */,
-				B0B14F792CB6276B00778895 /* MessageView.swift */,
-				B0B14F7B2CB6279900778895 /* ChatHistoryView.swift */,
 				B0EEE72A2C99326A0012F2BA /* ChatView.swift */,
 				B0EEE7292C99326A0012F2BA /* ChatViewModel.swift */,
-				B0B14F6F2CB626EC00778895 /* ChatContentView.swift */,
+				B0113FF82DC7110D00C980C9 /* ChatParts */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -253,8 +266,7 @@
 		B0DD9C652C9E09A000A0D623 /* Main */ = {
 			isa = PBXGroup;
 			children = (
-				B0DC0B392DC07D3B00160A74 /* AssistantIconManager.swift */,
-				B0DC0B372DC07CE800160A74 /* AppearanceMode.swift */,
+				B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */,
 				B0DC0B352DC0524800160A74 /* Appearance.swift */,
 				B0815C9B2DBC8126008B0E41 /* ModelCapabilities.swift */,
 				B0EEE71B2C99326A0012F2BA /* OpenAssistantApp.swift */,
@@ -263,6 +275,9 @@
 				B0DC007F2CC895FB0080C096 /* Additional.swift */,
 				B0EEE7382C99326A0012F2BA /* Errors.swift */,
 				B0EEE7372C99326A0012F2BA /* ResponseFormat.swift */,
+				B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */,
+				B0EEE73C2C99326A0012F2BA /* SettingsView.swift */,
+				B07E21882DA1EAF600C59A23 /* Content */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -313,13 +328,9 @@
 			children = (
 				B01974C12DB31AE40022AF6D /* Responses */,
 				B07E218A2DA1EB4000C59A23 /* Bases */,
-				B07E21882DA1EAF600C59A23 /* Content */,
 				B07E218B2DA1EB5800C59A23 /* Assistants */,
 				B07E21892DA1EB1D00C59A23 /* VectorStores */,
-				B0DD9C5D2C9DFA7000A0D623 /* MainTabView.swift */,
-				B0EEE7282C99326A0012F2BA /* MessageStore.swift */,
 				B07E21912DA1EC6C00C59A23 /* Chat */,
-				B0DD9C5F2C9DFAB100A0D623 /* LoadingView.swift */,
 			);
 			path = MVVMs;
 			sourceTree = "<group>";
@@ -331,7 +342,6 @@
 				B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */,
 				B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */,
 				B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */,
-				B0EEE73C2C99326A0012F2BA /* SettingsView.swift */,
 				B0DD9C612C9DFC3A00A0D623 /* OpenAIInitializer.swift */,
 			);
 			path = APIService;
@@ -410,7 +420,6 @@
 			files = (
 				B0DC00802CC895FB0080C096 /* Additional.swift in Sources */,
 				B0EEE73F2C99326A0012F2BA /* OpenAIService.swift in Sources */,
-				B0DC0B382DC07CF000160A74 /* AppearanceMode.swift in Sources */,
 				B0815C9C2DBC813A008B0E41 /* ModelCapabilities.swift in Sources */,
 				B0EEE7402C99326A0012F2BA /* VectorStoreManagerViewModel.swift in Sources */,
 				B0EEE7412C99326A0012F2BA /* ChatView.swift in Sources */,
@@ -437,7 +446,6 @@
 				B0EEE74C2C99326A0012F2BA /* SettingsView.swift in Sources */,
 				B0EEE74D2C99326A0012F2BA /* AssistantManagerView.swift in Sources */,
 				B0EEE74E2C99326A0012F2BA /* VectorStoreListView.swift in Sources */,
-				B0DC0B3A2DC07D4000160A74 /* AssistantIconManager.swift in Sources */,
 				B0C2907D2CA7A65B00163FE5 /* BaseViewModel.swift in Sources */,
 				B0EEE74F2C99326A0012F2BA /* Errors.swift in Sources */,
 				B0EEE7502C99326A0012F2BA /* AssistantDetailViewModel.swift in Sources */,

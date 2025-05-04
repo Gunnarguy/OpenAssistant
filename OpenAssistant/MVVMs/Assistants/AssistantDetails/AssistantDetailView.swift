@@ -105,6 +105,16 @@ struct AssistantDetailView: View {
                     didDeleteFile: $didDeleteFile
                 )
             }
+            // Add onChange modifier to react to success messages indicating VS association
+            .onChange(of: viewModel.successMessage) { successInfo in
+                // Check if the success message indicates a vector store association
+                if let success = successInfo, success.didAssociateVectorStore {
+                    print(
+                        "Detected vector store association success, refreshing vector stores list.")
+                    // Refresh the vector stores list in the manager
+                    vectorStoreManagerViewModel.fetchVectorStores()
+                }
+            }
             .alert(item: $viewModel.successMessage) { successMessage in
                 Alert(
                     title: Text("Success"),
