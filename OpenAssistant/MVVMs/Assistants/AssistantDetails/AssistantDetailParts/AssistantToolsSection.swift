@@ -54,30 +54,37 @@ struct AssistantToolsSectionView: View {
 
 // MARK: - Previews
 struct AssistantToolsSectionView_Previews: PreviewProvider {
-    // Mock assistants for preview
-    static let noTools = Assistant(
+    // Mock assistant with no tools enabled
+    @State static var noToolsAssistant = Assistant(  // Use @State for mutable binding
         id: "1", object: "assistant", created_at: 0,
-        name: "Sample", model: "gpt-3.5-turbo",
+        name: "Sample No Tools", model: "gpt-3.5-turbo",
         tools: [], top_p: 1.0, temperature: 1.0
     )
-    static let allTools = Assistant(
+    // Mock assistant with all tools enabled
+    @State static var allToolsAssistant = Assistant(  // Use @State for mutable binding
         id: "2", object: "assistant", created_at: 0,
-        name: "With Tools", model: "gpt-3.5-turbo",
+        name: "Sample All Tools", model: "gpt-3.5-turbo",
         tools: [Tool(type: "file_search"), Tool(type: "code_interpreter")],
         top_p: 1.0, temperature: 1.0
     )
 
     static var previews: some View {
-        Group {
-            AssistantToolsSectionView(assistant: .constant(noTools))
-                .previewLayout(.sizeThatFits)
-                .padding()
-                .previewDisplayName("No Tools Enabled")
-
-            AssistantToolsSectionView(assistant: .constant(allTools))
-                .previewLayout(.sizeThatFits)
-                .padding()
-                .previewDisplayName("All Tools Enabled")
+        // Preview for assistant with no tools
+        NavigationView {  // Wrap in NavigationView for context
+            Form {  // Wrap in Form for standard styling
+                AssistantToolsSectionView(assistant: $noToolsAssistant)  // Use binding
+            }
+            .navigationTitle("Capabilities (None)")  // Add title
         }
+        .previewDisplayName("Tools Section (No Tools)")
+
+        // Preview for assistant with all tools
+        NavigationView {  // Wrap in NavigationView for context
+            Form {  // Wrap in Form for standard styling
+                AssistantToolsSectionView(assistant: $allToolsAssistant)  // Use binding
+            }
+            .navigationTitle("Capabilities (All)")  // Add title
+        }
+        .previewDisplayName("Tools Section (All Tools)")
     }
 }
