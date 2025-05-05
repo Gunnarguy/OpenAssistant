@@ -1,12 +1,15 @@
-import Foundation
 import Combine
+import Foundation
 
 extension OpenAIService {
-    
+
     // MARK: - Private Helper Methods
-    
+
     /// Creates a URLRequest with dynamic Content-Type handling for JSON and multipart requests
-    func createRequest(endpoint: String, method: HTTPMethod = .get, body: [String: Any]? = nil, contentType: ContentType = .json) -> URLRequest? {
+    func createRequest(
+        endpoint: String, method: HTTPMethod = .get, body: [String: Any]? = nil,
+        contentType: ContentType = .json
+    ) -> URLRequest? {
         guard let url = URL(string: "\(baseURL)\(endpoint)") else {
             print("Invalid URL for endpoint: \(endpoint)")
             return nil
@@ -15,10 +18,10 @@ extension OpenAIService {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         addCommonHeaders(to: &request)
-        
+
         // Set the Content-Type header from enum rawValue.
         request.setValue(contentType.rawValue, forHTTPHeaderField: "Content-Type")
-        
+
         // Serialize JSON: check against .json instead of the string "application/json"
         if let body = body, contentType == .json {
             do {
@@ -37,18 +40,18 @@ extension OpenAIService {
         print("Request URL: \(request.url?.absoluteString ?? "Unknown URL")")
         return request
     }
-    
+
     /// Adds common headers required for OpenAI requests
 
-    
     /// Executes a URLSession data task and handles decoding the response
-    func handleURLSessionDataTask<T: Decodable>(request: URLRequest, completion: @escaping (Result<T, Error>) -> Void) {
+    func handleURLSessionDataTask<T: Decodable>(
+        request: URLRequest, completion: @escaping (Result<T, Error>) -> Void
+    ) {
         session.dataTask(with: request) { data, response, error in
-            self.handleDataTaskResponse(data: data, response: response, error: error, completion: completion)
+            self.handleDataTaskResponse(
+                data: data, response: response, error: error, completion: completion)
         }.resume()
     }
-    
-
 
     // MARK: - Request Configuration
 
@@ -56,38 +59,46 @@ extension OpenAIService {
         guard let url = URL(string: "\(baseURL)vector_stores") else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("assistants=v2", forHTTPHeaderField: "OpenAI-Beta")
-        
+
         let body: [String: Any] = ["name": name]
-        
+
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
         } catch {
             return Fail(error: error).eraseToAnyPublisher()
         }
-        
+
         return URLSession.shared.dataTaskPublisher(for: request)
             .tryMap { data, response -> String in
-                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                guard let httpResponse = response as? HTTPURLResponse,
+                    (200...299).contains(httpResponse.statusCode)
+                else {
                     throw URLError(.badServerResponse)
                 }
-                
+
                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                 guard let vectorStoreId = json?["id"] as? String else {
-                    throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Vector Store ID not found in response"])
+                    throw NSError(
+                        domain: "", code: -1,
+                        userInfo: [
+                            NSLocalizedDescriptionKey: "Vector Store ID not found in response"
+                        ])
                 }
                 return vectorStoreId
             }
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
-    
-    func createVectorStore(name: String, completion: @escaping (Result<VectorStore, OpenAIServiceError>) -> Void) {
+
+    func createVectorStore(
+        name: String, completion: @escaping (Result<VectorStore, OpenAIServiceError>) -> Void
+    ) {
         let endpoint = "vector_stores"
         let body: [String: Any] = ["name": name]
 
@@ -102,17 +113,22 @@ extension OpenAIService {
     }
 
     // MARK: - Fetch Vector Stores
-    
+
     func fetchVectorStores() -> Future<[VectorStore], Error> {
         return Future { promise in
             let endpoint = "vector_stores"
-            
+
             guard let request = self.createRequest(endpoint: endpoint) else {
-                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
+                promise(
+                    .failure(
+                        NSError(
+                            domain: "", code: -1,
+                            userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
                 return
             }
-            
-            self.handleURLSessionDataTask(request: request) { (result: Result<VectorStoreResponse, Error>) in
+
+            self.handleURLSessionDataTask(request: request) {
+                (result: Result<VectorStoreResponse, Error>) in
                 switch result {
                 case .success(let response):
                     promise(.success(response.data))
@@ -122,34 +138,43 @@ extension OpenAIService {
             }
         }
     }
-    
+
     // MARK: - Fetch Vector Store Details
-    
+
     func fetchVectorStoreDetails(vectorStoreId: String) -> Future<VectorStore, Error> {
         return Future { promise in
             let endpoint = "vector_stores/\(vectorStoreId)"
-            
+
             guard let request = self.createRequest(endpoint: endpoint) else {
-                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
+                promise(
+                    .failure(
+                        NSError(
+                            domain: "", code: -1,
+                            userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
                 return
             }
-            
+
             self.handleURLSessionDataTask(request: request, completion: promise)
         }
     }
-    
+
     // MARK: - Fetch Files
-    
+
     func fetchFiles(for vectorStoreId: String) -> Future<[File], Error> {
         return Future { promise in
             let endpoint = "vector_stores/\(vectorStoreId)/files"
-            
+
             guard let request = self.createRequest(endpoint: endpoint) else {
-                promise(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
+                promise(
+                    .failure(
+                        NSError(
+                            domain: "", code: -1,
+                            userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
                 return
             }
-            
-            self.handleURLSessionDataTask(request: request) { (result: Result<VectorStoreFilesResponse, Error>) in
+
+            self.handleURLSessionDataTask(request: request) {
+                (result: Result<VectorStoreFilesResponse, Error>) in
                 switch result {
                 case .success(let response):
                     promise(.success(response.data))
@@ -160,15 +185,19 @@ extension OpenAIService {
         }
     }
 
-
-
     // MARK: - Retrieve File Batch
 
-    func getFileBatch(vectorStoreId: String, batchId: String) -> AnyPublisher<VectorStoreFileBatch, Error> {
-        guard let request = makeRequest(endpoint: "vector_stores/\(vectorStoreId)/file_batches/\(batchId)", httpMethod: .get) else {
+    func getFileBatch(vectorStoreId: String, batchId: String) -> AnyPublisher<
+        VectorStoreFileBatch, Error
+    > {
+        guard
+            let request = makeRequest(
+                endpoint: "vector_stores/\(vectorStoreId)/file_batches/\(batchId)", httpMethod: .get
+            )
+        else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
-        
+
         return URLSession.shared.dataTaskPublisher(for: request)
             .map(\.data)
             .decode(type: VectorStoreFileBatch.self, decoder: JSONDecoder())
@@ -178,11 +207,16 @@ extension OpenAIService {
 
     // MARK: - List Files in File Batch
 
-    func listFilesInFileBatch(vectorStoreId: String, batchId: String) -> AnyPublisher<[File], Error> {
-        guard let request = makeRequest(endpoint: "vector_stores/\(vectorStoreId)/file_batches/\(batchId)/files", httpMethod: .get) else {
+    func listFilesInFileBatch(vectorStoreId: String, batchId: String) -> AnyPublisher<[File], Error>
+    {
+        guard
+            let request = makeRequest(
+                endpoint: "vector_stores/\(vectorStoreId)/file_batches/\(batchId)/files",
+                httpMethod: .get)
+        else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
-        
+
         return URLSession.shared.dataTaskPublisher(for: request)
             .map(\.data)
             .decode(type: [File].self, decoder: JSONDecoder())
@@ -190,10 +224,8 @@ extension OpenAIService {
             .eraseToAnyPublisher()
     }
 
-
-    
     // MARK: - MIME Type Helper
-    
+
     /// Returns the appropriate MIME type for a given file extension
     func mimeType(for fileExtension: String) -> String {
         switch fileExtension.lowercased() {
@@ -201,7 +233,8 @@ extension OpenAIService {
         case "cpp": return "text/x-c++"
         case "css": return "text/css"
         case "csv": return "text/csv"
-        case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        case "docx":
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         case "html": return "text/html"
         case "java": return "text/x-java"
         case "js": return "text/javascript"
@@ -209,7 +242,8 @@ extension OpenAIService {
         case "md": return "text/markdown"
         case "pdf": return "application/pdf"
         case "php": return "text/x-php"
-        case "pptx": return "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        case "pptx":
+            return "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         case "py": return "text/x-python"
         case "rb": return "text/x-ruby"
         case "tex": return "text/x-tex"
@@ -217,55 +251,62 @@ extension OpenAIService {
         case "txt": return "text/plain"
         case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         case "xml": return "text/xml"
-        default: return "application/octet-stream" // Fallback for unknown types
+        default: return "application/octet-stream"  // Fallback for unknown types
         }
     }
 
-
-    
     // MARK: - Update Vector Store
-    
-    func modifyVectorStore(vectorStoreId: String, name: String? = nil, expiresAfter: [String: Any]? = nil, metadata: [String: String]? = nil, files: [[String: Any]]? = nil, completion: @escaping (Result<VectorStore, Error>) -> Void) {
+
+    func modifyVectorStore(
+        vectorStoreId: String, name: String? = nil, expiresAfter: [String: Any]? = nil,
+        metadata: [String: String]? = nil, files: [[String: Any]]? = nil,
+        completion: @escaping (Result<VectorStore, Error>) -> Void
+    ) {
         let endpoint = "vector_stores/\(vectorStoreId)"
         var body: [String: Any] = [:]
-        
+
         if let name = name {
             body["name"] = name
         }
-        
+
         if let expiresAfter = expiresAfter {
             body["expires_after"] = expiresAfter
         }
-        
+
         if let metadata = metadata {
             body["metadata"] = metadata
         }
-        
+
         if let files = files {
             body["files"] = files
         }
-        
+
         guard let request = createRequest(endpoint: endpoint, method: .post, body: body) else {
-            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
+            completion(
+                .failure(
+                    NSError(
+                        domain: "", code: -1,
+                        userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
             return
         }
-        
+
         handleURLSessionDataTask(request: request, completion: completion)
     }
 
-    
     // MARK: - Delete Vector Store
-    
+
     func deleteVectorStore(vectorStoreId: String) -> AnyPublisher<Void, Error> {
         let endpoint = "vector_stores/\(vectorStoreId)"
-        
+
         guard let request = createRequest(endpoint: endpoint, method: .delete) else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
-        
+
         return session.dataTaskPublisher(for: request)
             .tryMap { data, response in
-                guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                guard let httpResponse = response as? HTTPURLResponse,
+                    httpResponse.statusCode == 200
+                else {
                     throw URLError(.badServerResponse)
                 }
                 let deleteResponse = try JSONDecoder().decode(DeleteResponse.self, from: data)
@@ -276,16 +317,16 @@ extension OpenAIService {
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
-    
+
     // MARK: - Delete File
-    
+
     func deleteFile(fileID: String) -> AnyPublisher<Void, Error> {
         let endpoint = "files/\(fileID)"
-        
+
         guard let request = createRequest(endpoint: endpoint, method: .delete) else {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
-        
+
         return URLSession.shared.dataTaskPublisher(for: request)
             .map { _ in () }  // Ignore the response body
             .mapError { $0 as Error }
@@ -307,9 +348,17 @@ struct VectorStore: Identifiable, Codable, Equatable {
     let expiresAfter: ExpiresAfterType?
     let expiresAt: Int?
     let lastActiveAt: Int?
-    var files: [VectorStoreFile]? // Mutable to allow updates
+    var files: [VectorStoreFile]?  // Mutable to allow updates
     private enum CodingKeys: String, CodingKey {
-        case id, name, description, status, usageBytes = "bytes", createdAt = "created_at", fileCounts = "file_counts", metadata, expiresAfter = "expires_after", expiresAt = "expires_at", lastActiveAt = "last_active_at", files
+        case id, name, description, status
+        case usageBytes = "bytes"
+        case createdAt = "created_at"
+        case fileCounts = "file_counts"
+        case metadata
+        case expiresAfter = "expires_after"
+        case expiresAt = "expires_at"
+        case lastActiveAt = "last_active_at"
+        case files
     }
     static func == (lhs: VectorStore, rhs: VectorStore) -> Bool {
         return lhs.id == rhs.id
@@ -331,12 +380,16 @@ struct VectorStoreFile: Codable, Identifiable {
     let createdAt: Int
     let vectorStoreId: String
     let status: String
-    let lastError: LastError? // Changed from String? to LastError?
+    let lastError: LastError?  // Changed from String? to LastError?
     let chunkingStrategy: ChunkingStrategy?
 
     private enum CodingKeys: String, CodingKey {
-        case id, object, usageBytes = "usage_bytes", createdAt = "created_at"
-        case vectorStoreId = "vector_store_id", status, lastError = "last_error"
+        case id, object
+        case usageBytes = "usage_bytes"
+        case createdAt = "created_at"
+        case vectorStoreId = "vector_store_id"
+        case status
+        case lastError = "last_error"
         case chunkingStrategy = "chunking_strategy"
     }
 }
@@ -351,7 +404,11 @@ struct VectorStoreFileBatch: Decodable {
     let fileCounts: FileCounts
 
     private enum CodingKeys: String, CodingKey {
-        case id, object, createdAt = "created_at", vectorStoreId = "vector_store_id", status, fileCounts = "file_counts"
+        case id, object
+        case createdAt = "created_at"
+        case vectorStoreId = "vector_store_id"
+        case status
+        case fileCounts = "file_counts"
     }
 }
 
@@ -361,7 +418,8 @@ struct ChunkingStrategy: Codable {
     let staticStrategy: StaticStrategy?
 
     private enum CodingKeys: String, CodingKey {
-        case type, staticStrategy = "static"
+        case type
+        case staticStrategy = "static"
     }
 
     func toDictionary() -> [String: Any] {
@@ -386,7 +444,7 @@ struct StaticStrategy: Codable {
     func toDictionary() -> [String: Any] {
         return [
             "max_chunk_size_tokens": maxChunkSizeTokens,
-            "chunk_overlap_tokens": chunkOverlapTokens
+            "chunk_overlap_tokens": chunkOverlapTokens,
         ]
     }
 }
@@ -400,7 +458,8 @@ struct FileCounts: Codable {
     let total: Int
 
     private enum CodingKeys: String, CodingKey {
-        case inProgress = "in_progress", completed, failed, cancelled, total
+        case inProgress = "in_progress"
+        case completed, failed, cancelled, total
     }
 }
 
@@ -429,7 +488,10 @@ struct VectorStoreFilesResponse: Codable {
     let hasMore: Bool
 
     private enum CodingKeys: String, CodingKey {
-        case data, firstId = "first_id", lastId = "last_id", hasMore = "has_more"
+        case data
+        case firstId = "first_id"
+        case lastId = "last_id"
+        case hasMore = "has_more"
     }
 }
 
@@ -444,11 +506,13 @@ struct File: Identifiable, Codable {
     let purpose: String?
     let mimeType: String?
     let objectType: String?
-    let lastError: LastError? // Changed from String? to LastError?
+    let lastError: LastError?  // Changed from String? to LastError?
     let chunkingStrategy: ChunkingStrategy?
-    
+
     private enum CodingKeys: String, CodingKey {
-        case id, name, status, bytes, purpose, mimeType, objectType, object, lastError = "last_error", chunkingStrategy = "chunking_strategy"
+        case id, name, status, bytes, purpose, mimeType, objectType, object
+        case lastError = "last_error"
+        case chunkingStrategy = "chunking_strategy"
         case createdAt = "created_at"
     }
 }
