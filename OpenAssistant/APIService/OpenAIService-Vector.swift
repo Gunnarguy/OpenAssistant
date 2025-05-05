@@ -316,6 +316,13 @@ struct VectorStore: Identifiable, Codable, Equatable {
     }
 }
 
+// MARK: - LastError
+/// Represents the last error object returned by the API.
+struct LastError: Codable {
+    let code: String
+    let message: String
+}
+
 // MARK: - VectorStoreFile
 struct VectorStoreFile: Codable, Identifiable {
     let id: String
@@ -324,7 +331,7 @@ struct VectorStoreFile: Codable, Identifiable {
     let createdAt: Int
     let vectorStoreId: String
     let status: String
-    let lastError: String?
+    let lastError: LastError? // Changed from String? to LastError?
     let chunkingStrategy: ChunkingStrategy?
 
     private enum CodingKeys: String, CodingKey {
@@ -437,7 +444,7 @@ struct File: Identifiable, Codable {
     let purpose: String?
     let mimeType: String?
     let objectType: String?
-    let lastError: String?
+    let lastError: LastError? // Changed from String? to LastError?
     let chunkingStrategy: ChunkingStrategy?
     
     private enum CodingKeys: String, CodingKey {

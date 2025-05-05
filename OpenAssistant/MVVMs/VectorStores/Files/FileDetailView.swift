@@ -57,6 +57,7 @@ struct FileDetailView: View {
         }
     }
     
+    /// The main section displaying various file attributes.
     private var fileDetailsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             copyableDetailRow(title: "ID", value: file.id) {
@@ -71,14 +72,17 @@ struct FileDetailView: View {
             detailRow(title: "Size", value: formatBytes(file.usageBytes))
             detailRow(title: "Created", value: formattedDate(from: file.createdAt))
             
-            if let error = file.lastError, !error.isEmpty {
-                errorDetailRow(title: "Last Error", error: error)
+            // Conditionally display the last error message if it exists.
+            if let error = file.lastError {
+                errorDetailRow(title: "Last Error", error: error.message) // Pass error.message string
             }
             
+            // Section displaying chunking strategy details.
             chunkingStrategySection
         }
     }
     
+    /// An overlay view for displaying toast notifications.
     private var toastOverlay: some View {
         VStack {
             Spacer()
@@ -99,6 +103,7 @@ struct FileDetailView: View {
     }
 
     // MARK: - Chunking Strategy Section
+    /// A dedicated section to display chunking strategy information if available.
     private var chunkingStrategySection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Chunking Strategy")
@@ -126,6 +131,9 @@ struct FileDetailView: View {
     }
 
     // MARK: - Helper Methods
+    /// Formats a Unix timestamp into a human-readable date and time string.
+    /// - Parameter timestamp: The Unix timestamp (seconds since 1970).
+    /// - Returns: A formatted date string (e.g., "May 5, 2025, 10:30 AM").
     private func formattedDate(from timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         let formatter = DateFormatter()
@@ -134,6 +142,9 @@ struct FileDetailView: View {
         return formatter.string(from: date)
     }
 
+    /// Formats a byte count into a human-readable string (KB, MB, GB).
+    /// - Parameter bytes: The number of bytes.
+    /// - Returns: A formatted size string (e.g., "1.23 MB").
     private func formatBytes(_ bytes: Int) -> String {
         let kb = Double(bytes) / 1024
         let mb = kb / 1024
@@ -150,6 +161,9 @@ struct FileDetailView: View {
         }
     }
     
+    /// Determines the color associated with a given file status string.
+    /// - Parameter status: The status string (e.g., "completed", "failed").
+    /// - Returns: A SwiftUI Color corresponding to the status.
     private func statusColor(for status: String) -> Color {
         switch status.lowercased() {
         case "completed", "processed", "success":
@@ -165,6 +179,10 @@ struct FileDetailView: View {
         }
     }
     
+    /// Copies the given text to the system clipboard and shows a confirmation toast.
+    /// - Parameters:
+    ///   - text: The string to copy.
+    ///   - label: A descriptive label for the copied item (e.g., "File ID").
     private func copyToClipboard(_ text: String, label: String) {
         UIPasteboard.general.string = text
         toastMessage = "\(label) copied!"
@@ -177,6 +195,11 @@ struct FileDetailView: View {
     }
 
     // MARK: - Reusable Views
+    /// A reusable view component for displaying a key-value pair.
+    /// - Parameters:
+    ///   - title: The label/key for the detail.
+    ///   - value: The value to display.
+    /// - Returns: A view displaying the title and value.
     private func detailRow(title: String, value: String) -> some View {
         HStack(alignment: .top) {
             Text("\(title):")
@@ -195,6 +218,12 @@ struct FileDetailView: View {
         .padding(.vertical, 4)
     }
     
+    /// A reusable view component similar to `detailRow` but adds a copy button.
+    /// - Parameters:
+    ///   - title: The label/key for the detail.
+    ///   - value: The value to display (often an ID).
+    ///   - action: The closure to execute when the copy button is tapped.
+    /// - Returns: A view displaying the title, value, and a copy button.
     private func copyableDetailRow(title: String, value: String, action: @escaping () -> Void) -> some View {
         HStack(alignment: .top) {
             Text("\(title):")
@@ -220,6 +249,11 @@ struct FileDetailView: View {
         .padding(.vertical, 4)
     }
     
+    /// A reusable view component specifically for displaying error messages.
+    /// - Parameters:
+    ///   - title: The label for the error (e.g., "Last Error").
+    ///   - error: The error message string to display.
+    /// - Returns: A view displaying the error title and message with distinct styling.
     private func errorDetailRow(title: String, error: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("\(title):")
