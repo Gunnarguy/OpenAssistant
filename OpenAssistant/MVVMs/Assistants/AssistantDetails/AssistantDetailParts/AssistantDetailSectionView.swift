@@ -31,7 +31,7 @@ struct AssistantDetailsSection: View {
             let isModelOseries = BaseViewModel.isReasoningModel(modelId)
             // Check if the model is a 4o model family
             let isModel4o = modelId.contains("4o")
-            
+
             if originalModelIsOseries {
                 // If original model was O-series, only show O-series models
                 return isModelOseries
@@ -78,7 +78,7 @@ struct AssistantDetailsSection: View {
                         .foregroundColor(.secondary)
                 }
             }
-            
+
             // Info text explaining the model restriction
             if originalModelIsOseries {
                 Text("O-series models can only be updated to other O-series models")
