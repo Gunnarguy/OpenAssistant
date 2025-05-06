@@ -8,6 +8,7 @@ struct AssistantDetailsSection: View {
 
     // State to track the original model type (O-series or GPT-series)
     @State private var originalModelIsOseries: Bool = false
+    @State private var originalModelIs4o: Bool = false
 
     // Available reasoning effort options for display
     private let reasoningOptions = ["low", "medium", "high"]
@@ -18,12 +19,29 @@ struct AssistantDetailsSection: View {
         return BaseViewModel.isReasoningModel(assistant.model)
     }
 
+    // Helper to check if the current selection is a 4o model
+    private var isCurrentSelection4oModel: Bool {
+        return assistant.model.contains("4o")
+    }
+
     // Filtered list of models based on the original assistant's model type
     private var filteredAvailableModels: [String] {
         availableModels.filter { modelId in
+            // Check if the model is an O-series model
             let isModelOseries = BaseViewModel.isReasoningModel(modelId)
-            // Show only models of the same type as the original
-            return isModelOseries == originalModelIsOseries
+            // Check if the model is a 4o model family
+            let isModel4o = modelId.contains("4o")
+            
+            if originalModelIsOseries {
+                // If original model was O-series, only show O-series models
+                return isModelOseries
+            } else if originalModelIs4o {
+                // If original model was 4o, only show 4o models
+                return isModel4o
+            } else {
+                // For other models like GPT-4, GPT-3.5, show models in same family (non-O, non-4o)
+                return !isModelOseries && !isModel4o
+            }
         }
     }
 
@@ -48,17 +66,33 @@ struct AssistantDetailsSection: View {
             HStack {
                 Image(systemName: "cpu")
                     .foregroundColor(.secondary)
-                Picker("Model", selection: $assistant.model) {
-                    ForEach(filteredAvailableModels, id: \.self) { model in
-                        Text(model).tag(model)
+                // Only show available models of the same family
+                if !filteredAvailableModels.isEmpty {
+                    Picker("Model", selection: $assistant.model) {
+                        ForEach(filteredAvailableModels, id: \.self) { model in
+                            Text(model).tag(model)
+                        }
                     }
+                } else {
+                    Text("No compatible models available")
+                        .foregroundColor(.secondary)
                 }
-                // REMOVED: .disabled(true) - Allow model selection
             }
-            // Add info text explaining the restriction
-            Text("Model cannot be changed between GPT and O-series families after creation.")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            
+            // Info text explaining the model restriction
+            if originalModelIsOseries {
+                Text("O-series models can only be updated to other O-series models")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else if originalModelIs4o {
+                Text("GPT-4o models can only be updated to other GPT-4o models")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else {
+                Text("Model family cannot be changed after creation")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
 
             // Description (Editable) - Use HStack with icon and TextEditor
             HStack(alignment: .top) {  // Align icon to top
@@ -70,6 +104,7 @@ struct AssistantDetailsSection: View {
         }
         .onAppear {
             self.originalModelIsOseries = BaseViewModel.isReasoningModel(assistant.model)
+            self.originalModelIs4o = assistant.model.contains("4o")
         }
 
         // Section for Generation Parameters (Conditional) - Extracted for clarity

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct InputView: View {
     @ObservedObject var viewModel: ChatViewModel
@@ -6,11 +7,12 @@ struct InputView: View {
     var colorScheme: ColorScheme
     @FocusState var isTextFieldFocused: Bool  // Manages the text field's focus state
 
-    // Define constants for font size and padding for easier adjustment
+    // Define constants for font size, padding, and vertical alignment
     private let inputFontSize: CGFloat = 15
-    // private let verticalPadding: CGFloat = 8 // No longer directly used for TextEditor padding
     private let horizontalPadding: CGFloat = 10
-    private let inputAreaHeight: CGFloat = 36  // Fixed height matching SendButton
+    // Single vertical padding - simpler approach to prevent text cut-off
+    private let verticalPadding: CGFloat = 6
+    private let inputAreaHeight: CGFloat = 40  // Increased height to accommodate text fully
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {  // Align items vertically center
@@ -48,44 +50,32 @@ struct InputView: View {
     // Extracted Text Field Area View Builder
     @ViewBuilder
     private var inputFieldArea: some View {
-        // Use a custom TextEditor for multi-line input, wrapped in a shape
-        HStack(alignment: .center, spacing: 0) {  // Center align content vertically
-            ZStack(alignment: .leading) {
-                // Placeholder text shown when input is empty
-                if viewModel.inputText.isEmpty {
-                    Text("Type a message...")
-                        .font(.system(size: inputFontSize))  // Use constant
-                        .foregroundColor(Color(UIColor.placeholderText))
-                        .padding(.horizontal, horizontalPadding + 2)  // Keep horizontal padding
-                        // Vertical padding calculated to center in fixed height
-                        .padding(.vertical, (inputAreaHeight - inputFontSize) / 2)
-                }
-
-                // Use TextEditor for multi-line support
-                TextEditor(text: $viewModel.inputText)
-                    .focused($isTextFieldFocused)  // Bind focus state
-                    .font(.system(size: inputFontSize))  // Use constant
-                    // Remove min/max height, let it fill the container
-                    // .frame(minHeight: 24, maxHeight: 70)
-                    .padding(.horizontal, horizontalPadding - 3)  // Inner horizontal padding for text
-                    // Vertical padding calculated to center in fixed height
-                    .padding(.vertical, (inputAreaHeight - inputFontSize) / 2)
-                    .foregroundColor(colorScheme == .dark ? .white : .black)
-                    .background(Color.clear)  // Make TextEditor background transparent
-                    .scrollContentBackground(.hidden)  // Hide default scroll view background (iOS 16+)
-                    .onAppear {  // Workaround to ensure focus works reliably
-                        DispatchQueue.main.async {
-                            isTextFieldFocused = viewModel.shouldFocusTextField
-                        }
-                    }
-                    // Allow vertical scrolling if text exceeds the height
-                    .scrollDisabled(false)
-
+        // Simplified ZStack with consistent padding for TextEditor and placeholder
+        ZStack(alignment: .leading) {
+            // Placeholder text shown when input is empty
+            if viewModel.inputText.isEmpty {
+                Text("Type a message...")
+                    .font(.system(size: inputFontSize))
+                    .foregroundColor(Color(UIColor.placeholderText))
             }
+
+            // Multi-line text editor without scrolling to prevent jiggle
+            TextEditor(text: $viewModel.inputText)
+                .focused($isTextFieldFocused)
+                .font(.system(size: inputFontSize))
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .background(Color.clear)
+                .scrollContentBackground(.hidden)
+                .scrollDisabled(true)
+                .onAppear {
+                    DispatchQueue.main.async {
+                        isTextFieldFocused = viewModel.shouldFocusTextField
+                    }
+                }
         }
-        .padding(.horizontal, 3)  // Reduced padding around ZStack
-        // Remove outer vertical padding
-        // .padding(.vertical, 3)
+        // Apply consistent horizontal and vertical padding
+        .padding(.horizontal, horizontalPadding)
+        .padding(.vertical, verticalPadding)
         .frame(height: inputAreaHeight)  // Apply fixed height to the container
         .background(Color(UIColor.systemGray6))  // Use slightly lighter gray
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))  // Slightly smaller radius
