@@ -113,37 +113,70 @@ struct AssistantManagerView: View {
     }
 }
 
-// Removed initial duplicate AssistantManagerView_Previews block
-
 // MARK: - Preview
 /// Provides a preview of AssistantManagerView with sample data
 struct AssistantManagerView_Previews: PreviewProvider {
+    // Create sample assistant data
+    static let sampleAssistants = [
+        Assistant(
+            id: "preview-1",
+            object: "assistant",
+            created_at: Int(Date().timeIntervalSince1970),
+            name: "General Assistant",
+            description: "A general-purpose assistant for everyday tasks.",
+            model: "gpt-4",
+            vectorStoreId: nil,
+            instructions: "You are a helpful assistant designed to assist with general tasks.",
+            threads: nil,
+            tools: [Tool(type: "file_search")],
+            top_p: 1.0,
+            temperature: 0.7,
+            reasoning_effort: nil,
+            tool_resources: nil,
+            metadata: nil,
+            response_format: nil,
+            file_ids: []
+        ),
+        Assistant(
+            id: "preview-2",
+            object: "assistant",
+            created_at: Int(Date().timeIntervalSince1970 - 86400),
+            name: "Code Helper",
+            description: "Specialized in programming assistance.",
+            model: "o1",
+            vectorStoreId: nil,
+            instructions: "You are a specialized assistant for coding help.",
+            threads: nil,
+            tools: [Tool(type: "code_interpreter")],
+            top_p: 1.0,
+            temperature: 0.7,
+            reasoning_effort: "high",
+            tool_resources: nil,
+            metadata: nil,
+            response_format: nil,
+            file_ids: []
+        ),
+    ]
+
     static var previews: some View {
-        // Create and configure a sample view model
+        Group {
+            // Light mode preview
+            AssistantManagerView()
+                .environmentObject(createViewModel())
+                .previewDisplayName("Light Mode")
+
+            // Dark mode preview
+            AssistantManagerView()
+                .environmentObject(createViewModel())
+                .preferredColorScheme(.dark)
+                .previewDisplayName("Dark Mode")
+        }
+    }
+
+    // Helper function to create and configure the view model
+    private static func createViewModel() -> AssistantManagerViewModel {
         let viewModel = AssistantManagerViewModel()
-        viewModel.assistants = [
-            Assistant(
-                id: "1",
-                object: "assistant",
-                created_at: Int(Date().timeIntervalSince1970),
-                name: "Preview Assistant 1",
-                description: "A preview assistant example.",
-                model: "preview-model",
-                vectorStoreId: nil,
-                instructions: nil,
-                threads: nil,
-                tools: [],
-                top_p: 1.0,
-                temperature: 0.7,
-                reasoning_effort: nil,
-                tool_resources: nil,
-                metadata: nil,
-                response_format: nil,
-                file_ids: []
-            )
-        ]
-        // Return the view with sample data environment
-        return AssistantManagerView()
-            .environmentObject(viewModel)
+        viewModel.assistants = sampleAssistants
+        return viewModel
     }
 }

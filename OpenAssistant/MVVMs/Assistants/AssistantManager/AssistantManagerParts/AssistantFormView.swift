@@ -219,40 +219,47 @@ struct AssistantFormView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             // Create Mode Preview
-            AssistantFormView(
-                name: .constant("Sample Assistant"),
-                instructions: .constant("These are example instructions."),
-                model: .constant("gpt-3.5-turbo"),
-                description: .constant("An example assistant description."),
-                temperature: .constant(1.0),
-                topP: .constant(1.0),
-                reasoningEffort: .constant("medium"),
-                enableFileSearch: .constant(true),
-                enableCodeInterpreter: .constant(false),
-                availableModels: ["gpt-3.5-turbo", "o1"],
-                isEditing: false,
-                onSave: {},
-                onDelete: nil
-            )
+            NavigationView {
+                AssistantFormView(
+                    name: .constant("Sample Assistant"),
+                    instructions: .constant("These are example instructions."),
+                    model: .constant("gpt-3.5-turbo"),
+                    description: .constant("An example assistant description."),
+                    temperature: .constant(1.0),
+                    topP: .constant(1.0),
+                    reasoningEffort: .constant("medium"),
+                    enableFileSearch: .constant(true),
+                    enableCodeInterpreter: .constant(false),
+                    availableModels: ["gpt-3.5-turbo", "gpt-4", "o1"],
+                    isEditing: false,
+                    onSave: {},
+                    onDelete: nil
+                )
+                .navigationTitle("Create Assistant")
+            }
             .previewDisplayName("Create Mode")
 
             // Edit Mode Preview
-            AssistantFormView(
-                name: .constant("Existing Assistant"),
-                instructions: .constant("Updated instructions."),
-                model: .constant("o1"),
-                description: .constant("Existing description."),
-                temperature: .constant(1.0),
-                topP: .constant(1.0),
-                reasoningEffort: .constant("high"),
-                enableFileSearch: .constant(false),
-                enableCodeInterpreter: .constant(true),
-                availableModels: ["gpt-3.5-turbo", "o1"],
-                isEditing: true,
-                onSave: {},
-                onDelete: {}
-            )
-            .previewDisplayName("Edit Mode")
+            NavigationView {
+                AssistantFormView(
+                    name: .constant("Existing Assistant"),
+                    instructions: .constant("Updated instructions for an existing assistant."),
+                    model: .constant("o1"),
+                    description: .constant("This assistant already exists and is being edited."),
+                    temperature: .constant(1.0),
+                    topP: .constant(1.0),
+                    reasoningEffort: .constant("high"),
+                    enableFileSearch: .constant(false),
+                    enableCodeInterpreter: .constant(true),
+                    availableModels: ["gpt-3.5-turbo", "gpt-4", "o1"],
+                    isEditing: true,
+                    onSave: {},
+                    onDelete: {}
+                )
+                .navigationTitle("Edit Assistant")
+                .preferredColorScheme(.dark)
+            }
+            .previewDisplayName("Edit Mode (Dark)")
         }
     }
 }

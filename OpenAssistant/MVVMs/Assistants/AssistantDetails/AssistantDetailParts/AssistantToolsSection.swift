@@ -54,37 +54,23 @@ struct AssistantToolsSectionView: View {
 
 // MARK: - Previews
 struct AssistantToolsSectionView_Previews: PreviewProvider {
-    // Mock assistant with no tools enabled
-    @State static var noToolsAssistant = Assistant(  // Use @State for mutable binding
-        id: "1", object: "assistant", created_at: 0,
-        name: "Sample No Tools", model: "gpt-3.5-turbo",
-        tools: [], top_p: 1.0, temperature: 1.0
-    )
-    // Mock assistant with all tools enabled
-    @State static var allToolsAssistant = Assistant(  // Use @State for mutable binding
-        id: "2", object: "assistant", created_at: 0,
-        name: "Sample All Tools", model: "gpt-3.5-turbo",
+    @State static var previewAssistant = Assistant(
+        id: "preview-1",
+        object: "assistant",
+        created_at: 0,
+        name: "Preview Assistant",
+        model: "gpt-3.5-turbo",
         tools: [Tool(type: "file_search"), Tool(type: "code_interpreter")],
-        top_p: 1.0, temperature: 1.0
+        top_p: 1.0,
+        temperature: 1.0
     )
 
     static var previews: some View {
-        // Preview for assistant with no tools
-        NavigationView {  // Wrap in NavigationView for context
-            Form {  // Wrap in Form for standard styling
-                AssistantToolsSectionView(assistant: $noToolsAssistant)  // Use binding
+        NavigationView {
+            Form {
+                AssistantToolsSectionView(assistant: $previewAssistant)
             }
-            .navigationTitle("Capabilities (None)")  // Add title
+            .navigationTitle("Capabilities")
         }
-        .previewDisplayName("Tools Section (No Tools)")
-
-        // Preview for assistant with all tools
-        NavigationView {  // Wrap in NavigationView for context
-            Form {  // Wrap in Form for standard styling
-                AssistantToolsSectionView(assistant: $allToolsAssistant)  // Use binding
-            }
-            .navigationTitle("Capabilities (All)")  // Add title
-        }
-        .previewDisplayName("Tools Section (All Tools)")
     }
 }

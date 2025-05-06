@@ -133,7 +133,7 @@ struct CreateAssistantView_Previews: PreviewProvider {
     // Mock view model for previews
     static var previewViewModel: AssistantManagerViewModel = {
         let vm = AssistantManagerViewModel()
-        vm.availableModels = ["gpt-3.5-turbo", "o1"]
+        vm.availableModels = ["gpt-3.5-turbo", "gpt-4", "o1", "gpt-4o"]
         return vm
     }()
 
@@ -141,12 +141,12 @@ struct CreateAssistantView_Previews: PreviewProvider {
         Group {
             // Light mode preview
             CreateAssistantView(viewModel: previewViewModel)
-                .previewDisplayName("Create Assistant (Light)")
+                .previewDisplayName("Light Mode")
 
             // Dark mode preview
             CreateAssistantView(viewModel: previewViewModel)
                 .preferredColorScheme(.dark)
-                .previewDisplayName("Create Assistant (Dark)")
+                .previewDisplayName("Dark Mode")
         }
     }
 }

@@ -52,7 +52,7 @@ struct VectorStoreManagementView: View {
                             }
                             .buttonStyle(.bordered).tint(.accentColor)
 
-                            Spacer() // Pushes buttons apart
+                            Spacer()  // Pushes buttons apart
 
                             // Button to remove the association with this Vector Store.
                             Button(role: .destructive) {
@@ -111,8 +111,8 @@ struct VectorStoreManagementView: View {
                         Label("Create and Associate", systemImage: "plus.app.fill")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered).tint(.green) // Less prominent than primary action
-                    .disabled(vectorStoreName.isEmpty) // Disable if name is empty
+                    .buttonStyle(.bordered).tint(.green)  // Less prominent than primary action
+                    .disabled(vectorStoreName.isEmpty)  // Disable if name is empty
                 }
                 .padding(.vertical, 8)
 
@@ -126,14 +126,14 @@ struct VectorStoreManagementView: View {
                     }
                     Button {
                         viewModel.saveVectorStoreId(vectorStoreIdToAssociate)
-                        vectorStoreIdToAssociate = "" // Clear field after associating
-                        showAssociationOptions = false // Hide options after associating
+                        vectorStoreIdToAssociate = ""  // Clear field after associating
+                        showAssociationOptions = false  // Hide options after associating
                     } label: {
                         Label("Associate This ID", systemImage: "link.badge.plus")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered).tint(.orange) // Different color for distinction
-                    .disabled(vectorStoreIdToAssociate.isEmpty) // Disable if ID is empty
+                    .buttonStyle(.bordered).tint(.orange)  // Different color for distinction
+                    .disabled(vectorStoreIdToAssociate.isEmpty)  // Disable if ID is empty
                 }
                 .padding(.vertical, 8)
             }
@@ -169,10 +169,10 @@ struct VectorStoreManagementView: View {
             HStack {
                 Label(label, systemImage: icon)
                     .foregroundColor(.secondary)
-                    .frame(width: 80, alignment: .leading) // Consistent label width
+                    .frame(width: 80, alignment: .leading)  // Consistent label width
                 Text(value)
-                    .lineLimit(1) // Prevent wrapping
-                    .truncationMode(truncate) // Apply truncation mode
+                    .lineLimit(1)  // Prevent wrapping
+                    .truncationMode(truncate)  // Apply truncation mode
                 Spacer()
             }
             .font(.subheadline)
@@ -191,5 +191,3 @@ struct VectorStoreManagementView: View {
         return formatter.string(from: date)
     }
 }
-
-

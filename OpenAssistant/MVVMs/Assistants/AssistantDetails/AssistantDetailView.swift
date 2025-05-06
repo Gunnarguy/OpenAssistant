@@ -45,29 +45,33 @@ struct AssistantDetailView: View {
                     onCreateVectorStore: createVectorStore
                 )
 
-                // Main Action Buttons (Save/Delete)
-                Section {  // Keep in separate section for visual separation
-                    HStack {
-                        Spacer()
-                        Button {
-                            handleSave()
-                        } label: {
-                            Label("Save Changes", systemImage: "checkmark.circle.fill")
-                        }
-                        .buttonStyle(.borderedProminent).tint(.blue)
-                        .disabled(viewModel.isLoading)
+                // Delete Button Section (Redesigned)
+                Section {
+                    VStack(spacing: 10) {
+                        Text("Danger Zone")
+                            .font(.headline)
+                            .foregroundColor(.red)
+                            .frame(maxWidth: .infinity, alignment: .center)
 
-                        Button(role: .destructive) {
-                            handleDelete()
-                        } label: {
-                            Label("Delete Assistant", systemImage: "trash.fill")
+                        Text("Permanently remove this assistant and all of its data.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.bottom, 5)
+
+                        Button(action: handleDelete) {
+                            Label("Delete Assistant", systemImage: "trash")
+                                .frame(maxWidth: .infinity)
+                                .foregroundColor(.white)
                         }
-                        .buttonStyle(.borderedProminent).tint(.red)
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
                         .disabled(viewModel.isLoading)
-                        Spacer()
+                        .padding(.horizontal, 40)
                     }
+                    .padding(.vertical, 8)
                 }
-                .listRowBackground(Color.clear)
+                .listRowBackground(Color(.systemGroupedBackground))
             }
             .onChange(of: vectorStoreManagerViewModel.vectorStores) { updatedStores in
                 updateVectorStore(with: updatedStores)
@@ -76,6 +80,17 @@ struct AssistantDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel", action: dismissView)
+                }
+
+                // Add Save button to the navigation bar's trailing position
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        handleSave()
+                    } label: {
+                        Text("Save")
+                            .fontWeight(.semibold)
+                    }
+                    .disabled(viewModel.isLoading)
                 }
             }
             .alert(isPresented: $showAlert) {
@@ -188,9 +203,9 @@ struct AssistantDetailView: View {
 }
 
 // MARK: - Preview
-/// Renders AssistantDetailView with sample data in Xcode canvas
+/// Renders AssistantDetailView with sample data
 struct AssistantDetailView_Previews: PreviewProvider {
-    // Sample assistant for preview
+    // Sample assistant with a comprehensive configuration
     static let sampleAssistant = Assistant(
         id: "preview-1",
         object: "assistant",
@@ -198,27 +213,25 @@ struct AssistantDetailView_Previews: PreviewProvider {
         name: "Preview Assistant",
         description: "This is a preview assistant for testing UI.",
         model: "gpt-3.5-turbo",
-        vectorStoreId: nil,
-        instructions: "",
-        threads: nil,
-        tools: [],
+        instructions: "Sample instructions for the assistant.",
+        tools: [Tool(type: "file_search")],
         top_p: 1.0,
-        temperature: 1.0,
+        temperature: 0.7,
         reasoning_effort: nil,
         tool_resources: nil,
         metadata: nil,
         response_format: nil,
         file_ids: []
     )
+
     // Manager view model with available models
     static let managerVM: AssistantManagerViewModel = {
         let vm = AssistantManagerViewModel()
-        vm.availableModels = ["gpt-3.5-turbo", "o1"]
+        vm.availableModels = ["gpt-3.5-turbo", "gpt-4", "o1"]
         return vm
     }()
 
     static var previews: some View {
-        // Embed in NavigationStack to display navigation bar
         NavigationStack {
             AssistantDetailView(
                 assistant: sampleAssistant,

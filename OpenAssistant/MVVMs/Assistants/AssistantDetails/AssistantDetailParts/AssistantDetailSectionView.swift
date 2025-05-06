@@ -210,52 +210,28 @@ extension Binding where Value == String {
 
 // MARK: - Previews
 struct AssistantDetailsSection_Previews: PreviewProvider {
-    // Mock assistant for previewing the section
-    @State static var mockAssistant = Assistant(  // Use @State for mutable binding
-        id: "1", object: "assistant", created_at: 0,
-        name: "Sample Assistant",
-        description: "This is a sample assistant for testing.",  // Corrected order
+    @State static var previewAssistant = Assistant(
+        id: "preview-1",
+        object: "assistant",
+        created_at: Int(Date().timeIntervalSince1970),
+        name: "Preview Assistant",
+        description: "This is a preview assistant for testing.",
         model: "gpt-3.5-turbo",
-        instructions: "You are a helpful assistant.",
-        tools: [], top_p: 1.0, temperature: 1.0
-    )
-
-    // Mock assistant for O-series model preview
-    @State static var mockOAssistant = Assistant(  // Use @State for mutable binding
-        id: "2", object: "assistant", created_at: 0,
-        name: "Sample O-Assistant",
-        description: "This is a sample O-series assistant.",  // Corrected order
-        model: "o1-mini",
-        instructions: "You are a helpful O-series assistant.",
+        instructions: "You are a helpful assistant for demonstration purposes.",
         tools: [],
-        top_p: 1.0,  // Added missing argument
-        temperature: 1.0,  // Added missing argument
-        reasoning_effort: "medium"
+        top_p: 0.8,
+        temperature: 0.7
     )
 
     static var previews: some View {
-        // Preview for GPT-style model
-        NavigationView {  // Add NavigationView for context
-            Form {  // Wrap in Form for standard styling
+        NavigationView {
+            Form {
                 AssistantDetailsSection(
-                    assistant: $mockAssistant,  // Use binding
-                    availableModels: ["gpt-3.5-turbo", "gpt-4", "o1-mini", "o1"]
+                    assistant: $previewAssistant,
+                    availableModels: ["gpt-3.5-turbo", "gpt-4", "gpt-4o", "o1-mini", "o1"]
                 )
             }
-            .navigationTitle("GPT Assistant Details")  // Add title
+            .navigationTitle("Assistant Details")
         }
-        .previewDisplayName("Details Section (GPT)")
-
-        // Preview for O-series model
-        NavigationView {  // Add NavigationView for context
-            Form {  // Wrap in Form for standard styling
-                AssistantDetailsSection(
-                    assistant: $mockOAssistant,  // Use binding
-                    availableModels: ["gpt-3.5-turbo", "gpt-4", "o1-mini", "o1"]
-                )
-            }
-            .navigationTitle("O-Assistant Details")  // Add title
-        }
-        .previewDisplayName("Details Section (O-Series)")
     }
 }
