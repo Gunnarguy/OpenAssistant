@@ -111,8 +111,8 @@ struct AssistantDetailView: View {
                 if let success = successInfo, success.didAssociateVectorStore {
                     print(
                         "Detected vector store association success, refreshing vector stores list.")
-                    // Refresh the vector stores list in the manager
-                    vectorStoreManagerViewModel.fetchVectorStores()
+                    // Use initializeAndFetch to subscribe internally and update vectorStores
+                    vectorStoreManagerViewModel.initializeAndFetch()
                 }
             }
             .alert(item: $viewModel.successMessage) { successMessage in
