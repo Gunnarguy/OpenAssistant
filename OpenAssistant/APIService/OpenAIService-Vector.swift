@@ -74,26 +74,70 @@ extension OpenAIService {
             return Fail(error: error).eraseToAnyPublisher()
         }
 
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap { data, response -> String in
+        // Use the new retry mechanism by adapting it for Combine publishers
+        return Future<String, Error> { promise in
+            self.performDataTaskWithRetry(request) { data, response, error in
+                if let error = error {
+                    promise(.failure(error))
+                    return
+                }
                 guard let httpResponse = response as? HTTPURLResponse,
                     (200...299).contains(httpResponse.statusCode)
                 else {
-                    throw URLError(.badServerResponse)
+                    // Attempt to decode error message from OpenAI if available
+                    if let data = data,
+                        let apiError = try? JSONDecoder().decode(APIError.self, from: data)
+                    {
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "OpenAPIError",
+                                    code: (response as? HTTPURLResponse)?.statusCode ?? -1,
+                                    userInfo: [NSLocalizedDescriptionKey: apiError.error.message])))
+                    } else {
+                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                        let errorDescription = HTTPURLResponse.localizedString(
+                            forStatusCode: statusCode)
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "NetworkError", code: statusCode,
+                                    userInfo: [
+                                        NSLocalizedDescriptionKey:
+                                            "Invalid response: \(errorDescription)"
+                                    ])))
+                    }
+                    return
                 }
-
-                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                guard let vectorStoreId = json?["id"] as? String else {
-                    throw NSError(
-                        domain: "", code: -1,
-                        userInfo: [
-                            NSLocalizedDescriptionKey: "Vector Store ID not found in response"
-                        ])
+                guard let data = data else {
+                    promise(
+                        .failure(
+                            NSError(
+                                domain: "NetworkError", code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                    return
                 }
-                return vectorStoreId
+                do {
+                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    guard let vectorStoreId = json?["id"] as? String else {
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "", code: -1,
+                                    userInfo: [
+                                        NSLocalizedDescriptionKey:
+                                            "Vector Store ID not found in response"
+                                    ])))
+                        return
+                    }
+                    promise(.success(vectorStoreId))
+                } catch {
+                    promise(.failure(error))
+                }
             }
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
+        }
+        .receive(on: DispatchQueue.main)
+        .eraseToAnyPublisher()
     }
 
     func createVectorStore(
@@ -107,9 +151,10 @@ extension OpenAIService {
             return
         }
 
-        session.dataTask(with: request) { data, response, error in
+        // Use the new retry mechanism
+        performDataTaskWithRetry(request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        }
     }
 
     // MARK: - Fetch Vector Stores
@@ -127,13 +172,16 @@ extension OpenAIService {
                 return
             }
 
-            self.handleURLSessionDataTask(request: request) {
-                (result: Result<VectorStoreResponse, Error>) in
-                switch result {
-                case .success(let response):
-                    promise(.success(response.data))
-                case .failure(let error):
-                    promise(.failure(error))
+            // Use the new retry mechanism
+            self.performDataTaskWithRetry(request) { data, response, error in
+                self.handleDataTaskResponse(data: data, response: response, error: error) {
+                    (result: Result<VectorStoreResponse, Error>) in
+                    switch result {
+                    case .success(let response):
+                        promise(.success(response.data))
+                    case .failure(let error):
+                        promise(.failure(error))
+                    }
                 }
             }
         }
@@ -153,8 +201,11 @@ extension OpenAIService {
                             userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
                 return
             }
-
-            self.handleURLSessionDataTask(request: request, completion: promise)
+            // Use the new retry mechanism
+            self.performDataTaskWithRetry(request) { data, response, error in
+                self.handleDataTaskResponse(
+                    data: data, response: response, error: error, completion: promise)
+            }
         }
     }
 
@@ -172,14 +223,16 @@ extension OpenAIService {
                             userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
                 return
             }
-
-            self.handleURLSessionDataTask(request: request) {
-                (result: Result<VectorStoreFilesResponse, Error>) in
-                switch result {
-                case .success(let response):
-                    promise(.success(response.data))
-                case .failure(let error):
-                    promise(.failure(error))
+            // Use the new retry mechanism
+            self.performDataTaskWithRetry(request) { data, response, error in
+                self.handleDataTaskResponse(data: data, response: response, error: error) {
+                    (result: Result<VectorStoreFilesResponse, Error>) in
+                    switch result {
+                    case .success(let response):
+                        promise(.success(response.data))
+                    case .failure(let error):
+                        promise(.failure(error))
+                    }
                 }
             }
         }
@@ -198,11 +251,60 @@ extension OpenAIService {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
 
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .map(\.data)
-            .decode(type: VectorStoreFileBatch.self, decoder: JSONDecoder())
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
+        // Use the new retry mechanism by adapting it for Combine publishers
+        return Future<VectorStoreFileBatch, Error> { promise in
+            self.performDataTaskWithRetry(request) { data, response, error in
+                if let error = error {
+                    promise(.failure(error))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse,
+                    (200...299).contains(httpResponse.statusCode)
+                else {
+                    // Attempt to decode error message from OpenAI if available
+                    if let data = data,
+                        let apiError = try? JSONDecoder().decode(APIError.self, from: data)
+                    {
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "OpenAPIError",
+                                    code: (response as? HTTPURLResponse)?.statusCode ?? -1,
+                                    userInfo: [NSLocalizedDescriptionKey: apiError.error.message])))
+                    } else {
+                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                        let errorDescription = HTTPURLResponse.localizedString(
+                            forStatusCode: statusCode)
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "NetworkError", code: statusCode,
+                                    userInfo: [
+                                        NSLocalizedDescriptionKey:
+                                            "Invalid response: \(errorDescription)"
+                                    ])))
+                    }
+                    return
+                }
+                guard let data = data else {
+                    promise(
+                        .failure(
+                            NSError(
+                                domain: "NetworkError", code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                    return
+                }
+                do {
+                    let decodedResponse = try JSONDecoder().decode(
+                        VectorStoreFileBatch.self, from: data)
+                    promise(.success(decodedResponse))
+                } catch {
+                    promise(.failure(error))
+                }
+            }
+        }
+        .receive(on: DispatchQueue.main)
+        .eraseToAnyPublisher()
     }
 
     // MARK: - List Files in File Batch
@@ -217,11 +319,59 @@ extension OpenAIService {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
 
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .map(\.data)
-            .decode(type: [File].self, decoder: JSONDecoder())
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
+        // Use the new retry mechanism by adapting it for Combine publishers
+        return Future<[File], Error> { promise in
+            self.performDataTaskWithRetry(request) { data, response, error in
+                if let error = error {
+                    promise(.failure(error))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse,
+                    (200...299).contains(httpResponse.statusCode)
+                else {
+                    // Attempt to decode error message from OpenAI if available
+                    if let data = data,
+                        let apiError = try? JSONDecoder().decode(APIError.self, from: data)
+                    {
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "OpenAPIError",
+                                    code: (response as? HTTPURLResponse)?.statusCode ?? -1,
+                                    userInfo: [NSLocalizedDescriptionKey: apiError.error.message])))
+                    } else {
+                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                        let errorDescription = HTTPURLResponse.localizedString(
+                            forStatusCode: statusCode)
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "NetworkError", code: statusCode,
+                                    userInfo: [
+                                        NSLocalizedDescriptionKey:
+                                            "Invalid response: \(errorDescription)"
+                                    ])))
+                    }
+                    return
+                }
+                guard let data = data else {
+                    promise(
+                        .failure(
+                            NSError(
+                                domain: "NetworkError", code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                    return
+                }
+                do {
+                    let decodedResponse = try JSONDecoder().decode([File].self, from: data)
+                    promise(.success(decodedResponse))
+                } catch {
+                    promise(.failure(error))
+                }
+            }
+        }
+        .receive(on: DispatchQueue.main)
+        .eraseToAnyPublisher()
     }
 
     // MARK: - MIME Type Helper
@@ -289,8 +439,11 @@ extension OpenAIService {
                         userInfo: [NSLocalizedDescriptionKey: "Failed to create request"])))
             return
         }
-
-        handleURLSessionDataTask(request: request, completion: completion)
+        // Use the new retry mechanism
+        performDataTaskWithRetry(request) { data, response, error in
+            self.handleDataTaskResponse(
+                data: data, response: response, error: error, completion: completion)
+        }
     }
 
     // MARK: - Delete Vector Store
@@ -302,20 +455,63 @@ extension OpenAIService {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
 
-        return session.dataTaskPublisher(for: request)
-            .tryMap { data, response in
+        // Use the new retry mechanism by adapting it for Combine publishers
+        return Future<Void, Error> { promise in
+            self.performDataTaskWithRetry(request) { data, response, error in
+                if let error = error {
+                    promise(.failure(error))
+                    return
+                }
                 guard let httpResponse = response as? HTTPURLResponse,
                     httpResponse.statusCode == 200
                 else {
-                    throw URLError(.badServerResponse)
+                    // Attempt to decode error message from OpenAI if available
+                    if let data = data,
+                        let apiError = try? JSONDecoder().decode(APIError.self, from: data)
+                    {
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "OpenAPIError",
+                                    code: (response as? HTTPURLResponse)?.statusCode ?? -1,
+                                    userInfo: [NSLocalizedDescriptionKey: apiError.error.message])))
+                    } else {
+                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                        let errorDescription = HTTPURLResponse.localizedString(
+                            forStatusCode: statusCode)
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "NetworkError", code: statusCode,
+                                    userInfo: [
+                                        NSLocalizedDescriptionKey:
+                                            "Invalid response: \(errorDescription)"
+                                    ])))
+                    }
+                    return
                 }
-                let deleteResponse = try JSONDecoder().decode(DeleteResponse.self, from: data)
-                guard deleteResponse.deleted else {
-                    throw URLError(.cannotParseResponse)
+                guard let data = data else {
+                    promise(
+                        .failure(
+                            NSError(
+                                domain: "NetworkError", code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                    return
+                }
+                do {
+                    let deleteResponse = try JSONDecoder().decode(DeleteResponse.self, from: data)
+                    guard deleteResponse.deleted else {
+                        promise(.failure(URLError(.cannotParseResponse)))
+                        return
+                    }
+                    promise(.success(()))
+                } catch {
+                    promise(.failure(error))
                 }
             }
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
+        }
+        .receive(on: DispatchQueue.main)
+        .eraseToAnyPublisher()
     }
 
     // MARK: - Delete File
@@ -327,10 +523,46 @@ extension OpenAIService {
             return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
         }
 
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .map { _ in () }  // Ignore the response body
-            .mapError { $0 as Error }
-            .eraseToAnyPublisher()
+        // Use the new retry mechanism by adapting it for Combine publishers
+        return Future<Void, Error> { promise in
+            self.performDataTaskWithRetry(request) { data, response, error in
+                if let error = error {
+                    promise(.failure(error))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse,
+                    (200...299).contains(httpResponse.statusCode)
+                else {  // Assuming 200-299 is success for delete file
+                    // Attempt to decode error message from OpenAI if available
+                    if let data = data,
+                        let apiError = try? JSONDecoder().decode(APIError.self, from: data)
+                    {
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "OpenAPIError",
+                                    code: (response as? HTTPURLResponse)?.statusCode ?? -1,
+                                    userInfo: [NSLocalizedDescriptionKey: apiError.error.message])))
+                    } else {
+                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                        let errorDescription = HTTPURLResponse.localizedString(
+                            forStatusCode: statusCode)
+                        promise(
+                            .failure(
+                                NSError(
+                                    domain: "NetworkError", code: statusCode,
+                                    userInfo: [
+                                        NSLocalizedDescriptionKey:
+                                            "Invalid response: \(errorDescription)"
+                                    ])))
+                    }
+                    return
+                }
+                promise(.success(()))  // Successful deletion, no specific data expected beyond status code
+            }
+        }
+        .receive(on: DispatchQueue.main)
+        .eraseToAnyPublisher()
     }
 }
 

@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		B0067AF62CA8B43E0043E2DD /* BaseAssistantViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0067AF52CA8B43E0043E2DD /* BaseAssistantViewModel.swift */; };
 		B0067AFB2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */; };
-		B01974C32DB31AF60022AF6D /* ResponseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01974C22DB31AF60022AF6D /* ResponseView.swift */; };
-		B01974C52DB31B070022AF6D /* ResponseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01974C42DB31B070022AF6D /* ResponseViewModel.swift */; };
 		B033D41A2CCAFECD00984B82 /* OpenAIService-Vector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */; };
 		B033D41C2CCB05F700984B82 /* OpenAIService-Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */; };
 		B033D41E2CCB0AB000984B82 /* OpenAIService-Threads.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */; };
@@ -64,8 +62,6 @@
 /* Begin PBXFileReference section */
 		B0067AF52CA8B43E0043E2DD /* BaseAssistantViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseAssistantViewModel.swift; sourceTree = "<group>"; };
 		B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailSectionView.swift; sourceTree = "<group>"; };
-		B01974C22DB31AF60022AF6D /* ResponseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseView.swift; sourceTree = "<group>"; };
-		B01974C42DB31B070022AF6D /* ResponseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseViewModel.swift; sourceTree = "<group>"; };
 		B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Vector.swift"; sourceTree = "<group>"; };
 		B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Assistant.swift"; sourceTree = "<group>"; };
 		B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Threads.swift"; sourceTree = "<group>"; };
@@ -162,15 +158,6 @@
 				B0EEE71D2C99326A0012F2BA /* CreateAssistantView.swift */,
 			);
 			path = AssistantManagerParts;
-			sourceTree = "<group>";
-		};
-		B01974C12DB31AE40022AF6D /* Responses */ = {
-			isa = PBXGroup;
-			children = (
-				B01974C22DB31AF60022AF6D /* ResponseView.swift */,
-				B01974C42DB31B070022AF6D /* ResponseViewModel.swift */,
-			);
-			path = Responses;
 			sourceTree = "<group>";
 		};
 		B07E21882DA1EAF600C59A23 /* Content */ = {
@@ -326,7 +313,6 @@
 		B0EEE7232C99326A0012F2BA /* MVVMs */ = {
 			isa = PBXGroup;
 			children = (
-				B01974C12DB31AE40022AF6D /* Responses */,
 				B07E218A2DA1EB4000C59A23 /* Bases */,
 				B07E218B2DA1EB5800C59A23 /* Assistants */,
 				B07E21892DA1EB1D00C59A23 /* VectorStores */,
@@ -439,7 +425,6 @@
 				B0067AFB2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift in Sources */,
 				B0EEE7492C99326A0012F2BA /* ResponseFormat.swift in Sources */,
 				B0BFE4442C9BDC8800EB6D81 /* AssistantFormView.swift in Sources */,
-				B01974C32DB31AF60022AF6D /* ResponseView.swift in Sources */,
 				B0EEE74B2C99326A0012F2BA /* ContentView.swift in Sources */,
 				B0DD9C5C2C9DFA5300A0D623 /* ContentViewModel.swift in Sources */,
 				B0B14F762CB6273B00778895 /* SendButton.swift in Sources */,
@@ -457,7 +442,6 @@
 				B0EEE7522C99326A0012F2BA /* AssistantManagerViewModel.swift in Sources */,
 				B033D41C2CCB05F700984B82 /* OpenAIService-Assistant.swift in Sources */,
 				B0B14F7C2CB6279900778895 /* ChatHistoryView.swift in Sources */,
-				B01974C52DB31B070022AF6D /* ResponseViewModel.swift in Sources */,
 				B0BFE4422C9BDC3E00EB6D81 /* AssistantDetailView.swift in Sources */,
 				B0EEE7532C99326A0012F2BA /* AssistantPickerViewModel.swift in Sources */,
 				B0EEE7542C99326A0012F2BA /* AddFileView.swift in Sources */,

@@ -12,7 +12,8 @@ extension OpenAIService {
             completion(.failure(.invalidRequest))
             return
         }
-        session.dataTask(with: request) { data, response, error in
+        // Use the new retry mechanism
+        performDataTaskWithRetry(request) { data, response, error in
             self.handleResponse(data, response, error) {
                 (result: Result<AssistantsResponse, OpenAIServiceError>) in
                 switch result {
@@ -22,7 +23,7 @@ extension OpenAIService {
                     completion(.failure(error))
                 }
             }
-        }.resume()
+        }
     }
 
     // MARK: - Fetch Assistant Settings
@@ -34,9 +35,10 @@ extension OpenAIService {
             completion(.failure(.invalidRequest))
             return
         }
-        session.dataTask(with: request) { data, response, error in
+        // Use the new retry mechanism
+        performDataTaskWithRetry(request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        }
     }
 
     // MARK: - Create Assistant
@@ -81,9 +83,10 @@ extension OpenAIService {
             return
         }
 
-        session.dataTask(with: request) { data, response, error in
+        // Use the new retry mechanism
+        performDataTaskWithRetry(request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        }
     }
 
     // MARK: - Update Assistant
@@ -175,8 +178,8 @@ extension OpenAIService {
             return
         }
 
-        // ... rest of the function (session.dataTask, handleResponse) ...
-        session.dataTask(with: request) { data, response, error in
+        // Use the new retry mechanism
+        performDataTaskWithRetry(request) { data, response, error in
             // Debug: log HTTP status and response data
             if let httpResponse = response as? HTTPURLResponse {
                 print("Update Assistant HTTP status: \(httpResponse.statusCode)")
@@ -185,7 +188,7 @@ extension OpenAIService {
                 print("Update Assistant response data: \(json)")
             }
             self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        }
     }
 
     // MARK: - Delete Assistant
@@ -198,9 +201,10 @@ extension OpenAIService {
             completion(.failure(.invalidRequest))
             return
         }
-        session.dataTask(with: request) { data, response, error in
+        // Use the new retry mechanism
+        performDataTaskWithRetry(request) { data, response, error in
             self.handleDeleteResponse(data, response, error, completion: completion)
-        }.resume()
+        }
     }
 
     // New: Fetch Assistant Details
@@ -212,9 +216,10 @@ extension OpenAIService {
             completion(.failure(.custom("Failed to create request")))
             return
         }
-        session.dataTask(with: request) { data, response, error in
+        // Use the new retry mechanism
+        performDataTaskWithRetry(request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        }
     }
 
     // Note: To control generation parameters like temperature/top_p, use the `createResponse` endpoint when sending messages to the assistant, since the Assistants API endpoints don't accept those params.

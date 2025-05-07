@@ -11,7 +11,7 @@ struct MainTabView: View {
 
     // Store API key and response VM
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
-    @StateObject private var responseVM: ResponseViewModel
+    // @StateObject private var responseVM: ResponseViewModel // Removed
 
     // Custom init to set up ResponseViewModel
     init(
@@ -22,11 +22,10 @@ struct MainTabView: View {
         self._selectedAssistant = selectedAssistant
         self.vectorStoreViewModel = vectorStoreViewModel
         self.messageStore = messageStore
-        // Load API key from storage
-        let storedKey = UserDefaults.standard.string(forKey: "OpenAI_API_Key") ?? ""
-        // Initialize ResponseViewModel
-        _responseVM = StateObject(
-            wrappedValue: ResponseViewModel(service: OpenAIService(apiKey: storedKey)))
+        // Load API key from storage // Removed
+        // Initialize ResponseViewModel // Removed
+        // _responseVM = StateObject( // Removed
+        //     wrappedValue: ResponseViewModel(service: OpenAIService(apiKey: storedKey))) // Removed
     }
 
     // MARK: - Body
@@ -43,9 +42,9 @@ struct MainTabView: View {
                         }
                     #endif
             }
-            // Add Responses tab
-            ResponseView(viewModel: responseVM)
-                .tabItem { Label("Responses", systemImage: "doc.text") }
+            // Add Responses tab // Removed
+            // ResponseView(viewModel: responseVM) // Removed
+            //     .tabItem { Label("Responses", systemImage: "doc.text") } // Removed
         }
         .sheet(item: $selectedAssistant) { assistant in
             NavigationView {

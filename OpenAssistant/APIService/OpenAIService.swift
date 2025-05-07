@@ -83,6 +83,83 @@ class OpenAIService {
         request.setValue("assistants=v2", forHTTPHeaderField: HTTPHeaderField.openAIBeta.rawValue)
     }
 
+    // MARK: - Request Execution with Retry
+
+    /// Performs a URLSession data task with retry logic for transient network errors.
+    /// - Parameters:
+    ///   - request: The URLRequest to execute.
+    ///   - currentRetry: The current retry attempt count.
+    ///   - maxRetries: The maximum number of retry attempts.
+    ///   - initialDelay: The base delay for the first retry, subsequent retries use exponential backoff.
+    ///   - completion: Completion handler with the raw `Data?`, `URLResponse?`, and `Error?`.
+    func performDataTaskWithRetry(
+        _ request: URLRequest,
+        currentRetry: Int = 0,
+        maxRetries: Int = 2,  // Total 3 attempts (initial + 2 retries)
+        initialDelay: TimeInterval = 1.0,
+        completion: @escaping (Data?, URLResponse?, Error?) -> Void
+    ) {
+        // Log attempt details
+        let attemptNumber = currentRetry + 1
+        let totalAttempts = maxRetries + 1
+        logInfo(
+            "Attempting request to \(request.url?.path ?? "unknown path") (Attempt \(attemptNumber)/\(totalAttempts))"
+        )
+
+        session.dataTask(with: request) { data, response, error in
+            // Check for specific retryable URLErrors
+            if let urlError = error as? URLError,
+                urlError.code == .networkConnectionLost || urlError.code == .timedOut
+                    || urlError.code == .cannotConnectToHost
+                    || urlError.code == .resourceUnavailable,
+                currentRetry < maxRetries
+            {
+
+                // Calculate delay with exponential backoff
+                let delay = initialDelay * pow(2.0, Double(currentRetry))
+                // Log failure and retry scheduling
+                self.logInfo(
+                    "Request to \(request.url?.path ?? "unknown path") failed (Attempt \(attemptNumber)/\(totalAttempts)) with URLError code \(urlError.code.rawValue). Retrying in \(String(format: "%.2f", delay))s..."
+                )
+
+                DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                    self.performDataTaskWithRetry(
+                        request,
+                        currentRetry: currentRetry + 1,
+                        maxRetries: maxRetries,
+                        initialDelay: initialDelay,
+                        completion: completion)
+                }
+                return
+            }
+
+            // Log if request succeeded or failed permanently after retries
+            if let error = error {
+                self.logError(
+                    "Request to \(request.url?.path ?? "unknown path") failed permanently after \(attemptNumber) attempt(s). Error: \(error.localizedDescription)"
+                )
+            } else if let httpResponse = response as? HTTPURLResponse,
+                !(200...299).contains(httpResponse.statusCode)
+            {
+                // Log non-success HTTP status codes
+                var responseBodyString: String = "<No data or non-UTF8 data>"
+                if let data = data, let bodyStr = String(data: data, encoding: .utf8) {
+                    responseBodyString = bodyStr
+                }
+                self.logError(
+                    "Request to \(request.url?.path ?? "unknown path") completed with non-success status code \(httpResponse.statusCode) after \(attemptNumber) attempt(s). Response: \(responseBodyString)"
+                )
+            } else {
+                self.logInfo(
+                    "Request to \(request.url?.path ?? "unknown path") succeeded after \(attemptNumber) attempt(s)."
+                )
+            }
+
+            // If not retrying (e.g., error is not retryable, or retries exhausted, or no error), pass results to completion
+            completion(data, response, error)
+        }.resume()
+    }
+
     // MARK: - HandleResponse
     internal func handleResponse<T: Decodable>(
         _ data: Data?, _ response: URLResponse?, _ error: Error?,
@@ -337,7 +414,8 @@ class OpenAIService {
         var request = URLRequest(url: url)
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        // Use the new retry mechanism
+        performDataTaskWithRetry(request) { data, response, error in
             if let error = error {
                 completion(.failure(error))
                 return
@@ -345,18 +423,36 @@ class OpenAIService {
             guard let httpResponse = response as? HTTPURLResponse,
                 (200...299).contains(httpResponse.statusCode)
             else {
-                completion(
-                    .failure(
-                        NSError(
-                            domain: "", code: -1,
-                            userInfo: [NSLocalizedDescriptionKey: "Invalid response"])))
+                // Attempt to decode error message from OpenAI if available
+                if let data = data,
+                    let apiError = try? JSONDecoder().decode(APIError.self, from: data)
+                {
+                    completion(
+                        .failure(
+                            NSError(
+                                domain: "OpenAPIError",
+                                code: (response as? HTTPURLResponse)?.statusCode ?? -1,
+                                userInfo: [NSLocalizedDescriptionKey: apiError.error.message])))
+                } else {
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    let errorDescription = HTTPURLResponse.localizedString(
+                        forStatusCode: statusCode)
+                    completion(
+                        .failure(
+                            NSError(
+                                domain: "NetworkError", code: statusCode,
+                                userInfo: [
+                                    NSLocalizedDescriptionKey:
+                                        "Invalid response: \(errorDescription)"
+                                ])))
+                }
                 return
             }
             guard let data = data else {
                 completion(
                     .failure(
                         NSError(
-                            domain: "", code: -1,
+                            domain: "NetworkError", code: -1,
                             userInfo: [NSLocalizedDescriptionKey: "No data received"])))
                 return
             }
@@ -368,7 +464,7 @@ class OpenAIService {
             } catch {
                 completion(.failure(error))
             }
-        }.resume()
+        }
     }
 }
 
@@ -400,9 +496,10 @@ extension OpenAIService {
             completion(.failure(.invalidRequest))
             return
         }
-        session.dataTask(with: urlRequest) { data, response, error in
+        // Use the new retry mechanism
+        performDataTaskWithRetry(urlRequest) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        }
     }
 
     /// Retrieve a model response by ID
@@ -415,9 +512,10 @@ extension OpenAIService {
             completion(.failure(.invalidRequest))
             return
         }
-        session.dataTask(with: request) { data, response, error in
+        // Use the new retry mechanism
+        performDataTaskWithRetry(request) { data, response, error in
             self.handleResponse(data, response, error, completion: completion)
-        }.resume()
+        }
     }
 }
 

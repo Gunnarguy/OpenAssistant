@@ -8,7 +8,7 @@ class AssistantPickerViewModel: BaseAssistantViewModel {
 
     override init() {
         super.init()
-        fetchAssistants()
+        // Removed fetchAssistants() from init. It will be called by the View's .task modifier.
         setupNotificationObservers()
     }
 
