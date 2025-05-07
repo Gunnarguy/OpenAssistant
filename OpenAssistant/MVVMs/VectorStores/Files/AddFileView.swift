@@ -1,6 +1,6 @@
-import SwiftUI
-import Foundation
 import Combine
+import Foundation
+import SwiftUI
 import UniformTypeIdentifiers
 
 // File upload status tracking
@@ -10,8 +10,8 @@ struct FileUploadStatus: Identifiable {
     var status: UploadStatus
     var fileId: String?
     var error: String?
-    var progress: Double = 0.0 // Add progress tracking
-    
+    var progress: Double = 0.0  // Add progress tracking
+
     enum UploadStatus {
         case pending
         case uploading
@@ -23,6 +23,8 @@ struct FileUploadStatus: Identifiable {
 struct AddFileView: View {
     @ObservedObject var viewModel: VectorStoreManagerViewModel
     let vectorStoreId: VectorStore
+    @Binding var chunkSize: Int
+    @Binding var overlapSize: Int
     @State private var selectedFiles: [URL] = []
     @State private var isFilePickerPresented = false
     @State private var showErrorAlert = false
@@ -41,11 +43,11 @@ struct AddFileView: View {
     var body: some View {
         VStack(spacing: 20) {
             fileSelectionHeaderView
-            
+
             if !fileStatuses.isEmpty {
                 uploadProgressList
             }
-            
+
             if showUploadSummary {
                 uploadSummary
             }
@@ -77,13 +79,19 @@ struct AddFileView: View {
 
     private var fileSelectionHeaderView: some View {
         VStack(spacing: 15) {
-            Text(selectedFiles.isEmpty ? "No files selected" : "Selected \(selectedFiles.count) file(s)")
-                .font(.headline)
-            
+            Text(
+                selectedFiles.isEmpty
+                    ? "No files selected" : "Selected \(selectedFiles.count) file(s)"
+            )
+            .font(.headline)
+
+            chunkingSettingsView
+                .padding(.bottom, 20)  // Add spacing below the chunking settings
+
             HStack(spacing: 20) {
                 Button("Select Files") { isFilePickerPresented = true }
                     .buttonStyle(.borderedProminent)
-                
+
                 Button("Upload Files") { startUploadTask() }
                     .buttonStyle(.borderedProminent)
                     .disabled(selectedFiles.isEmpty || isUploading)
@@ -105,13 +113,13 @@ struct AddFileView: View {
                             Spacer()
                             uploadStatusIndicator(for: status)
                         }
-                        
+
                         // Show progress bar for uploading files
                         if status.status == .uploading {
                             ProgressView(value: status.progress)
                                 .progressViewStyle(LinearProgressViewStyle())
                         }
-                        
+
                         if let error = status.error {
                             Text(error)
                                 .font(.caption)
@@ -131,7 +139,7 @@ struct AddFileView: View {
         .frame(maxHeight: 300)
         .padding(.vertical)
     }
-    
+
     private func uploadStatusIndicator(for status: FileUploadStatus) -> some View {
         Group {
             switch status.status {
@@ -150,7 +158,7 @@ struct AddFileView: View {
             }
         }
     }
-    
+
     private var uploadSummary: some View {
         VStack(spacing: 8) {
             Text("Upload Complete")
@@ -182,6 +190,16 @@ struct AddFileView: View {
         }
     }
 
+    private func prepareChunkingStrategy() -> ChunkingStrategy {
+        return ChunkingStrategy(
+            type: "static",
+            staticStrategy: StaticStrategy(
+                maxChunkSizeTokens: chunkSize,
+                chunkOverlapTokens: overlapSize
+            )
+        )
+    }
+
     @MainActor
     private func startUploadTask() {
         // Reset status tracking
@@ -189,12 +207,18 @@ struct AddFileView: View {
         failureCount = 0
         showUploadSummary = false
         isCancelled = false
-        fileStatuses = selectedFiles.map { FileUploadStatus(fileName: $0.lastPathComponent, status: .pending) }
-        
+        fileStatuses = selectedFiles.map {
+            FileUploadStatus(fileName: $0.lastPathComponent, status: .pending)
+        }
+
+        // Prepare chunking strategy
+        let chunkingStrategy = prepareChunkingStrategy()
+        print("Chunking Strategy: \(chunkingStrategy)")
+
         uploadTask = Task {
             do {
                 isUploading = true
-                try await uploadFilesConcurrently()
+                try await uploadFilesConcurrently(chunkingStrategy: chunkingStrategy)
             } catch is CancellationError {
                 await showError("Upload was canceled.")
             } catch {
@@ -205,15 +229,21 @@ struct AddFileView: View {
         }
     }
 
-    private func uploadFile(_ fileURL: URL) async throws -> String? {
-        guard let statusIndex = fileStatuses.firstIndex(where: { $0.fileName == fileURL.lastPathComponent }) else {
+    private func uploadFile(_ fileURL: URL, chunkingStrategy: ChunkingStrategy) async throws
+        -> String?
+    {
+        guard
+            let statusIndex = fileStatuses.firstIndex(where: {
+                $0.fileName == fileURL.lastPathComponent
+            })
+        else {
             return nil
         }
-        
+
         await MainActor.run {
             fileStatuses[statusIndex].status = .uploading
         }
-        
+
         // Security-scoped resource handling
         guard fileURL.startAccessingSecurityScopedResource() else {
             await MainActor.run {
@@ -226,7 +256,8 @@ struct AddFileView: View {
 
         // Check if file exists and can be read
         guard let fileSize = try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize,
-              fileSize > 0 else {
+            fileSize > 0
+        else {
             await MainActor.run {
                 fileStatuses[statusIndex].status = .failure
                 fileStatuses[statusIndex].error = "File is empty or cannot be read"
@@ -238,34 +269,39 @@ struct AddFileView: View {
         do {
             let fileData = try Data(contentsOf: fileURL)
             guard !fileData.isEmpty else {
-                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "File data is empty"])
+                throw NSError(
+                    domain: "", code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "File data is empty"])
             }
-            
+
             // Update progress periodically
             await MainActor.run {
-                fileStatuses[statusIndex].progress = 0.3 // Started upload
+                fileStatuses[statusIndex].progress = 0.3  // Started upload
             }
-            
+
             // Check for cancellation
             if Task.isCancelled || isCancelled {
                 throw CancellationError()
             }
 
             // Upload file
-            let fileId = try await viewModel.uploadFile(fileData: fileData, fileName: fileURL.lastPathComponent, vectorStoreId: vectorStoreId.id)
-            
+            let fileId = try await viewModel.uploadFile(
+                fileData: fileData, fileName: fileURL.lastPathComponent,
+                vectorStoreId: vectorStoreId.id)
+
             await MainActor.run {
-                fileStatuses[statusIndex].progress = 0.7 // File uploaded
+                fileStatuses[statusIndex].progress = 0.7  // File uploaded
             }
-            
+
             // Check for cancellation again
             if Task.isCancelled || isCancelled {
                 throw CancellationError()
             }
-            
-            // Add file to vector store
-            try await viewModel.addFileToVectorStore(vectorStoreId: vectorStoreId.id, fileId: fileId)
-            
+
+            // Pass the chunking strategy when associating the file with the vector store
+            try await viewModel.addFileToVectorStore(
+                vectorStoreId: vectorStoreId.id, fileId: fileId, chunkingStrategy: chunkingStrategy)
+
             // Update status to success
             await MainActor.run {
                 fileStatuses[statusIndex].status = .success
@@ -273,7 +309,7 @@ struct AddFileView: View {
                 fileStatuses[statusIndex].progress = 1.0
                 successCount += 1
             }
-            
+
             return fileId
         } catch {
             // Update status to failure
@@ -286,23 +322,25 @@ struct AddFileView: View {
         }
     }
 
-    private func uploadFilesConcurrently() async throws {
-        // No file size limit - removed entirely
+    private func uploadFilesConcurrently(chunkingStrategy: ChunkingStrategy) async throws {
+        // Updated to accept chunkingStrategy
         var successfulFileIds: [(fileName: String, fileId: String)] = []
         var failedFiles: [(fileName: String, error: Error)] = []
 
         // Retry settings
         let maxRetries = 2
         let retryDelay: TimeInterval = 2.0
-        
-        // Calculate concurrency limit based on file count
-        let maxConcurrentUploads = min(selectedFiles.count, 3) // Max 3 concurrent uploads
 
-        try await withThrowingTaskGroup(of: (fileName: String, result: Result<String?, Error>).self, returning: Void.self) { group in
+        // Calculate concurrency limit based on file count
+        let maxConcurrentUploads = min(selectedFiles.count, 3)  // Max 3 concurrent uploads
+
+        try await withThrowingTaskGroup(
+            of: (fileName: String, result: Result<String?, Error>).self, returning: Void.self
+        ) { group in
             // Add initial batch of files
             var remainingFiles = selectedFiles
             var activeUploads = 0
-            
+
             // Helper to add a file to the upload group
             func addFileUploadTask(for fileURL: URL) {
                 group.addTask {
@@ -314,34 +352,43 @@ struct AddFileView: View {
                             if Task.isCancelled || cancelled {
                                 throw CancellationError()
                             }
-                            
-                            let fileId = try await self.uploadFile(fileURL)
+
+                            let fileId = try await self.uploadFile(
+                                fileURL, chunkingStrategy: chunkingStrategy)
                             return (fileName: fileURL.lastPathComponent, result: .success(fileId))
                         } catch is CancellationError {
                             throw CancellationError()
                         } catch {
                             attempt += 1
                             if attempt > maxRetries {
-                                return (fileName: fileURL.lastPathComponent, result: .failure(error))
+                                return (
+                                    fileName: fileURL.lastPathComponent, result: .failure(error)
+                                )
                             }
                             try? await Task.sleep(nanoseconds: UInt64(retryDelay * 1_000_000_000))
                         }
                     }
-                    return (fileName: fileURL.lastPathComponent, result: .failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Retry attempts exhausted."])))
+                    return (
+                        fileName: fileURL.lastPathComponent,
+                        result: .failure(
+                            NSError(
+                                domain: "", code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "Retry attempts exhausted."]))
+                    )
                 }
                 activeUploads += 1
             }
-            
+
             // Start initial batch
             while activeUploads < maxConcurrentUploads && !remainingFiles.isEmpty {
                 let fileURL = remainingFiles.removeFirst()
                 addFileUploadTask(for: fileURL)
             }
-            
+
             // Process results and add more files as capacity becomes available
             for try await taskResult in group {
                 activeUploads -= 1
-                
+
                 // Process this result
                 switch taskResult.result {
                 case .success(let fileId):
@@ -351,19 +398,19 @@ struct AddFileView: View {
                 case .failure(let error):
                     failedFiles.append((fileName: taskResult.fileName, error: error))
                 }
-                
+
                 // Check if upload was cancelled - fix Main Actor isolation
                 let cancelled = await MainActor.run { self.isCancelled }
                 if Task.isCancelled || cancelled {
                     break
                 }
-                
+
                 // Add another file if available
                 if !remainingFiles.isEmpty {
                     let fileURL = remainingFiles.removeFirst()
                     addFileUploadTask(for: fileURL)
                 }
-                
+
                 // If all files have been added and no more active uploads, we're done
                 if remainingFiles.isEmpty && activeUploads == 0 {
                     break
@@ -376,48 +423,82 @@ struct AddFileView: View {
         if cancelled {
             throw CancellationError()
         }
-        
+
         if !successfulFileIds.isEmpty {
-            let successDetails = successfulFileIds.map { "\($0.fileName): ID \($0.fileId)" }.joined(separator: "\n")
+            let successDetails = successfulFileIds.map { "\($0.fileName): ID \($0.fileId)" }.joined(
+                separator: "\n")
             print("Successfully uploaded and associated files:\n\(successDetails)")
         }
 
         if !failedFiles.isEmpty {
-            let failureDetails = failedFiles.map { "\($0.fileName): \($0.error.localizedDescription)" }.joined(separator: "\n")
+            let failureDetails = failedFiles.map {
+                "\($0.fileName): \($0.error.localizedDescription)"
+            }.joined(separator: "\n")
             await showError("Some files failed to upload:\n\(failureDetails)")
         }
 
         if successfulFileIds.isEmpty && !isCancelled {
-            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No files were uploaded successfully."])
+            throw NSError(
+                domain: "", code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "No files were uploaded successfully."])
         }
     }
-    
+
     @MainActor
     private func showError(_ message: String) async {
         errorMessage = message
         showErrorAlert = true
     }
-    
+
     private func resetErrorState() {
         showErrorAlert = false
         errorMessage = ""
     }
-    
+
     private var allowedContentTypes: [UTType] {
         // Support more file types - fix UTType.csv reference
         return [
-            UTType.pdf, 
-            UTType.plainText, 
-            UTType.image, 
+            UTType.pdf,
+            UTType.plainText,
+            UTType.image,
             UTType.json,
             UTType.html,
             UTType.rtf,
             UTType.xml,
-            .init(filenameExtension: "csv") ?? UTType.data, // Fix: Use file extension initialization
+            .init(filenameExtension: "csv") ?? UTType.data,  // Fix: Use file extension initialization
             .init(filenameExtension: "md") ?? UTType.plainText,
             .init(filenameExtension: "docx") ?? UTType.data,
             .init(filenameExtension: "pptx") ?? UTType.data,
-            .init(filenameExtension: "xlsx") ?? UTType.data
+            .init(filenameExtension: "xlsx") ?? UTType.data,
         ]
+    }
+
+    // View for configuring chunking settings
+    private var chunkingSettingsView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Chunking Settings")
+                .font(.headline)
+
+            HStack {
+                Text("Chunk Size (tokens):")
+                    .font(.subheadline)
+                TextField("800", value: $chunkSize, formatter: NumberFormatter())
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .keyboardType(.numberPad)
+            }
+
+            HStack {
+                Text("Overlap Size (tokens):")
+                    .font(.subheadline)
+                TextField("400", value: $overlapSize, formatter: NumberFormatter())
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .keyboardType(.numberPad)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(.systemGray6))
+        )
     }
 }

@@ -220,9 +220,14 @@ class VectorStoreManagerViewModel: BaseViewModel {
     }
 
     // Improved method to add file to vector store with better error handling
-    func addFileToVectorStore(vectorStoreId: String, fileId: String) async throws {
+    func addFileToVectorStore(
+        vectorStoreId: String, fileId: String, chunkingStrategy: ChunkingStrategy
+    ) async throws {
         let endpoint = "vector_stores/\(vectorStoreId)/file_batches"
-        let body: [String: Any] = ["file_ids": [fileId]]
+        let body: [String: Any] = [
+            "file_ids": [fileId],
+            "chunking_strategy": chunkingStrategy.toDictionary(),
+        ]
 
         guard let request = createRequest(endpoint: endpoint, method: "POST", body: body) else {
             throw VectorStoreError.invalidURL

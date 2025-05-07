@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 struct VectorStoreDetailView: View {
@@ -14,7 +14,9 @@ struct VectorStoreDetailView: View {
     @State private var alert: AlertData?
     @State private var isLoading = false
     @State private var isRefreshing = false
-    
+    @State private var chunkSize: Int = 800  // Default chunk size
+    @State private var overlapSize: Int = 400  // Default overlap size
+
     var body: some View {
         List {
             VectorStoreDetailsSection(vectorStore: vectorStore)
@@ -35,38 +37,45 @@ struct VectorStoreDetailView: View {
             }
         }
         .sheet(isPresented: $isAddingFile) {
-            AddFileView(viewModel: viewModel, vectorStoreId: vectorStore)
-                .onDisappear { 
-                    if didDeleteFile {
-                        loadFiles()
-                    }
+            AddFileView(
+                viewModel: viewModel, vectorStoreId: vectorStore, chunkSize: $chunkSize,
+                overlapSize: $overlapSize
+            )
+            .onDisappear {
+                if didDeleteFile {
+                    loadFiles()
                 }
+            }
         }
         .alert(item: $alert) { alert in
-            Alert(title: Text(alert.title), message: Text(alert.message), dismissButton: .default(Text("OK")))
+            Alert(
+                title: Text(alert.title), message: Text(alert.message),
+                dismissButton: .default(Text("OK")))
         }
         .searchable(text: $searchText, prompt: "Search files")
         .refreshable {
             await refreshFiles()
         }
     }
-    
+
     // MARK: - Helper Methods
     private func loadFiles() {
         // Prevent multiple simultaneous loads
         guard !isLoading else { return }
-        
+
         isLoading = true
         viewModel.fetchFiles(for: vectorStore)
             .receive(on: DispatchQueue.main)
             .handleEvents(receiveCompletion: { completion in
                 // Always update isLoading first
                 self.isLoading = false
-                
+
                 if case .failure(let error) = completion {
                     // Delay showing alert to prevent presentation conflicts
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        showAlert(title: "Error", message: "Failed to load files: \(error.localizedDescription)")
+                        showAlert(
+                            title: "Error",
+                            message: "Failed to load files: \(error.localizedDescription)")
                     }
                 }
             })
@@ -79,15 +88,15 @@ struct VectorStoreDetailView: View {
             })
             .store(in: &cancellables)
     }
-    
+
     private func refreshFiles() async {
         // Prevent multiple simultaneous refreshes
-        guard !isRefreshing && !isLoading else { 
+        guard !isRefreshing && !isLoading else {
             return
         }
-        
+
         isRefreshing = true
-        
+
         return await withCheckedContinuation { continuation in
             viewModel.fetchFiles(for: vectorStore)
                 .receive(on: DispatchQueue.main)
@@ -97,11 +106,14 @@ struct VectorStoreDetailView: View {
                         if case .failure(let error) = completion {
                             // Delay showing alert to prevent presentation conflicts
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                showAlert(title: "Error", message: "Failed to refresh files: \(error.localizedDescription)")
+                                showAlert(
+                                    title: "Error",
+                                    message:
+                                        "Failed to refresh files: \(error.localizedDescription)")
                             }
                         }
                         continuation.resume()
-                    }, 
+                    },
                     receiveValue: { fetchedFiles in
                         self.files = fetchedFiles
                     }
@@ -109,21 +121,23 @@ struct VectorStoreDetailView: View {
                 .store(in: &cancellables)
         }
     }
-    
+
     private func deleteFile(at offsets: IndexSet) {
         // Create a local copy of the indices to delete to avoid index changes during deletion
         let filesToDelete = offsets.map { files[$0] }
-        
+
         for file in filesToDelete {
             viewModel.deleteFileFromVectorStore(vectorStoreId: vectorStore.id, fileId: file.id)
                 .sink(
                     receiveCompletion: { completion in
                         if case .failure(let error) = completion {
                             DispatchQueue.main.async {
-                                showAlert(title: "Error", message: "Failed to delete file: \(error.localizedDescription)")
+                                showAlert(
+                                    title: "Error",
+                                    message: "Failed to delete file: \(error.localizedDescription)")
                             }
                         }
-                    }, 
+                    },
                     receiveValue: { _ in
                         DispatchQueue.main.async {
                             if let index = self.files.firstIndex(where: { $0.id == file.id }) {
@@ -149,12 +163,12 @@ struct VectorStoreDetailView: View {
             return files
         } else {
             return files.filter { file in
-                file.id.localizedCaseInsensitiveContains(searchText) || 
-                file.object.localizedCaseInsensitiveContains(searchText)
+                file.id.localizedCaseInsensitiveContains(searchText)
+                    || file.object.localizedCaseInsensitiveContains(searchText)
             }
         }
     }
-    
+
     private var refreshButton: some View {
         Button(action: loadFiles) {
             if isLoading {
@@ -173,12 +187,12 @@ struct VectorStoreDetailView: View {
 
 struct VectorStoreDetailsSection: View {
     let vectorStore: VectorStore
-    
+
     var body: some View {
         Section(header: Text("Details")) {
             Text("Name: \(vectorStore.name ?? "Unnamed Vector Store")")
             HStack {
-                Text("ID: \(vectorStore.id)") // Display the vector store ID
+                Text("ID: \(vectorStore.id)")  // Display the vector store ID
                 Button(action: {
                     UIPasteboard.general.string = vectorStore.id
                 }) {
@@ -200,7 +214,7 @@ struct VectorStoreDetailsSection: View {
 
 struct FileCountsSection: View {
     let fileCounts: FileCounts
-    
+
     var body: some View {
         Section(header: Text("File Counts")) {
             Text("In Progress: \(fileCounts.inProgress)")
@@ -216,7 +230,7 @@ struct FilesSection: View {
     let files: [VectorStoreFile]
     let isLoading: Bool
     let onDelete: (IndexSet) -> Void
-    
+
     var body: some View {
         Section(header: Text("Files")) {
             if isLoading {
@@ -239,7 +253,7 @@ struct FilesSection: View {
 
 struct AddFileSection: View {
     @Binding var isAddingFile: Bool
-    
+
     var body: some View {
         Section {
             Button(action: { isAddingFile = true }) {
@@ -260,7 +274,7 @@ extension VectorStoreDetailsSection {
         formatter.timeStyle = .short
         return formatter.string(from: date)
     }
-    
+
     private func formatBytes(_ bytes: Int?) -> String {
         guard let bytes = bytes else { return "N/A" }
         let kb = Double(bytes) / 1024

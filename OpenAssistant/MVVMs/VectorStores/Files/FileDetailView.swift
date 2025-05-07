@@ -188,7 +188,10 @@ struct FileDetailView: View {
     ///   - text: The string to copy.
     ///   - label: A descriptive label for the copied item (e.g., "File ID").
     private func copyToClipboard(_ text: String, label: String) {
-        UIPasteboard.general.string = text
+        #if canImport(AppKit)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+        #endif
         toastMessage = "\(label) copied!"
         showCopyToast = true
 
