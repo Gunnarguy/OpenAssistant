@@ -6,41 +6,46 @@ struct AssistantDetailsSection: View {
     @Binding var assistant: Assistant
     var availableModels: [String]
 
-    // State to track the original model type (O-series or GPT-series)
+    // State to track the original model type
     @State private var originalModelIsOseries: Bool = false
-    @State private var originalModelIs4o: Bool = false
+    @State private var originalModelIs4oFamily: Bool = false  // Renamed from originalModelIs4o
+    @State private var originalModelIs4point1Family: Bool = false  // New state variable
 
     // Available reasoning effort options for display
     private let reasoningOptions = ["low", "medium", "high"]
 
     // Helper to check if the *current* selection is an O-series model
     private var isCurrentSelectionOModel: Bool {
-        // Use the static method from BaseViewModel for consistency
         return BaseViewModel.isReasoningModel(assistant.model)
     }
 
-    // Helper to check if the current selection is a 4o model
-    private var isCurrentSelection4oModel: Bool {
-        return assistant.model.contains("4o")
+    // Helper function to check if a model ID belongs to the GPT-4o family
+    private func is4oFamily(_ modelId: String) -> Bool {
+        return modelId.lowercased().contains("gpt-4o")
+    }
+
+    // Helper function to check if a model ID belongs to the GPT-4.1 family
+    private func is4point1Family(_ modelId: String) -> Bool {
+        return modelId.lowercased().contains("gpt-4.1")
     }
 
     // Filtered list of models based on the original assistant's model type
     private var filteredAvailableModels: [String] {
         availableModels.filter { modelId in
-            // Check if the model is an O-series model
-            let isModelOseries = BaseViewModel.isReasoningModel(modelId)
-            // Check if the model is a 4o model family
-            let isModel4o = modelId.contains("4o")
+            let modelIsOseries = BaseViewModel.isReasoningModel(modelId)
+            let modelIs4o = is4oFamily(modelId)
+            let modelIs4point1 = is4point1Family(modelId)
 
             if originalModelIsOseries {
                 // If original model was O-series, only show O-series models
-                return isModelOseries
-            } else if originalModelIs4o {
-                // If original model was 4o, only show 4o models
-                return isModel4o
+                return modelIsOseries
+            } else if originalModelIs4oFamily || originalModelIs4point1Family {
+                // If original model was from 4o or 4.1 family, allow interchange between these two families
+                return modelIs4o || modelIs4point1
             } else {
-                // For other models like GPT-4, GPT-3.5, show models in same family (non-O, non-4o)
-                return !isModelOseries && !isModel4o
+                // For other models (e.g., GPT-4 legacy, GPT-3.5),
+                // show models that are NOT O-series, NOT 4o-family, and NOT 4.1-family
+                return !modelIsOseries && !modelIs4o && !modelIs4point1
             }
         }
     }
@@ -81,15 +86,15 @@ struct AssistantDetailsSection: View {
 
             // Info text explaining the model restriction
             if originalModelIsOseries {
-                Text("O-series models can only be updated to other O-series models")
+                Text("O-series models can only be updated to other O-series models.")
                     .font(.caption)
                     .foregroundColor(.secondary)
-            } else if originalModelIs4o {
-                Text("GPT-4o models can only be updated to other GPT-4o models")
+            } else if originalModelIs4oFamily || originalModelIs4point1Family {
+                Text("GPT-4o and GPT-4.1 family models can be interchanged.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             } else {
-                Text("Model family cannot be changed after creation")
+                Text("Model family (e.g., GPT-3.5, older GPT-4) cannot be changed after creation.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -104,7 +109,8 @@ struct AssistantDetailsSection: View {
         }
         .onAppear {
             self.originalModelIsOseries = BaseViewModel.isReasoningModel(assistant.model)
-            self.originalModelIs4o = assistant.model.contains("4o")
+            self.originalModelIs4oFamily = is4oFamily(assistant.model)  // Updated to use helper
+            self.originalModelIs4point1Family = is4point1Family(assistant.model)  // Initialize new state
         }
 
         // Section for Generation Parameters (Conditional) - Extracted for clarity
