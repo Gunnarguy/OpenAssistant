@@ -2,14 +2,17 @@
 <h1 align="center">
 <img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/ec559a9f6bfd399b82bb44393651661b08aaf7ba/icons/folder-markdown-open.svg" width="100" />
 <br>
-OpenAssistant
+OpenAssistant (iOS Client)
 </h1>
-<h3 align="center">📍 A native SwiftUI iOS client for interacting with the OpenAI Assistants API</h3>
-<h3 align="center">⚙️ Developed with the software and tools below:</h3>
+<h3 align="center">📍 A Native SwiftUI iOS Client for the OpenAI Assistants API</h3>
+<h3 align="center"> Dive deep into an application designed for seamless interaction with powerful AI. This document provides an exhaustive guide to its architecture, components, and their intricate interactions.</h3>
+<h3 align="center">⚙️ Developed with Swift & SwiftUI</h3>
 
 <p align="center">
 <img src="https://img.shields.io/badge/Swift-F05138.svg?style=for-the-badge&logo=Swift&logoColor=white" alt="Swift" />
-<img src="https://img.shields.io/badge/JSON-000000.svg?style=for-the-badge&logo=JSON&logoColor=white" alt="JSON" />
+<img src="https://img.shields.io/badge/SwiftUI-007AFF.svg?style=for-the-badge&logo=SwiftUI&logoColor=white" alt="SwiftUI" />
+<img src="https://img.shields.io/badge/Combine-007AFF.svg?style=for-the-badge&logo=Combine&logoColor=white" alt="Combine Framework" />
+<img src="https://img.shields.io/badge/OpenAI%20API-412991.svg?style=for-the-badge&logo=OpenAI&logoColor=white" alt="OpenAI API" />
 </p>
 </div>
 
@@ -17,233 +20,327 @@ OpenAssistant
 
 ## 📚 Table of Contents
 
-- [📚 Table of Contents](#-table-of-contents)
 - [📍 Overview](#-overview)
 - [✨ Key Features](#-key-features)
-- [📂 Project Structure](#-project-structure)
-- [🌊 Application Flow](#-application-flow)
-- [👏 Acknowledgments](#-acknowledgments)
+- [📐 Architecture (MVVM)](#-architecture-mvvm)
+- [📂 Detailed Project Structure](#-detailed-project-structure)
+    - [Root Level](#root-level)
+    - [APIService Directory](#apiservice-directory)
+    - [Main Directory](#main-directory)
+    - [MVVMs Directory](#mvvms-directory)
+- [🌊 Core Application & Data Flow](#-core-application--data-flow)
+    - [1. App Initialization & Setup](#1-app-initialization--setup)
+    - [2. API Key Management](#2-api-key-management)
+    - [3. Main Navigation (`MainTabView`)](#3-main-navigation-maintabview)
+    - [4. Data Fetching & Display](#4-data-fetching--display)
+    - [5. User Interactions & Actions](#5-user-interactions--actions)
+- [🧩 Core Components & Their Interactions](#-core-components--their-interactions)
+    - [App Entry & Root UI (`OpenAssistantApp`, `ContentView`, `ContentViewModel`)](#app-entry--root-ui-openassistantapp-contentview-contentviewmodel)
+    - [API Service Layer (`APIService/`)](#api-service-layer-apiservice)
+    - [Base ViewModels (`MVVMs/Bases/`)](#base-viewmodels-mvvmsbases)
+    - [Assistant Management (`MVVMs/Assistants/`)](#assistant-management-mvvmsassistants)
+    - [Chat Functionality (`MVVMs/Chat/`)](#chat-functionality-mvvmschat)
+    - [Vector Store & File Management (`MVVMs/VectorStores/`)](#vector-store--file-management-mvvmsvectorstores)
+    - [Settings (`SettingsView.swift`)](#settings-settingsviewswift)
+    - [Data Persistence (`MessageStore.swift`, `@AppStorage`)](#data-persistence-messagestoreswift-appstorage)
+    - [Decoupled Communication (`NotificationCenter`)](#decoupled-communication-notificationcenter)
+- [📊 Visualizing Interactions (`interactions.html`)](#-visualizing-interactions-interactionshtml)
+- [🛠️ Potential Refinements & Considerations](#️-potential-refinements--considerations)
+- [🚀 Getting Started](#-getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Installation & Setup](#installation--setup)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
 ---
 
 ## 📍 Overview
 
-OpenAssistant is a native iOS application built entirely with SwiftUI, designed to provide a seamless and intuitive interface for interacting with the OpenAI Assistants API. It allows users to create, manage, and chat with custom AI assistants directly from their iPhone or iPad. The app handles the complexities of the Assistants API, including thread management, vector stores, file uploads, and tool usage (like Code Interpreter and File Search), offering a robust platform for leveraging OpenAI's powerful assistant capabilities in a user-friendly mobile environment.
+OpenAssistant is a feature-rich, native iOS application built meticulously with SwiftUI and the Combine framework. It serves as a sophisticated client for the OpenAI Assistants API, empowering users to harness the full potential of AI assistants directly from their Apple devices. The application offers comprehensive management of assistants, vector stores for retrieval, and file handling, all wrapped in an intuitive user interface. It is designed to handle the complexities of asynchronous API interactions, thread management, and local data persistence, providing a robust and user-friendly mobile experience.
 
 ---
 
 ## ✨ Key Features
 
-<!-- Placeholder for App Screenshots -->
-**Screenshots:**
-
-*(Consider adding screenshots here showcasing the main features like the Chat Interface, Assistant Management, and Vector Store Management)*
-
-| Feature                     | Description                                                                                                                               |
-| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
-| **🤖 Assistant Management**   | Create, view, update, and delete OpenAI Assistants. Configure name, instructions, model, description, temperature, and top P settings.     |
-| **🛠️ Tool Enablement**       | Enable or disable tools for assistants, including Code Interpreter and File Search (Retrieval).                                             |
-| **🗂️ Vector Store Management** | Create, view, update, and delete Vector Stores. Associate Vector Stores with Assistants to enable file-based knowledge retrieval.         |
-| **📄 File Management**        | Upload files to OpenAI and associate them with specific Vector Stores. View file details and manage files within stores.                  |
-| **💬 Chat Interface**        | Engage in conversations with selected Assistants. Handles message history, thread management, and displays assistant responses.             |
-| **🔄 Real-time Updates**     | Utilizes Combine and NotificationCenter for reactive updates across the UI when assistants, stores, or settings change.                   |
-| **🔑 Secure API Key Handling**| Securely stores and manages the OpenAI API key using `AppStorage`.                                                                        |
-| **📱 Native iOS Experience**  | Built with SwiftUI for a modern, responsive, and platform-native user experience, including support for Dark Mode.                      |
-| **🏗️ MVVM Architecture**     | Organizes code using the Model-View-ViewModel (MVVM) pattern for better separation of concerns, testability, and maintainability.        |
-| **⚙️ API Service Layer**      | Dedicated service layer (`APIService`) encapsulates all interactions with the OpenAI API, handling requests, responses, and errors.       |
+| Feature                      | Description                                                                                                                                                             |
+| :--------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **🤖 Assistant Lifecycle Management** | Create, view, meticulously configure (name, instructions, model selection including GPT-4o/4.1/O-series, description, temperature, top P, reasoning effort), and delete OpenAI Assistants. |
+| **🛠️ Advanced Tool Configuration** | Dynamically enable or disable powerful tools for assistants, such as Code Interpreter and File Search (Retrieval).                                              |
+| **🗂️ Vector Store Operations** | Full CRUD (Create, Read, Update, Delete) for Vector Stores. Associate Vector Stores with Assistants to enable precise, file-based knowledge retrieval.                     |
+| **📄 Comprehensive File Handling** | Upload various file types (PDF, TXT, DOCX, etc.) to OpenAI, associate them with specific Vector Stores using configurable chunking strategies (size and overlap). View detailed file metadata and manage files within these stores. |
+| **💬 Dynamic Chat Interface** | Engage in interactive conversations with selected Assistants. Features include Markdown rendering for assistant responses, robust message history management (persisted locally via `MessageStore`), and OpenAI thread lifecycle control. |
+| **🔄 Reactive UI & Data Sync** | Leverages the Combine framework for managing asynchronous operations and `NotificationCenter` for decoupled, real-time updates across the UI when assistants, stores, or settings change. |
+| **🔑 Secure & Persistent API Key**| Securely stores and manages the OpenAI API key using `@AppStorage`, ensuring it persists across app sessions.                                                       |
+| **🎨 Adaptive Appearance** | Supports Light, Dark, and System-defined appearance modes, configurable via in-app settings for a personalized user experience.                                     |
+| **📱 Native iOS Excellence** | Built from the ground up using SwiftUI, ensuring a modern, responsive, and platform-native user experience optimized for iOS.                                         |
+| **🏗️ Robust MVVM Architecture** | Organizes code using the Model-View-ViewModel (MVVM) pattern, promoting clear separation of concerns, enhanced testability, and superior maintainability.          |
+| **⚙️ Dedicated API Service Layer**| A specialized service layer (`APIService`) encapsulates all interactions with the OpenAI API, efficiently handling requests, responses, error conditions, and retries. |
 
 ---
 
-<img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/ec559a9f6bfd399b82bb44393651661b08aaf7ba/icons/folder-github-open.svg" width="80" />
+## 📐 Architecture (MVVM)
 
-## 📂 Project Structure
+The application is architected using the **Model-View-ViewModel (MVVM)** pattern, a cornerstone for building scalable and maintainable SwiftUI applications.
 
-The project follows the Model-View-ViewModel (MVVM) architectural pattern, promoting separation of concerns, testability, and maintainability. Here's a breakdown of the key components and their relationships:
+* **Model**: Represents the data structures and business logic. These are primarily Codable structs that mirror the OpenAI API entities (e.g., `Assistant`, `Message`, `Thread`, `Run`, `VectorStore`, `File`) and internal application data constructs.
+* **View**: The UI layer, built declaratively with SwiftUI. Views observe ViewModels for state changes and render the UI accordingly. Examples: `ChatView`, `AssistantManagerView`, `VectorStoreDetailView`. They delegate user actions to their respective ViewModels.
+* **ViewModel**: Acts as the bridge between the View and the Model. It prepares and provides data for the View, processes user input, manages UI state (e.g., loading indicators, error messages), and orchestrates operations by interacting with services (primarily `APIService`). Examples: `ChatViewModel`, `AssistantManagerViewModel`, `VectorStoreManagerViewModel`.
 
 ```mermaid
 graph TD
     subgraph "User Interface (SwiftUI Views)"
         direction LR
-        CV(ContentView)
-        MTV(MainTabView)
-        ChatV(ChatView)
-        AsstMgrV(AssistantManagerView)
-        AsstDetailV(AssistantDetailView)
-        VecStoreListV(VectorStoreListView)
-        SettingsV(SettingsView)
+        V_Chat[ChatView]
+        V_AsstMgr[AssistantManagerView]
+        V_AsstDetail[AssistantDetailView]
+        V_VecStoreList[VectorStoreListView]
+        V_VecStoreDetail[VectorStoreDetailView]
+        V_Settings[SettingsView]
+        V_Picker[AssistantPickerView]
+        V_CreateAsst[CreateAssistantView]
+        V_MainTab[MainTabView]
+        V_Content[ContentView]
     end
 
-    subgraph "ViewModels (State & Logic)"
+    subgraph "ViewModels (State & Business Logic)"
         direction LR
-        ContentVM(ContentViewModel)
-        ChatVM(ChatViewModel)
-        AsstMgrVM(AssistantManagerViewModel)
-        AsstDetailVM(AssistantDetailViewModel)
-        VecStoreMgrVM(VectorStoreManagerViewModel)
-        BaseVM(BaseViewModel)
+        VM_Base[BaseViewModel]
+        VM_BaseAsst[BaseAssistantViewModel] --- VM_Base
+        VM_Content[ContentViewModel] --- VM_Base
+        VM_Chat[ChatViewModel] --- VM_BaseAsst
+        VM_AsstMgr[AssistantManagerViewModel] --- VM_BaseAsst
+        VM_AsstDetail[AssistantDetailViewModel] --- VM_BaseAsst
+        VM_AsstPicker[AssistantPickerViewModel] --- VM_BaseAsst
+        VM_VecStoreMgr[VectorStoreManagerViewModel] --- VM_Base
     end
 
-    subgraph Services
-        APIService(APIService)
+    subgraph "Services (API & File Handling)"
+        direction LR
+        S_OpenAI_Init[OpenAIInitializer]
+        S_OpenAI[OpenAIService] -. Uses .-> S_OpenAI_Init
+        S_OpenAI_AsstExt[OpenAIService-Assistant Ext.] -- Extends --> S_OpenAI
+        S_OpenAI_ThreadExt[OpenAIService-Threads Ext.] -- Extends --> S_OpenAI
+        S_OpenAI_VecExt[OpenAIService-Vector Ext.] -- Extends --> S_OpenAI
+        S_FileUpload[FileUploadService] -. Uses .-> S_OpenAI
     end
 
-    subgraph External
-        OpenAI(OpenAI API)
+    subgraph "Data Persistence & System Services"
+        P_AppStorage[@AppStorage (API Key, Settings)]
+        P_MessageStore[MessageStore (Chat History)]
+        P_NotifCenter[NotificationCenter]
+        P_Combine[Combine Framework]
     end
 
-    UserInterface --> ViewModels
-    ViewModels --> Services
-    Services --> External
+    subgraph "External Dependencies"
+        Ext_OpenAI_API[OpenAI API]
+    end
 
-    CV --- ContentVM
-    MTV --- ChatV & AsstMgrV & VecStoreListV & SettingsV
-    ChatV --- ChatVM
-    AsstMgrV --- AsstMgrVM
-    AsstDetailV --- AsstDetailVM
-    VecStoreListV --- VecStoreMgrVM
+    %% View to ViewModel (User Actions & Data Binding)
+    V_Content --> VM_Content
+    V_MainTab --> V_Picker
+    V_MainTab --> V_AsstMgr
+    V_MainTab --> V_VecStoreList
+    V_MainTab --> V_Settings
+    V_Picker --> VM_AsstPicker
+    V_AsstMgr --> VM_AsstMgr
+    V_AsstMgr --- V_CreateAsst
+    V_AsstMgr --- V_AsstDetail
+    V_CreateAsst --> VM_AsstMgr
+    V_AsstDetail --> VM_AsstDetail
+    V_VecStoreList --> VM_VecStoreMgr
+    V_VecStoreDetail --> VM_VecStoreMgr
+    V_Chat --> VM_Chat
+    V_Settings --> P_AppStorage
+    V_Settings -. Posts .-> P_NotifCenter
 
-    ContentVM -.-> BaseVM
-    ChatVM -.-> BaseVM
-    AsstMgrVM -.-> BaseVM
-    AsstDetailVM -.-> BaseVM
-    VecStoreMgrVM -.-> BaseVM
+    %% ViewModel to Service (Requesting Data/Actions)
+    VM_Base --> S_OpenAI
+    VM_Chat -.-> S_OpenAI_ThreadExt
+    VM_AsstMgr -.-> S_OpenAI_AsstExt
+    VM_AsstMgr -.-> S_OpenAI_VecExt
+    VM_AsstDetail -.-> S_OpenAI_AsstExt
+    VM_AsstDetail -.-> VM_VecStoreMgr
+    VM_AsstPicker -.-> VM_AsstMgr
+    VM_VecStoreMgr -.-> S_OpenAI_VecExt
+    VM_VecStoreMgr -.-> S_FileUpload
 
-    BaseVM --> APIService
-    ChatVM --> APIService
-    AsstMgrVM --> APIService
-    AsstDetailVM --> APIService
-    VecStoreMgrVM --> APIService
+    %% Service to External API
+    S_OpenAI --> Ext_OpenAI_API
+    S_FileUpload --> Ext_OpenAI_API
 
-    APIService --> OpenAI
+    %% Data Flow & State Management
+    P_MessageStore <--> VM_Chat
+    P_AppStorage <--> VM_Base
+    P_NotifCenter <--> VM_Base
+    P_NotifCenter <--> VM_Content
+    P_Combine <--> S_OpenAI
+    P_Combine <--> VM_Base
+    P_Combine <--> VM_VecStoreMgr
 
-    style UserInterface fill:#f9f,stroke:#333,stroke-width:2px
-    style ViewModels fill:#ccf,stroke:#333,stroke-width:2px
-    style Services fill:#cfc,stroke:#333,stroke-width:2px
-    style External fill:#fcc,stroke:#333,stroke-width:2px
+
+    classDef view fill:#B0E0E6,stroke:#4682B4,stroke-width:2px;
+    classDef viewModel fill:#98FB98,stroke:#2E8B57,stroke-width:2px;
+    classDef service fill:#FFA07A,stroke:#CD5C5C,stroke-width:2px;
+    classDef persistence fill:#DDA0DD,stroke:#8A2BE2,stroke-width:2px;
+    classDef external fill:#FFD700,stroke:#B8860B,stroke-width:2px;
+
+    class V_Chat,V_AsstMgr,V_AsstDetail,V_VecStoreList,V_VecStoreDetail,V_Settings,V_Picker,V_CreateAsst,V_MainTab,V_Content view;
+    class VM_Base,VM_BaseAsst,VM_Content,VM_Chat,VM_AsstMgr,VM_AsstDetail,VM_AsstPicker,VM_VecStoreMgr viewModel;
+    class S_OpenAI_Init,S_OpenAI,S_OpenAI_AsstExt,S_OpenAI_ThreadExt,S_OpenAI_VecExt,S_FileUpload service;
+    class P_AppStorage,P_MessageStore,P_NotifCenter,P_Combine persistence;
+    class Ext_OpenAI_API external;
 ```
 
-- **`OpenAssistant/`**: The main application module containing all source code, resources, and configuration.
+---
 
-  - **`APIService/`**: This directory is the dedicated layer for all network interactions with the OpenAI API. It abstracts the complexities of API calls, authentication, request building, response parsing, and error handling.
-    - `OpenAIService.swift`: The core class defining common request logic, headers, and response handling (`handleResponse`, `handleDeleteResponse`, `handleHTTPError`). It acts as the base for specific API interactions.
-    - `OpenAIInitializer.swift`: Provides a static method to initialize and configure the shared `OpenAIService` instance, ensuring consistent setup with the API key.
-    - `OpenAIService-*.swift` (e.g., `-Assistant`, `-Threads`, `-Vector`): Extensions of `OpenAIService` containing methods specific to different OpenAI API endpoints (Assistants, Threads, Messages, Vector Stores, Files). This keeps the API logic organized by feature.
-    - `OpenAIServiceError.swift`: Defines custom error types specific to API interactions (e.g., `rateLimitExceeded`, `invalidResponse`, `decodingError`), providing more context than standard network errors.
-    - `CommonMethods.swift`, `Utils.swift`: Contain shared helper functions and utilities used within the API service layer.
+## 📂 Detailed Project Structure
 
-  - **`Main/`**: Holds core application setup files, global definitions, shared models, and utilities that are not specific to a single feature.
-    - `OpenAssistantApp.swift`: The main entry point (`@main`) of the application. It initializes the root view (`ContentView`), sets up environment objects (like `AssistantManagerViewModel`, `VectorStoreViewModel`), and handles initial checks (like API key presence).
-    - `Additional.swift`, `ResponseFormat.swift`: Define shared data structures (Models) used across different parts of the application, often mirroring parts of the OpenAI API responses but potentially adapted for UI use.
-    - `Extensions.swift`: Contains extensions to standard Swift types (like `String`, `Date`) providing convenient helper methods used throughout the app.
-    - `Errors.swift`: Defines global application-level errors (distinct from API-specific errors).
-    - `FeatureFlags.swift`: Allows toggling features on or off, useful for development and testing.
-    - `ModelCapabilities.swift`: Defines information about different OpenAI models, potentially their capabilities or limitations.
+The project is organized into several directories, each serving a specific purpose. Here's a detailed breakdown:
 
-  - **`MVVMs/`**: This is the heart of the application's features, organized by domain according to the MVVM pattern. Each sub-directory typically contains the Views (UI), ViewModels (state and logic), and sometimes feature-specific Models.
-    - **`Bases/`**: Contains base classes for ViewModels (`BaseViewModel`, `BaseAssistantViewModel`). These provide common functionality like API service access (`openAIService`), error handling (`errorMessage`), API key management (`@AppStorage`), and notification observation, reducing boilerplate in specific ViewModels.
-    - **`Content/`**: Manages the root view hierarchy.
-      - `ContentView.swift`: The main container view presented by `OpenAssistantApp`. It sets up the `MainTabView` and handles the display of loading indicators or initial setup screens (like the API key prompt).
-      - `ContentViewModel.swift`: The ViewModel for `ContentView`. It orchestrates the initial state, manages loading indicators, and potentially handles global state changes affecting the main view.
-    - **`MainTabView.swift`**: Defines the primary tab-based navigation structure of the app (Chat, Assistants, Vector Stores, Settings). It hosts the views for each tab.
-    - **`Assistants/`**: Feature module dedicated to managing OpenAI Assistants.
-      - `AssistantManager/`: Contains `AssistantManagerView` (lists assistants) and `AssistantManagerViewModel` (fetches, creates, updates, deletes assistants; manages the `assistants` array).
-      - `AssistantCreate/`: Views (`CreateAssistantView`, `AssistantFormView`, `ActionButtonsView`) responsible for the multi-step process of creating a new assistant. Logic is likely handled by `AssistantManagerViewModel` or a dedicated creation ViewModel.
-      - `AssistantDetails/`: `AssistantDetailView` displays the configuration of a single assistant. `AssistantDetailViewModel` manages the state for this view, potentially handling updates and interactions like associating Vector Stores.
-      - `AssistantPicker/`: `AssistantPickerView` allows the user to select an assistant to start a chat session. It likely interacts with `AssistantManagerViewModel` to get the list of assistants.
-    - **`Chat/`**: Feature module for the conversational interface.
-      - `ChatView.swift`: The main view for a chat session with a selected Assistant. It orchestrates the `MessageListView` and `InputView`.
-      - `ChatViewModel.swift`: The critical ViewModel managing the entire state of a single chat session. It holds the `messages` array, handles `inputText`, creates/manages the OpenAI Thread, sends messages (`sendMessage`), runs the Assistant (`runAssistantOnThread`), polls for run status (`pollRunStatus`), fetches new messages, and handles loading states and errors for the chat interface.
-      - `MessageListView.swift`, `MessageView.swift`: Views responsible for rendering the list of messages in the conversation.
-      - `InputView.swift`: The UI component containing the text field for user input and the send button.
-    - **`VectorStores/`**: Feature module for managing Vector Stores and associated files.
-      - `VectorStoreListView.swift`: Displays the list of available Vector Stores.
-      - `VectorStoreManagerViewModel.swift`: Manages the fetching, creation, deletion, and updating of Vector Stores. It holds the `vectorStores` array and interacts with the `APIService` for vector store and file operations.
-      - `VectorStoreDetailView.swift`: Shows the details of a specific Vector Store, including its associated files. Allows users to add/remove files.
-      - `Files/`: Contains views like `AddFileView` (for uploading files) and `FileDetailView` (showing details of a file within a store), likely interacting with `VectorStoreManagerViewModel`.
-    - **`Responses/`**: Contains `ResponseView` and `ResponseViewModel`. This seems dedicated to displaying raw or processed responses from a specific API endpoint (perhaps `/v1/responses`), potentially for debugging or a specialized feature.
-    - **`LoadingView.swift`**: A reusable SwiftUI view component displayed when background tasks are in progress.
-    - **`MessageStore.swift`**: Appears to be responsible for persisting chat messages locally, though its current implementation might be basic.
+### Root Level
 
-  - **`Assets.xcassets/`**: Stores application assets like icons, images, and color sets.
-  - **`Preview Content/`**: Contains assets used specifically for generating SwiftUI Previews in Xcode.
-  - **`cline_docs/`**: Developer-specific documentation, like roadmaps or task lists.
-  - **`Info.plist`**, **`PrivacyInfo.xcprivacy`**: Standard iOS application configuration files defining metadata, permissions, and privacy practices.
-  - **`.xcconfig` files**: Xcode build configuration files (Debug, Release) allowing different settings for various build types.
+- `OpenAssistantApp.swift`: The main entry point of the application.
+- `ContentView.swift`: The root view of the application.
+- `ContentViewModel.swift`: The view model for the root view.
 
-- **`OpenAssistant.xcodeproj/`**: The Xcode project file. It defines targets, build settings, dependencies, and the overall structure recognized by Xcode.
+### APIService Directory
+
+- `APIService.swift`: The main service for interacting with the OpenAI API.
+- `OpenAIInitializer.swift`: Handles the initialization of the OpenAI API.
+- `OpenAIService-AssistantExt.swift`: Extension for assistant-related API calls.
+- `OpenAIService-ThreadsExt.swift`: Extension for thread-related API calls.
+- `OpenAIService-VectorExt.swift`: Extension for vector-related API calls.
+- `FileUploadService.swift`: Service for handling file uploads.
+
+### Main Directory
+
+- `MainTabView.swift`: The main tab view of the application.
+- `SettingsView.swift`: The settings view of the application.
+
+### MVVMs Directory
+
+- `Bases/`: Contains base view models.
+- `Assistants/`: Contains view models and views related to assistant management.
+- `Chat/`: Contains view models and views related to chat functionality.
+- `VectorStores/`: Contains view models and views related to vector store management.
 
 ---
 
-## 🌊 Application Flow
+## 🌊 Core Application & Data Flow
 
-Here's a high-level overview of the typical user flow and application logic:
+### 1. App Initialization & Setup
 
-```mermaid
-flowchart TD
-    A[App Launch] --> B{API Key Set?};
-    B -- No --> C[Show SettingsView];
-    C --> D[User Enters Key];
-    D --> E[Save Key];
-    B -- Yes --> F[Show MainTabView];
-    E --> F;
+The application starts with the `OpenAssistantApp` struct, which initializes the main view (`ContentView`) and sets up the necessary environment objects.
 
-    F --> G{Select Tab};
-    G -- Chat --> H[AssistantPickerView];
-    G -- Assistants --> I[AssistantManagerView];
-    G -- Vector Stores --> J[VectorStoreListView];
-    G -- Settings --> C;
+### 2. API Key Management
 
-    H --> K{Select Assistant};
-    K --> L[Navigate to ChatView];
-    L --> M[ChatViewModel Manages Thread/Messages];
-    M --> N[User Sends Message];
-    N --> O[ChatVM calls APIService];
-    O --> P[APIService interacts with OpenAI];
-    P --> Q[APIService returns response];
-    Q --> R[ChatVM updates Messages];
-    R --> S[MessageListView Updates];
-    S --> N;
-    %% Loop back for more messages
+The API key is securely stored using `@AppStorage`, ensuring it persists across app sessions. The `ContentViewModel` handles the retrieval and storage of the API key.
 
-    I --> T{User Action};
-    T -- Create --> U[Show CreateAssistantView];
-    T -- View/Edit --> V[Show AssistantDetailView];
-    T -- Delete --> W[Call APIService to Delete];
+### 3. Main Navigation (`MainTabView`)
 
-    J --> X{User Action};
-    X -- Create --> Y[Show Create Vector Store UI];
-    X -- View/Edit --> Z[Show VectorStoreDetailView];
-    Z --> AA[Manage Files Add/Remove];
+The main navigation is handled by the `MainTabView`, which provides tabs for different sections of the application, such as assistants, vector stores, and settings.
 
-    style A fill:#lightgrey,stroke:#333
-    style F fill:#lightblue,stroke:#333
-    style L fill:#lightgreen,stroke:#333
-    style I fill:#lightyellow,stroke:#333
-    style J fill:#lightcoral,stroke:#333
-```
+### 4. Data Fetching & Display
 
-1. **App Launch**: The `OpenAssistantApp` initializes the main view (`ContentView`).
-2. **API Key Check**: On appearance, the `ContentViewModel` checks if an OpenAI API key is stored using `@AppStorage`. If not, the `SettingsView` is presented modally.
-3. **Settings**: The user enters their API key in the `SettingsView`, which is saved securely.
-4. **Main Interface (`MainTabView`)**: The user is presented with a tabbed interface:
-    - **Chat Tab**: Shows the `AssistantPickerView` to select an existing assistant to chat with.
-    - **Assistants Tab**: Displays the `AssistantManagerView` to manage (create, view, update, delete) assistants.
-    - **Vector Stores Tab**: Presents the `VectorStoreListView` to manage vector stores and their associated files.
-5. **Assistant Interaction**:
-    - Users can create a new assistant via `CreateAssistantView`.
-    - Existing assistants can be viewed/edited in `AssistantDetailView`. This includes associating Vector Stores.
-6. **Vector Store Interaction**:
-    - Users can create new vector stores.
-    - Files can be uploaded and associated with stores via `AddFileView` within the `VectorStoreDetailView`.
-7. **Chatting**:
-    - Selecting an assistant from the `AssistantPickerView` navigates to the `ChatView`.
-    - The `ChatViewModel` manages creating a new thread (if needed) and handles sending messages to/receiving messages from the selected assistant via the `APIService`.
-    - Messages are displayed in `MessageListView`, and input is handled by `InputView`.
+Data fetching is primarily handled by the `APIService` and its extensions. The view models interact with the service layer to fetch data and update the views accordingly.
+
+### 5. User Interactions & Actions
+
+User interactions are captured by the views and delegated to the view models. The view models process the input, perform necessary actions (e.g., API calls), and update the UI state.
 
 ---
 
-## 👏 Acknowledgments
+## 🧩 Core Components & Their Interactions
 
-> - [📌  List any resources, contributors, inspiration, etc.]
+### App Entry & Root UI (`OpenAssistantApp`, `ContentView`, `ContentViewModel`)
+
+The `OpenAssistantApp` struct initializes the main view (`ContentView`) and sets up the necessary environment objects. The `ContentView` is the root view of the application, and the `ContentViewModel` manages its state.
+
+### API Service Layer (`APIService/`)
+
+The `APIService` directory contains the main service for interacting with the OpenAI API and its extensions for specific functionalities (e.g., assistant management, thread management, vector store management).
+
+### Base ViewModels (`MVVMs/Bases/`)
+
+The `Bases` directory contains base view models that provide common functionality for other view models.
+
+### Assistant Management (`MVVMs/Assistants/`)
+
+The `Assistants` directory contains view models and views related to assistant management, such as creating, viewing, and configuring assistants.
+
+### Chat Functionality (`MVVMs/Chat/`)
+
+The `Chat` directory contains view models and views related to chat functionality, including the `ChatView` and `ChatViewModel`.
+
+### Vector Store & File Management (`MVVMs/VectorStores/`)
+
+The `VectorStores` directory contains view models and views related to vector store management, including CRUD operations and file handling.
+
+### Settings (`SettingsView.swift`)
+
+The `SettingsView` provides a user interface for configuring application settings, such as appearance and API key management.
+
+### Data Persistence (`MessageStore.swift`, `@AppStorage`)
+
+The `MessageStore` handles the persistence of chat history, while `@AppStorage` is used for storing the API key and other settings.
+
+### Decoupled Communication (`NotificationCenter`)
+
+The `NotificationCenter` is used for decoupled communication between different parts of the application, allowing for real-time updates across the UI.
 
 ---
+
+## 📊 Visualizing Interactions (`interactions.html`)
+
+The `interactions.html` file provides a visual representation of the interactions between different components of the application. It uses the Mermaid diagram syntax to illustrate the flow of data and interactions.
+
+---
+
+## 🛠️ Potential Refinements & Considerations
+
+- **Error Handling**: Improve error handling across the application, especially for API calls and data persistence.
+- **Unit Testing**: Increase the coverage of unit tests for view models and services.
+- **Performance Optimization**: Optimize the performance of data fetching and UI rendering.
+- **Accessibility**: Enhance the accessibility of the application to ensure it is usable by a wider audience.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Xcode 12 or later
+- Swift 5.3 or later
+- An OpenAI API key
+
+### Installation & Setup
+
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/yourusername/OpenAssistant-iOS.git
+    cd OpenAssistant-iOS
+    ```
+
+2. Open the project in Xcode:
+    ```sh
+    open OpenAssistant.xcodeproj
+    ```
+
+3. Set your OpenAI API key in the `ContentViewModel.swift` file:
+    ```swift
+    @AppStorage("apiKey") var apiKey: String = "YOUR_API_KEY"
+    ```
+
+4. Build and run the project on your iOS device or simulator.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read the [contributing guidelines](CONTRIBUTING.md) for more information.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.

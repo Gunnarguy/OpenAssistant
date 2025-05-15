@@ -1,37 +1,39 @@
-/interactions.html -->
 <!DOCTYPE html>
 <html>
 <head>
-  <title>OpenAssistant Component Interactions (Final Hierarchical)</title>
+  <title>OpenAssistant Component Interactions (Updated)</title>
   <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
   <style type="text/css">
     #mynetwork {
       width: 100%;
       height: 95vh;
       border: 1px solid lightgray;
-      background-color: #f9f9f9; /* Slightly off-white background */
+      background-color: #f9f9f9;
     }
     /* Style nodes based on group */
     .vis-network .vis-node {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif; /* System font */
-        font-size: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+        font-size: 13px; /* Increased font size */
         color: #333;
-        border-width: 1.5px;
-        shape-rendering: crispEdges; /* Sharper node edges */
+        border-width: 2px; /* Thicker border */
+        shape-rendering: crispEdges;
     }
-    .vis-network .vis-node.app { background-color: #FFD700; border-color: #B8860B; } /* Darker Gold Border */
-    .vis-network .vis-node.view { background-color: #B0E0E6; border-color: #4682B4; } /* Powder Blue / Steel Blue Border */
-    .vis-network .vis-node.viewModel { background-color: #98FB98; border-color: #2E8B57; } /* Pale Green / Sea Green Border */
-    .vis-network .vis-node.service { background-color: #FFA07A; border-color: #CD5C5C; } /* Light Salmon / Indian Red Border */
-    .vis-network .vis-node.store { background-color: #DDA0DD; border-color: #8A2BE2; } /* Plum / Blue Violet Border */
-    .vis-network .vis-node.utility { background-color: #F5F5DC; border-color: #A0522D; } /* Beige / Sienna Border */
-    .vis-network .vis-node.tabView { background-color: #E6E6FA; border-color: #483D8B; } /* Lavender / Dark Slate Blue Border */
+    .vis-network .vis-node.app { background-color: #FFD700; border-color: #B8860B; }
+    .vis-network .vis-node.view { background-color: #B0E0E6; border-color: #4682B4; }
+    .vis-network .vis-node.viewModel { background-color: #98FB98; border-color: #2E8B57; }
+    .vis-network .vis-node.service { background-color: #FFA07A; border-color: #CD5C5C; }
+    .vis-network .vis-node.store { background-color: #DDA0DD; border-color: #8A2BE2; }
+    .vis-network .vis-node.tabView { background-color: #E6E6FA; border-color: #483D8B; }
+    .vis-network .vis-node.model { background-color: #FFB6C1; border-color: #FF69B4; } /* Pink for models */
+    .vis-network .vis-node.utility { background-color: #F5F5DC; border-color: #A0522D; } /* Kept for potential future use, but nodes removed */
+    .vis-network .vis-node.config { background-color: #D2B48C; border-color: #8B4513; } /* Kept for potential future use, but nodes removed */
+
 
     /* Style edges */
     .vis-network .vis-edge {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-        font-size: 9px;
-        color: #606060; /* Slightly darker grey for labels */
+        font-size: 10px; /* Slightly larger edge labels */
+        color: #505050; /* Darker grey for labels */
     }
   </style>
 </head>
@@ -40,173 +42,125 @@
 <div id="mynetwork"></div>
 
 <script type="text/javascript">
-  // Create nodes representing application components
-  // 'level' property guides the hierarchical layout (lower numbers are higher up)
+  // SIMPLIFIED NODES DEFINITION
   const nodes = new vis.DataSet([
-    // App Entry & Main Structure
-    { id: 'App', label: 'OpenAssistantApp', group: 'app', title: 'Main application entry point', level: 0 },
-    { id: 'ContentView', label: 'ContentView', group: 'view', title: 'Root view container', level: 1 },
-    { id: 'ContentVM', label: 'ContentViewModel', group: 'viewModel', title: 'Manages ContentView state (e.g., loading)', level: 2 },
-    { id: 'MainTabView', label: 'MainTabView', group: 'tabView', title: 'Root container for tab navigation', level: 2 },
-    { id: 'LoadingView', label: 'LoadingView', group: 'view', title: 'Global loading indicator overlay', level: 2 },
+    // --- App Entry & Main Structure (Level 0-2) ---
+    { id: 'OpenAssistantApp', label: 'OpenAssistantApp\n(@main)', group: 'app', title: 'Main application entry point. Initializes root VMs and MessageStore.', level: 0 },
+    { id: 'ContentView', label: 'ContentView', group: 'view', title: 'Root SwiftUI View. Hosts MainTabView or LoadingView. Observes ContentViewModel.', level: 1 },
+    { id: 'ContentViewModel', label: 'ContentViewModel', group: 'viewModel', title: 'Manages ContentView state (loading, API key check), refreshes content. Uses AssistantManagerVM.', level: 2 },
+    { id: 'MainTabView', label: 'MainTabView', group: 'tabView', title: 'Core tab-based navigation. Hosts feature views. Presents ChatView.', level: 2 },
+    { id: 'LoadingView', label: 'LoadingView (Global)', group: 'view', title: 'Global loading indicator overlay, shown by ContentView.', level: 2 },
 
-    // Core ViewModels (Initialized early)
-    { id: 'AssistantManagerVM', label: 'AssistantManagerViewModel', group: 'viewModel', title: 'Manages Assistant data (CRUD, Fetch)', level: 1 },
-    { id: 'VectorStoreManagerVM', label: 'VectorStoreManagerViewModel', group: 'viewModel', title: 'Manages Vector Store data (CRUD, Fetch, Files)', level: 1 },
-    { id: 'BaseVM', label: 'BaseViewModel', group: 'viewModel', title: 'Base class providing common ViewModel functionality', level: 5 },
-    { id: 'BaseAssistantVM', label: 'BaseAssistantViewModel', group: 'viewModel', title: 'Base class for Assistant-related ViewModels', level: 4 },
+    // --- Core ViewModels & Stores (Initialized Early - Level 1-2) ---
+    { id: 'AssistantManagerViewModel', label: 'AssistantManagerVM', group: 'viewModel', title: 'Manages Assistants (CRUD, models, vector stores link). Injected via @EnvironmentObject.', level: 1 },
+    { id: 'VectorStoreManagerViewModel', label: 'VectorStoreManagerVM', group: 'viewModel', title: 'Manages Vector Stores (CRUD, files). Injected via @EnvironmentObject.', level: 1 },
+    { id: 'MessageStore', label: 'MessageStore', group: 'store', title: 'Manages local persistence of chat messages. Injected via @EnvironmentObject.', level: 1 },
 
-    // Tabs & Features (Organized by Tab)
-    // -- Assistants Tab
-    { id: 'AssistantPickerView', label: 'AssistantPickerView', group: 'view', title: 'View to select an Assistant for chat', level: 3 },
-    { id: 'AssistantPickerVM', label: 'AssistantPickerViewModel', group: 'viewModel', title: 'Logic for AssistantPickerView', level: 4 },
-    // -- Manage Tab
-    { id: 'AssistantManagerView', label: 'AssistantManagerView', group: 'view', title: 'View to list and manage Assistants', level: 3 },
-    { id: 'CreateAssistantView', label: 'CreateAssistantView', group: 'view', title: 'View/Form to create a new Assistant', level: 4 },
-    { id: 'AssistantFormView', label: 'AssistantFormView', group: 'view', title: 'Reusable UI form for Assistant details', level: 5 },
-    { id: 'AssistantDetailView', label: 'AssistantDetailView', group: 'view', title: 'View to display/edit Assistant details', level: 4 },
-    { id: 'AssistantDetailVM', label: 'AssistantDetailViewModel', group: 'viewModel', title: 'Logic for AssistantDetailView', level: 5 },
-    { id: 'AssistantDetailSectionView', label: 'AssistantDetailSectionView', group: 'view', title: 'Reusable UI section within AssistantDetailView', level: 5 },
-    // -- Vector Stores Tab
-    { id: 'VectorStoreListView', label: 'VectorStoreListView', group: 'view', title: 'View to list and manage Vector Stores', level: 3 },
-    { id: 'VectorStoreDetailView', label: 'VectorStoreDetailView', group: 'view', title: 'View Vector Store details and associated files', level: 4 },
-    { id: 'AddFileView', label: 'AddFileView', group: 'view', title: 'View to upload files to a Vector Store', level: 5 },
-    { id: 'FileDetailView', label: 'FileDetailView', group: 'view', title: 'View details of a specific file within a Vector Store', level: 5 },
-    // -- Settings Tab
-    { id: 'SettingsView', label: 'SettingsView', group: 'view', title: 'View to configure application settings (e.g., API Key)', level: 3 },
-    // -- Responses Tab
-    { id: 'ResponseView', label: 'ResponseView', group: 'view', title: 'View to inspect raw API responses (debugging)', level: 3 },
-    { id: 'ResponseVM', label: 'ResponseViewModel', group: 'viewModel', title: 'Logic for ResponseView', level: 4 },
+    // --- Base Classes (Level 3) ---
+    { id: 'BaseViewModel', label: 'BaseViewModel', group: 'viewModel', title: 'Base for ViewModels. Provides OpenAIService access, API key handling, error publishing.', level: 3 },
+    { id: 'BaseAssistantViewModel', label: 'BaseAssistantVM', group: 'viewModel', title: 'Base for Assistant ViewModels, inherits BaseViewModel.', level: 4 },
 
-    // Chat Feature
-    { id: 'ChatView', label: 'ChatView', group: 'view', title: 'Main chat interface view', level: 4 },
-    { id: 'ChatVM', label: 'ChatViewModel', group: 'viewModel', title: 'Logic for ChatView (sending/receiving messages)', level: 5 },
-    { id: 'ChatContentView', label: 'ChatContentView', group: 'view', title: 'Container view holding chat UI elements', level: 5 },
-    { id: 'MessageListView', label: 'MessageListView', group: 'view', title: 'Displays the list of chat messages', level: 6 },
-    { id: 'InputView', label: 'InputView', group: 'view', title: 'Component for text input and send button', level: 6 },
-    { id: 'MessageStore', label: 'MessageStore', group: 'store', title: 'Stores and manages chat messages for a session', level: 3 },
-    { id: 'ChatHistoryView', label: 'ChatHistoryView', group: 'view', title: 'View to display past chat messages (if implemented)', level: 5 },
+    // --- Settings Feature (Level 3) ---
+    { id: 'SettingsView', label: 'SettingsView', group: 'view', title: 'UI for API Key and Appearance. Posts .settingsUpdated.', level: 3 },
 
-    // API Service Layer (Lower levels, foundational)
-    { id: 'OpenAIService', label: 'OpenAIService', group: 'service', title: 'Core class for interacting with OpenAI API', level: 7 },
-    { id: 'OpenAIService-Assistant', label: 'OpenAIService\n-Assistant', group: 'service', title: 'Extension for Assistant-related API endpoints', level: 6 },
-    { id: 'OpenAIService-Threads', label: 'OpenAIService\n-Threads', group: 'service', title: 'Extension for Threads/Messages API endpoints', level: 6 },
-    { id: 'OpenAIService-Vector', label: 'OpenAIService\n-Vector', group: 'service', title: 'Extension for Vector Store API endpoints', level: 6 },
-    { id: 'FileUploadService', label: 'FileUploadService', group: 'service', title: 'Service dedicated to handling file uploads', level: 6 },
-    { id: 'OpenAIInitializer', label: 'OpenAIInitializer', group: 'service', title: 'Manages the shared OpenAIService instance', level: 6 },
-    { id: 'Errors', label: 'Errors', group: 'utility', title: 'Defines custom error types for the application', level: 7 },
+    // --- Assistant Management Feature (Level 4-5) ---
+    { id: 'AssistantManagerView', label: 'AssistantManagerView', group: 'view', title: 'Lists assistants, navigates to Detail/Create. Uses AssistantManagerVM.', level: 4 },
+    // CreateAssistantView and AssistantFormView are important for flow but can be implied if too cluttered.
+    { id: 'AssistantDetailView', label: 'AssistantDetailView', group: 'view', title: 'Displays/edits an Assistant. Uses AssistantDetailVM. Integrates VectorStoreManagement.', level: 5 },
+    { id: 'AssistantDetailViewModel', label: 'AssistantDetailVM', group: 'viewModel', title: 'Manages state for AssistantDetailView. Handles updates, deletion, Vector Store association.', level: 5 },
 
-    // Utilities & System Frameworks (Lowest levels, widely used)
-    { id: 'NotificationCenter', label: 'NotificationCenter', group: 'utility', title: 'System mechanism for broadcasting events', level: 8 },
-    { id: 'AppStorage', label: '@AppStorage', group: 'utility', title: 'SwiftUI mechanism for UserDefaults persistence', level: 8 },
-    { id: 'Combine', label: 'Combine', group: 'utility', title: 'Apple framework for handling asynchronous events and state', level: 8 },
+    // --- Assistant Picking Feature (Level 4-5) ---
+    { id: 'AssistantPickerView', label: 'AssistantPickerView', group: 'view', title: 'Lists assistants to select for chat. Uses AssistantPickerVM.', level: 4 },
+    { id: 'AssistantPickerViewModel', label: 'AssistantPickerVM', group: 'viewModel', title: 'Fetches/provides assistants for AssistantPickerView.', level: 5 },
+
+    // --- Chat Feature (Level 4-6) ---
+    { id: 'ChatView', label: 'ChatView', group: 'view', title: 'Main chat interface. Uses ChatVM.', level: 4 },
+    { id: 'ChatViewModel', label: 'ChatViewModel', group: 'viewModel', title: 'Core logic for chat: thread mgmt, messages, run polling. Uses OpenAIService-Threads, MessageStore.', level: 5 },
+    { id: 'ChatContentView', label: 'ChatContentView', group: 'view', title: 'Container for MessageList & InputView within ChatView.', level: 6 },
+    { id: 'MessageListView', label: 'MessageListView', group: 'view', title: 'Displays list of chat messages.', level: 6 },
+    { id: 'InputView', label: 'InputView', group: 'view', title: 'TextEditor for message input and SendButton.', level: 6 },
+
+    // --- Vector Store Management Feature (Level 4-5) ---
+    { id: 'VectorStoreListView', label: 'VectorStoreListView', group: 'view', title: 'Lists Vector Stores. Uses VectorStoreManagerVM.', level: 4 },
+    { id: 'VectorStoreDetailView', label: 'VectorStoreDetailView', group: 'view', title: 'Displays Vector Store details & files. Uses VectorStoreManagerVM.', level: 5 },
+    // AddFileView can be implied if too cluttered.
+
+    // --- API Service Layer (Level 7-8) ---
+    { id: 'OpenAIService', label: 'OpenAIService (Base)', group: 'service', title: 'Core for OpenAI API interactions: requests, auth, retries.', level: 7 },
+    { id: 'OpenAIService-Extensions', label: 'OpenAIService Extensions\n(Assistant, Threads, Vector)', group: 'service', title: 'Extensions for specific API endpoints (Assistant, Threads, Vector Store/File).', level: 8 },
+    { id: 'FileUploadService', label: 'FileUploadService', group: 'service', title: 'Service for multipart/form-data file uploads to OpenAI.', level: 8 },
+    { id: 'OpenAIInitializer', label: 'OpenAIInitializer', group: 'service', title: 'Manages shared OpenAIService instance creation & config.', level: 7 },
+
+    // --- Data Models (Conceptual Grouping - Level 9) ---
+    { id: 'DataModels', label: 'Data Models\n(Assistant, Message, Thread, etc.)', group: 'model', title: 'Structs for API objects (Assistant, Message, Thread, Run, VectorStore, File, Tool, APIError, ResponseFormat).', level: 9 }
   ]);
 
-  // Create edges representing interactions between components
-  // Labels describe the nature of the interaction
+  // SIMPLIFIED EDGES DEFINITION
   const edges = new vis.DataSet([
-    // App Initialization Flow
-    { from: 'App', to: 'ContentView', label: 'Creates' },
-    { from: 'App', to: 'AssistantManagerVM', label: 'Creates &\nInjects (Env)', arrows: 'to' },
-    { from: 'App', to: 'VectorStoreManagerVM', label: 'Creates &\nInjects (Env)', arrows: 'to' },
-    { from: 'App', to: 'SettingsView', label: 'Shows (if no key)', arrows: 'to', dashes: true },
-    { from: 'App', to: 'AppStorage', label: 'Reads API Key', arrows: 'to' },
-    { from: 'App', to: 'AssistantManagerVM', label: 'Calls\nFetch Assistants', arrows: 'to', dashes: true }, // On appear
+    // --- App Initialization Flow ---
+    { from: 'OpenAssistantApp', to: 'ContentView', label: 'Presents' },
+    { from: 'OpenAssistantApp', to: 'AssistantManagerViewModel', label: 'Creates & Injects', arrows: 'to' },
+    { from: 'OpenAssistantApp', to: 'VectorStoreManagerViewModel', label: 'Creates & Injects', arrows: 'to' },
+    { from: 'OpenAssistantApp', to: 'MessageStore', label: 'Creates & Injects', arrows: 'to' },
 
-    // ContentView & ViewModel
-    { from: 'ContentView', to: 'ContentVM', label: 'Uses (State)', arrows: 'to' },
-    { from: 'ContentView', to: 'MainTabView', label: 'Displays (UI)' },
-    { from: 'ContentView', to: 'LoadingView', label: 'Displays (UI)', dashes: true },
-    { from: 'ContentView', to: 'MessageStore', label: 'Creates', arrows: 'to' },
-    { from: 'ContentView', to: 'VectorStoreManagerVM', label: 'Uses (Env)', arrows: 'to' }, // Clarification: App creates, ContentView uses via Env
-    { from: 'ContentVM', to: 'AssistantManagerVM', label: 'Uses (Env)', arrows: 'to' },
-    { from: 'ContentVM', to: 'NotificationCenter', label: 'Listens For\n.settingsUpdated', arrows: 'from' },
+    // --- ContentView & ContentViewModel ---
+    { from: 'ContentView', to: 'ContentViewModel', label: 'Uses (State)', arrows: 'to' },
+    { from: 'ContentView', to: 'MainTabView', label: 'Displays' },
+    { from: 'ContentView', to: 'LoadingView', label: 'Displays (Conditional)', dashes: true },
+    { from: 'ContentViewModel', to: 'AssistantManagerViewModel', label: 'Uses (Refresh)', arrows: 'to' },
 
-    // MainTabView & Tabs
-    { from: 'MainTabView', to: 'AssistantPickerView', label: 'Contains Tab:\nAssistants' },
-    { from: 'MainTabView', to: 'AssistantManagerView', label: 'Contains Tab:\nManage' },
-    { from: 'MainTabView', to: 'VectorStoreListView', label: 'Contains Tab:\nVector Stores' },
-    { from: 'MainTabView', to: 'SettingsView', label: 'Contains Tab:\nSettings' },
-    { from: 'MainTabView', to: 'ResponseView', label: 'Contains Tab:\nResponses' },
+    // --- MainTabView & Tabs ---
+    { from: 'MainTabView', to: 'AssistantPickerView', label: 'Tab: Assistants' },
+    { from: 'MainTabView', to: 'AssistantManagerView', label: 'Tab: Manage' },
+    { from: 'MainTabView', to: 'VectorStoreListView', label: 'Tab: Vector Stores' },
+    { from: 'MainTabView', to: 'SettingsView', label: 'Tab: Settings' },
     { from: 'MainTabView', to: 'ChatView', label: 'Presents (Sheet)', arrows: 'to', dashes: true },
-    { from: 'MainTabView', to: 'MessageStore', label: 'Passes To Tabs', arrows: 'to' },
-    { from: 'MainTabView', to: 'VectorStoreManagerVM', label: 'Provides (Env)', arrows: 'to' }, // Passes via Environment
-    { from: 'MainTabView', to: 'ResponseVM', label: 'Uses (State)', arrows: 'to' },
-    { from: 'ResponseVM', to: 'OpenAIService', label: 'Calls API', arrows: 'to' }, // For fetching responses
 
-    // Assistant Picker
-    { from: 'AssistantPickerView', to: 'AssistantPickerVM', label: 'Uses (State)', arrows: 'to' },
-    { from: 'AssistantPickerVM', to: 'AssistantManagerVM', label: 'Uses (Env)', arrows: 'to' },
-    { from: 'AssistantPickerVM', to: 'NotificationCenter', label: 'Listens For\nUpdates', arrows: 'from' },
-    { from: 'AssistantPickerView', to: 'ChatView', label: 'Navigates To', arrows: 'to', dashes: true },
+    // --- Settings Feature ---
+    { from: 'SettingsView', to: 'BaseViewModel', label: 'Uses (API Key)', arrows: 'to', dashes: true }, // Indirectly via AppStorage
 
-    // Assistant Manager
-    { from: 'AssistantManagerView', to: 'AssistantManagerVM', label: 'Uses (Env)', arrows: 'to' },
-    { from: 'AssistantManagerView', to: 'CreateAssistantView', label: 'Presents (Sheet)', arrows: 'to', dashes: true },
+    // --- BaseViewModel & OpenAIInitializer ---
+    { from: 'BaseViewModel', to: 'OpenAIInitializer', label: 'Uses to get/init', arrows: 'to' },
+    { from: 'OpenAIInitializer', to: 'OpenAIService', label: 'Creates/Provides', arrows: 'to' },
+    { from: 'BaseViewModel', to: 'OpenAIService', label: 'Holds Instance', arrows: 'to' },
+    { from: 'BaseAssistantViewModel', to: 'BaseViewModel', label: 'Inherits', arrows: 'from' },
+
+    // --- Assistant Management Feature ---
+    { from: 'AssistantManagerView', to: 'AssistantManagerViewModel', label: 'Uses (State)', arrows: 'to' },
     { from: 'AssistantManagerView', to: 'AssistantDetailView', label: 'Navigates To', arrows: 'to', dashes: true },
-    { from: 'AssistantManagerView', to: 'NotificationCenter', label: 'Listens For\nUpdates', arrows: 'from' },
-    { from: 'CreateAssistantView', to: 'AssistantManagerVM', label: 'Calls\nCreate Assistant', arrows: 'to' },
-    { from: 'CreateAssistantView', to: 'AssistantFormView', label: 'Uses (UI)' },
-    { from: 'AssistantDetailView', to: 'AssistantDetailVM', label: 'Uses (State)', arrows: 'to' },
-    { from: 'AssistantDetailView', to: 'AssistantDetailSectionView', label: 'Uses (UI)' },
-    { from: 'AssistantDetailVM', to: 'AssistantManagerVM', label: 'Calls\nUpdate/Delete', arrows: 'to' },
-    { from: 'AssistantDetailVM', to: 'VectorStoreManagerVM', label: 'Uses (Env)', arrows: 'to' }, // For linking stores
+    { from: 'AssistantManagerViewModel', to: 'OpenAIService-Extensions', label: 'Calls API (CRUD)', arrows: 'to' },
+    { from: 'AssistantDetailView', to: 'AssistantDetailViewModel', label: 'Uses (State)', arrows: 'to' },
+    { from: 'AssistantDetailViewModel', to: 'OpenAIService-Extensions', label: 'Calls API (Update)', arrows: 'to' },
+    { from: 'AssistantDetailViewModel', to: 'DataModels', label: 'Manages (Assistant)', arrows: 'to', color: {color: '#aaa'} },
 
-    // Vector Stores
-    { from: 'VectorStoreListView', to: 'VectorStoreManagerVM', label: 'Uses (Env)', arrows: 'to' },
+    // --- Assistant Picking Feature ---
+    { from: 'AssistantPickerView', to: 'AssistantPickerViewModel', label: 'Uses (State)', arrows: 'to' },
+    { from: 'AssistantPickerViewModel', to: 'OpenAIService-Extensions', label: 'Calls API (Fetch)', arrows: 'to' },
+    { from: 'AssistantPickerView', to: 'ChatView', label: 'Presents', arrows: 'to', dashes: true },
+
+    // --- Chat Feature ---
+    { from: 'ChatView', to: 'ChatViewModel', label: 'Uses (State)', arrows: 'to' },
+    { from: 'ChatView', to: 'ChatContentView', label: 'Displays' },
+    { from: 'ChatContentView', to: 'MessageListView', label: 'Displays' },
+    { from: 'ChatContentView', to: 'InputView', label: 'Displays' },
+    { from: 'InputView', to: 'ChatViewModel', label: 'Calls sendMessage()', arrows: 'to' },
+    { from: 'ChatViewModel', to: 'MessageStore', label: 'Adds/Reads Messages', arrows: 'to' },
+    { from: 'ChatViewModel', to: 'OpenAIService-Extensions', label: 'Calls API (Threads, Runs)', arrows: 'to' },
+    { from: 'ChatViewModel', to: 'DataModels', label: 'Manages (Thread, Message)', arrows: 'to', color: {color: '#aaa'} },
+
+    // --- Vector Store Management Feature ---
+    { from: 'VectorStoreListView', to: 'VectorStoreManagerViewModel', label: 'Uses (State)', arrows: 'to' },
     { from: 'VectorStoreListView', to: 'VectorStoreDetailView', label: 'Navigates To', arrows: 'to', dashes: true },
-    { from: 'VectorStoreDetailView', to: 'VectorStoreManagerVM', label: 'Uses (Env)', arrows: 'to' },
-    { from: 'VectorStoreDetailView', to: 'AddFileView', label: 'Presents (Sheet)', arrows: 'to', dashes: true },
-    { from: 'VectorStoreDetailView', to: 'FileDetailView', label: 'Navigates To', arrows: 'to', dashes: true },
-    { from: 'AddFileView', to: 'VectorStoreManagerVM', label: 'Calls\nUpload/Add File', arrows: 'to' },
+    { from: 'VectorStoreManagerViewModel', to: 'OpenAIService-Extensions', label: 'Calls API (VS CRUD, Files)', arrows: 'to' },
+    { from: 'VectorStoreManagerViewModel', to: 'FileUploadService', label: 'Uses for Upload', arrows: 'to' },
+    { from: 'VectorStoreDetailView', to: 'VectorStoreManagerViewModel', label: 'Uses (State & Actions)', arrows: 'to' },
+    { from: 'VectorStoreManagerViewModel', to: 'DataModels', label: 'Manages (VectorStore)', arrows: 'to', color: {color: '#aaa'} },
 
-    // Settings
-    { from: 'SettingsView', to: 'AppStorage', label: 'Reads/Writes\nAPI Key', arrows: 'to' },
-    { from: 'SettingsView', to: 'NotificationCenter', label: 'Posts\n.settingsUpdated', arrows: 'to' },
-    { from: 'SettingsView', to: 'AssistantManagerVM', label: 'Uses (Env)', arrows: 'to' }, // To potentially clear data on key change
-
-    // Chat
-    { from: 'ChatView', to: 'ChatVM', label: 'Uses (State)', arrows: 'to' },
-    { from: 'ChatView', to: 'MessageStore', label: 'Uses (Data)', arrows: 'to' },
-    { from: 'ChatView', to: 'ChatContentView', label: 'Displays (UI)' },
-    { from: 'ChatView', to: 'ChatHistoryView', label: 'Navigates To', arrows: 'to', dashes: true },
-    { from: 'ChatContentView', to: 'MessageListView', label: 'Displays (UI)' },
-    { from: 'ChatContentView', to: 'InputView', label: 'Displays (UI)' },
-    { from: 'InputView', to: 'ChatVM', label: 'Calls\nSend Message', arrows: 'to' },
-    { from: 'InputView', to: 'MessageStore', label: 'Adds User\nMessage', arrows: 'to' }, // Optimistic update
-    { from: 'ChatVM', to: 'MessageStore', label: 'Adds/Updates\nMessages', arrows: 'to' },
-    { from: 'ChatVM', to: 'OpenAIService-Threads', label: 'Calls API\n(Threads)', arrows: 'to' },
-    { from: 'ChatVM', to: 'BaseVM', label: 'Inherits From', arrows: 'from' }, // Or BaseAssistantVM
-
-    // ViewModel Inheritance & Base Class Usage
-    { from: 'AssistantManagerVM', to: 'BaseAssistantVM', label: 'Inherits From', arrows: 'from' },
-    { from: 'AssistantDetailVM', to: 'BaseAssistantVM', label: 'Inherits From', arrows: 'from' },
-    { from: 'AssistantPickerVM', to: 'BaseAssistantVM', label: 'Inherits From', arrows: 'from' },
-    { from: 'VectorStoreManagerVM', to: 'BaseVM', label: 'Inherits From', arrows: 'from' },
-    { from: 'BaseAssistantVM', to: 'BaseVM', label: 'Inherits From', arrows: 'from' },
-    { from: 'BaseVM', to: 'OpenAIService', label: 'Uses (Service)', arrows: 'to' },
-    { from: 'BaseVM', to: 'OpenAIInitializer', label: 'Uses (Service)', arrows: 'to' },
-    { from: 'BaseVM', to: 'AppStorage', label: 'Reads API Key', arrows: 'to' },
-    { from: 'BaseVM', to: 'NotificationCenter', label: 'Listens For\n.settingsUpdated', arrows: 'from' },
-
-    // API Service Layer Interactions
-    { from: 'AssistantManagerVM', to: 'OpenAIService-Assistant', label: 'Calls API\n(Assistants)', arrows: 'to' },
-    { from: 'AssistantManagerVM', to: 'OpenAIService-Vector', label: 'Calls API\n(Vector Stores)', arrows: 'to' }, // Fetching stores for linking
-    { from: 'VectorStoreManagerVM', to: 'OpenAIService-Vector', label: 'Calls API\n(Vector Stores)', arrows: 'to' },
-    { from: 'VectorStoreManagerVM', to: 'FileUploadService', label: 'Uses (Service)', arrows: 'to' },
-    { from: 'OpenAIService-Assistant', to: 'OpenAIService', label: 'Extends' },
-    { from: 'OpenAIService-Threads', to: 'OpenAIService', label: 'Extends' },
-    { from: 'OpenAIService-Vector', to: 'OpenAIService', label: 'Extends' },
-    { from: 'FileUploadService', to: 'OpenAIService', label: 'Uses (Internal)', arrows: 'to', dashes: true }, // Assumed internal dependency
-    { from: 'OpenAIService', to: 'Errors', label: 'Uses (Errors)', arrows: 'to' },
-
-    // System Framework Usage (Combine)
-    { from: 'ContentVM', to: 'Combine', label: 'Uses (Combine)', arrows: 'to' },
-    { from: 'BaseVM', to: 'Combine', label: 'Uses (Combine)', arrows: 'to' },
-    { from: 'ChatVM', to: 'Combine', label: 'Uses (Combine)', arrows: 'to' },
-    { from: 'VectorStoreManagerVM', to: 'Combine', label: 'Uses (Combine)', arrows: 'to' },
-    { from: 'AssistantManagerVM', to: 'Combine', label: 'Uses (Combine)', arrows: 'to' },
-    { from: 'OpenAIService', to: 'Combine', label: 'Uses (Combine)', arrows: 'to' }, // For publishers
+    // --- API Service Layer Interactions ---
+    { from: 'OpenAIService-Extensions', to: 'OpenAIService', label: 'Extends/Uses Base' },
+    { from: 'FileUploadService', to: 'OpenAIService', label: 'Uses Base (Session)', dashes: true, arrows: 'to' },
+    { from: 'OpenAIService', to: 'DataModels', label: 'Decodes Errors With', arrows: 'to', color: {color: '#aaa'} },
+    { from: 'OpenAIService-Extensions', to: 'DataModels', label: 'Decodes/Encodes', color: {color: '#aaa'} }
   ]);
 
   // Get the container element for the network graph
@@ -220,90 +174,82 @@
 
   // Define configuration options for the network visualization
   const options = {
-    // Configure the overall layout engine
     layout: {
       hierarchical: {
-        enabled: true,              // Use the hierarchical layout engine
-        levelSeparation: 220,       // Vertical distance between layers
-        nodeSpacing: 140,           // Horizontal distance between nodes within the same layer
-        treeSpacing: 280,           // Distance between different trees (if graph splits)
-        direction: 'UD',            // Layout direction: Up-Down (UD), Down-Up (DU), Left-Right (LR), Right-Left (RL)
-        sortMethod: 'directed',     // Arrange nodes trying to follow edge directions ('hubsize' is default)
-        shakeTowards: 'roots'       // Stabilize layout towards the root nodes ('leaves' also possible)
+        enabled: true,
+        levelSeparation: 250, // Increased further
+        nodeSpacing: 150,    // Increased further
+        treeSpacing: 300,    // Increased further
+        direction: 'UD',
+        sortMethod: 'directed',
+        shakeTowards: 'roots'
       }
     },
-    // Physics simulation is disabled for hierarchical layout
     physics: {
-        enabled: false
+        enabled: false // Keep physics disabled for hierarchical layouts
     },
-    // Configure node appearance
     nodes: {
-      shape: 'box',               // Node shape
-      margin: 12,                 // Margin around the text inside the node
-      borderWidth: 1.5,           // Node border thickness
-      shadow: {                   // Subtle shadow for depth
+      shape: 'box',
+      margin: 12, // Slightly more margin
+      borderWidth: 2, // Thicker border for better visibility
+      shadow: {
           enabled: true,
-          color: 'rgba(0,0,0,0.2)',
+          color: 'rgba(0,0,0,0.1)', // Lighter shadow
           size: 5,
-          x: 2,
-          y: 2
+          x: 3,
+          y: 3
       },
-      font: {                     // Font settings for node labels
-          size: 12,               // Font size
-          face: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif' // Use system font
+      font: {
+          size: 13, // Larger font for node labels
+          face: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif'
       }
     },
-    // Configure edge (connection) appearance
     edges: {
       arrows: {
-        to: { enabled: true, scaleFactor: 0.7, type: 'arrow' } // Arrowhead style
+        to: { enabled: true, scaleFactor: 0.7, type: 'arrow' } // Slightly larger arrows
       },
       smooth: {
-          enabled: true,            // Enable edge smoothing
-          type: 'cubicBezier',      // Curve type for smooth edges
-          forceDirection: 'vertical', // Prefer vertical curves for UD layout
-          roundness: 0.4            // Adjust curve roundness (0 to 1)
+          enabled: true,
+          type: 'cubicBezier', // Good default for hierarchical
+          forceDirection: 'vertical',
+          roundness: 0.4
       },
        color:{
-         color:'#888888',           // Default edge color (medium grey)
-         highlight:'#0056b3',       // Edge color on hover/selection (distinct blue)
-         hover: '#007bff',          // Edge color on hover (bright blue)
-         inherit: false,            // Do not inherit color from nodes (keeps edges consistent)
-         opacity:0.8                // Slight transparency for edges
+         color:'#666666', // Medium grey for edges
+         highlight:'#0052cc',
+         hover: '#007bff',
+         inherit: false,
+         opacity: 0.8
        },
        font: {
-           size: 9,                 // Font size for edge labels
-           color: '#606060',        // Label color (dark grey)
-           align: 'middle',         // Label position relative to the edge line
-           multi: true,             // Allow multi-line labels using '\n'
-           strokeWidth: 2,          // White stroke behind text for readability
-           strokeColor: '#ffffff'   // Color of the stroke behind text
+           size: 10, // Larger font for edge labels
+           color: '#444444',
+           align: 'middle',
+           strokeWidth: 3, // Thicker stroke for readability
+           strokeColor: '#ffffffBB' // More opaque stroke
        },
-       width: 1,                    // Default edge line width
-       hoverWidth: 1.5,             // Edge line width on hover
-       selectionWidth: 2           // Edge line width when selected
+       width: 1, // Slightly thicker default lines
+       hoverWidth: 1.5,
+       selectionWidth: 2
     },
-    // Configure user interaction options
     interaction: {
-      dragNodes: true,              // Allow dragging nodes (even in hierarchical)
-      dragView: true,               // Allow panning the view by dragging
-      zoomView: true,               // Allow zooming using scroll wheel or pinch
-      tooltipDelay: 200,            // Delay before showing tooltips (in ms)
-      hover: true,                  // Enable hover effects on nodes and edges
-      hoverConnectedEdges: true,    // Highlight connected edges when hovering over a node
-      selectConnectedEdges: true,   // Select connected edges when selecting a node
-      navigationButtons: true,      // Show zoom/fit buttons overlay
-      keyboard: true                // Enable keyboard shortcuts (zoom with +/-, move with arrows)
+      dragNodes: true,
+      dragView: true,
+      zoomView: true,
+      tooltipDelay: 100, // Even faster tooltips
+      hover: true,
+      navigationButtons: true,
+      keyboard: true
     },
-    // Define styles for different node groups (referenced by 'group' property in node data)
      groups: {
-        app: { color: { background:'#FFD700', border:'#B8860B' } }, // Gold
-        view: { color: { background:'#B0E0E6', border:'#4682B4' } }, // Powder Blue
-        viewModel: { color: { background:'#98FB98', border:'#2E8B57' } }, // Pale Green
-        service: { color: { background:'#FFA07A', border:'#CD5C5C' } }, // Light Salmon
-        store: { color: { background:'#DDA0DD', border:'#8A2BE2' } }, // Plum
-        utility: { color: { background:'#F5F5DC', border:'#A0522D' } }, // Beige
-        tabView: { color: { background:'#E6E6FA', border:'#483D8B' } } // Lavender
+        app: { color: { background:'#FFD700', border:'#B8860B', highlight: { background: '#FFFACD', border: '#FFD700'} } },
+        view: { color: { background:'#B0E0E6', border:'#4682B4', highlight: { background: '#E0FFFF', border: '#B0E0E6'} } },
+        viewModel: { color: { background:'#98FB98', border:'#2E8B57', highlight: { background: '#E0FFE0', border: '#98FB98'} } },
+        service: { color: { background:'#FFA07A', border:'#CD5C5C', highlight: { background: '#FFE4E1', border: '#FFA07A'} } },
+        store: { color: { background:'#DDA0DD', border:'#8A2BE2', highlight: { background: '#E6E6FA', border: '#DDA0DD'} } },
+        tabView: { color: { background:'#E6E6FA', border:'#483D8B', highlight: { background: '#F0F0FF', border: '#E6E6FA'} } },
+        model: { color: { background:'#FFB6C1', border:'#FF69B4', highlight: { background: '#FFF0F5', border: '#FFB6C1'} } }
+        // utility and config groups styles remain but nodes are removed for simplicity
     }
   };
 
