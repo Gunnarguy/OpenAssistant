@@ -125,10 +125,10 @@ graph TD
     end
 
     subgraph "Data Persistence & System Services"
-        P_AppStorage[@AppStorage (API Key, Settings)]
-        P_MessageStore[MessageStore (Chat History)]
+        P_AppStorage["@AppStorage (API Key, Settings)"]
+        P_MessageStore["MessageStore (Chat History)"]
         P_NotifCenter[NotificationCenter]
-        P_Combine[Combine Framework]
+        P_Combine["Combine Framework"]
     end
 
     subgraph "External Dependencies"
