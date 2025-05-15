@@ -6,7 +6,7 @@
   <style type="text/css">
     #mynetwork {
       width: 100%;
-      height: 95vh;
+      height: 100vh; /* Increased height to fill viewport */
       border: 1px solid lightgray;
       background-color: #f9f9f9;
     }
@@ -177,9 +177,9 @@
     layout: {
       hierarchical: {
         enabled: true,
-        levelSeparation: 250, // Increased further
-        nodeSpacing: 150,    // Increased further
-        treeSpacing: 300,    // Increased further
+        levelSeparation: 300, // Further increased for clarity
+        nodeSpacing: 180,    // Further increased
+        treeSpacing: 350,    // Further increased
         direction: 'UD',
         sortMethod: 'directed',
         shakeTowards: 'roots'
@@ -190,7 +190,7 @@
     },
     nodes: {
       shape: 'box',
-      margin: 12, // Slightly more margin
+      margin: 15, // Slightly more margin for larger nodes
       borderWidth: 2, // Thicker border for better visibility
       shadow: {
           enabled: true,
@@ -200,13 +200,13 @@
           y: 3
       },
       font: {
-          size: 13, // Larger font for node labels
+          size: 14, // Slightly larger font for node labels
           face: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif'
       }
     },
     edges: {
       arrows: {
-        to: { enabled: true, scaleFactor: 0.7, type: 'arrow' } // Slightly larger arrows
+        to: { enabled: true, scaleFactor: 0.8, type: 'arrow' } // Slightly larger arrows for visibility
       },
       smooth: {
           enabled: true,
@@ -222,15 +222,15 @@
          opacity: 0.8
        },
        font: {
-           size: 10, // Larger font for edge labels
+           size: 11, // Slightly larger font for edge labels
            color: '#444444',
            align: 'middle',
            strokeWidth: 3, // Thicker stroke for readability
-           strokeColor: '#ffffffBB' // More opaque stroke
+           strokeColor: '#ffffffCC' // More opaque stroke for better readability
        },
-       width: 1, // Slightly thicker default lines
-       hoverWidth: 1.5,
-       selectionWidth: 2
+       width: 1.2, // Slightly thicker default lines for better visibility
+       hoverWidth: 1.8,
+       selectionWidth: 2.2
     },
     interaction: {
       dragNodes: true,
