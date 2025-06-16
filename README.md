@@ -461,38 +461,96 @@ The `interactions.html` file provides a visual representation of the interaction
 
 ### Prerequisites
 
-- Xcode 12 or later
-- Swift 5.3 or later
-- An OpenAI API key
+To build and run OpenAssistant, you'll need:
+
+- **macOS**: The latest version is recommended for compatibility with the newest Xcode features.
+- **Xcode**: The latest version, available from the Mac App Store. This includes the Swift compiler and iOS SDKs.
+- **Swift 5.x**: Comes bundled with modern versions of Xcode.
+- **OpenAI API Key**: An active API key from OpenAI is required to use the application's core features. You can obtain one from [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+- **Git**: For cloning the repository.
 
 ### Installation & Setup
 
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/yourusername/OpenAssistant-iOS.git
-    cd OpenAssistant-iOS
+1. **Clone the Repository**:
+
+    ```bash
+    git clone https://github.com/username/repository.git # Replace with the actual repository URL
+    cd OpenAssistant # Or your repository's directory name
     ```
 
-2. Open the project in Xcode:
-    ```sh
+2. **Open in Xcode**:
+
+    Open the `OpenAssistant.xcodeproj` file in Xcode.
+
+    ```bash
     open OpenAssistant.xcodeproj
     ```
 
-3. Set your OpenAI API key in the `ContentViewModel.swift` file:
-    ```swift
-    @AppStorage("apiKey") var apiKey: String = "YOUR_API_KEY"
-    ```
+3. **Configure API Key**:
+    - Upon launching the app for the first time, navigate to the Settings screen (often indicated by a gear icon).
+    - Enter your OpenAI API Key in the designated field. The application securely stores your API key using `@AppStorage` for persistence across sessions, as mentioned in the Key Features.
 
-4. Build and run the project on your iOS device or simulator.
+4. **Build & Run**:
+    - In Xcode, select an appropriate iOS Simulator or a connected physical iOS device from the scheme menu.
+    - Click the "Play" button (or press `Cmd+R`) to build and launch the application on the selected simulator/device.
+
+Ensure your development environment meets these prerequisites for a smooth setup process.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read the [contributing guidelines](CONTRIBUTING.md) for more information.
+We warmly welcome contributions to OpenAssistant! Whether it's reporting a bug, suggesting a feature, or submitting code changes, your help is appreciated. To ensure a smooth and effective collaboration, please follow these guidelines:
+
+### Reporting Issues
+
+- Before creating a new issue, please check if a similar one already exists.
+- Provide a clear and descriptive title and detailed steps to reproduce the bug or a thorough explanation of the feature request.
+- Include information about your environment (e.g., iOS version, Xcode version) if relevant.
+
+### Making Changes
+
+1. **Fork the Repository**: Start by forking the main `OpenAssistant` repository to your GitHub account.
+
+2. **Create a Branch**: For each new feature or bug fix, create a new branch from the primary development branch (e.g., `main` or `develop` - please check the repository's active branches). Use a descriptive branch name like:
+
+    ```bash
+    git checkout -b feature/your-awesome-feature
+    # or
+    git checkout -b bugfix/fix-that-annoying-bug
+    ```
+
+3. **Develop**:
+    - Write clean, maintainable, and well-documented code.
+    - Adhere to the existing coding style and conventions found in the project.
+    - Add meaningful comments where necessary.
+
+4. **Test**:
+    - If you're adding new functionality, please include relevant unit or UI tests.
+    - Ensure all existing tests pass before submitting your changes.
+
+5. **Commit Your Changes**: Use clear and concise commit messages that explain the "what" and "why" of your changes.
+
+6. **Push to Your Fork**: Push your changes to your forked repository.
+
+    ```bash
+    git push origin feature/your-awesome-feature
+    ```
+
+7. **Submit a Pull Request (PR)**:
+    - Open a Pull Request from your branch to the primary development branch of the main `OpenAssistant` repository.
+    - Provide a clear title and a detailed description of the changes in your PR. Link to any relevant issues.
+    - Be prepared to discuss your changes and address any feedback from the maintainers during the code review process.
+
+### Code of Conduct
+Please note that this project may have a Code of Conduct. Participants are expected to follow it in all interactions. (If a Code of Conduct file, e.g., `CODE_OF_CONDUCT.md`, exists, link to it here).
+
+Thank you for contributing to OpenAssistant!
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+This project is licensed under the MIT License.
+
+A copy of the MIT License is included in the `LICENSE` file (commonly `LICENSE` or `LICENSE.md`) in the root directory of this repository. Please review the license for terms and conditions regarding the use, modification, and distribution of the software.
