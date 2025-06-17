@@ -48,6 +48,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
         super.init()
         print("VectorStoreManagerViewModel initialized")
         initializeAndFetch()
+        setupVectorStoreObservers()
     }
 
     private func configureRequest(_ request: inout URLRequest, httpMethod: String) {
@@ -75,6 +76,19 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 }
             )
             .store(in: &cancellables)
+    }
+
+    private func setupVectorStoreObservers() {
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [
+            .vectorStoreCreated, .vectorStoreUpdated, .vectorStoreDeleted
+        ]
+
+        names.forEach { name in
+            center.publisher(for: name)
+                .sink { [weak self] _ in self?.initializeAndFetch() }
+                .store(in: &cancellables)
+        }
     }
 
     func createRequest(endpoint: String, method: String, body: [String: Any]? = nil) -> URLRequest?
@@ -125,6 +139,9 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 }
                 return vectorStoreId
             }
+            .handleEvents(receiveOutput: { id in
+                NotificationCenter.default.post(name: .vectorStoreCreated, object: id)
+            })
             .eraseToAnyPublisher()
     }
 
@@ -304,7 +321,13 @@ class VectorStoreManagerViewModel: BaseViewModel {
             Task { @MainActor in
                 // Use the refined handler that includes status code checking
                 self.handleDataTaskResponseWithStatusCodeCheck(
-                    data: data, response: response, error: error, completion: completion)
+                    data: data, response: response, error: error
+                ) { result in
+                    if case .success(let store) = result {
+                        NotificationCenter.default.post(name: .vectorStoreUpdated, object: store)
+                    }
+                    completion(result)
+                }
             }
         }.resume()
     }
@@ -489,6 +512,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 },
                 receiveValue: { _ in
                     print("Vector store deleted successfully.")
+                    NotificationCenter.default.post(name: .vectorStoreDeleted, object: vectorStoreId)
                 }
             )
             .store(in: &cancellables)

@@ -153,7 +153,12 @@ extension OpenAIService {
 
         // Use the new retry mechanism
         performDataTaskWithRetry(request) { data, response, error in
-            self.handleResponse(data, response, error, completion: completion)
+            self.handleResponse(data, response, error) { result in
+                if case .success(let store) = result {
+                    NotificationCenter.default.post(name: .vectorStoreCreated, object: store.id)
+                }
+                completion(result)
+            }
         }
     }
 
