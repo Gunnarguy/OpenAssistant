@@ -6,6 +6,9 @@ extension Notification.Name {
     static let assistantCreated = Notification.Name("assistantCreated")
     static let assistantUpdated = Notification.Name("assistantUpdated")
     static let assistantDeleted = Notification.Name("assistantDeleted")
+    static let vectorStoreCreated = Notification.Name("vectorStoreCreated")
+    static let vectorStoreUpdated = Notification.Name("vectorStoreUpdated")
+    static let vectorStoreDeleted = Notification.Name("vectorStoreDeleted")
 }
 
 // MARK: - View Extension for Keyboard Dismissal
