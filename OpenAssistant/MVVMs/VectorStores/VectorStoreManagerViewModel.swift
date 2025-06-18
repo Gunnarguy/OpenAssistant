@@ -8,6 +8,8 @@ class VectorStoreManagerViewModel: BaseViewModel {
     private let baseURL = URL(string: "https://api.openai.com/v1")!
     private let session: URLSession
     var cancellables = Set<AnyCancellable>()  // Change access level to internal
+    private var isFetching = false
+    private let fetchQueue = DispatchQueue(label: "com.openassistant.vectorStoreFetch")
     @Published var alertMessage: String?
     @Published var showAlert: Bool = false
 
@@ -48,6 +50,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
         super.init()
         print("VectorStoreManagerViewModel initialized")
         initializeAndFetch()
+        setupVectorStoreObservers()
     }
 
     private func configureRequest(_ request: inout URLRequest, httpMethod: String) {
@@ -58,23 +61,48 @@ class VectorStoreManagerViewModel: BaseViewModel {
     }
 
     func initializeAndFetch() {
-        fetchVectorStores()
-            .sink(
-                receiveCompletion: { completion in
-                    switch completion {
-                    case .finished:
-                        print("Successfully fetched vector stores.")
-                    case .failure(let error):
-                        print("Error fetching vector stores: \(error.localizedDescription)")
-                        self.alertMessage = error.localizedDescription
-                        self.showAlert = true
+        fetchQueue.async { [weak self] in
+            guard let self = self else { return }
+            guard !self.isFetching else { return }
+            self.isFetching = true
+
+            self.fetchVectorStores()
+                .sink(
+                    receiveCompletion: { [weak self] completion in
+                        self?.fetchQueue.async { self?.isFetching = false }
+                        switch completion {
+                        case .finished:
+                            print("Successfully fetched vector stores.")
+                        case .failure(let error):
+                            print("Error fetching vector stores: \(error.localizedDescription)")
+                            DispatchQueue.main.async { [weak self] in
+                                self?.alertMessage = error.localizedDescription
+                                self?.showAlert = true
+                            }
+                        }
+                    },
+                    receiveValue: { [weak self] stores in
+                        DispatchQueue.main.async { [weak self] in
+                            self?.vectorStores = stores
+                        }
                     }
-                },
-                receiveValue: { [weak self] stores in
-                    self?.vectorStores = stores
-                }
-            )
-            .store(in: &cancellables)
+                )
+                .store(in: &self.cancellables)
+        }
+    }
+
+    private func setupVectorStoreObservers() {
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [
+            .vectorStoreCreated, .vectorStoreUpdated, .vectorStoreDeleted
+        ]
+
+        names.forEach { name in
+            center.publisher(for: name)
+                .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
+                .sink { [weak self] _ in self?.initializeAndFetch() }
+                .store(in: &cancellables)
+        }
     }
 
     func createRequest(endpoint: String, method: String, body: [String: Any]? = nil) -> URLRequest?
@@ -125,6 +153,11 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 }
                 return vectorStoreId
             }
+            .handleEvents(receiveOutput: { id in
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .vectorStoreCreated, object: id)
+                }
+            })
             .eraseToAnyPublisher()
     }
 
@@ -304,7 +337,15 @@ class VectorStoreManagerViewModel: BaseViewModel {
             Task { @MainActor in
                 // Use the refined handler that includes status code checking
                 self.handleDataTaskResponseWithStatusCodeCheck(
-                    data: data, response: response, error: error, completion: completion)
+                    data: data, response: response, error: error
+                ) { result in
+                    if case .success(let store) = result {
+                        DispatchQueue.main.async {
+                            NotificationCenter.default.post(name: .vectorStoreUpdated, object: store)
+                        }
+                    }
+                    completion(result)
+                }
             }
         }.resume()
     }
@@ -489,6 +530,9 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 },
                 receiveValue: { _ in
                     print("Vector store deleted successfully.")
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .vectorStoreDeleted, object: vectorStoreId)
+                    }
                 }
             )
             .store(in: &cancellables)
