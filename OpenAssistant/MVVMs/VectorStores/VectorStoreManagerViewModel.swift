@@ -13,6 +13,9 @@ class VectorStoreManagerViewModel: BaseViewModel {
     @Published var alertMessage: String?
     @Published var showAlert: Bool = false
 
+    // Cache for current file counts to provide real-time updates
+    private var fileCache: [String: [VectorStoreFile]] = [:]
+
     // Standard error handling enum
     enum VectorStoreError: Error, LocalizedError {
         case invalidURL
@@ -61,28 +64,27 @@ class VectorStoreManagerViewModel: BaseViewModel {
     }
 
     func initializeAndFetch() {
-        fetchQueue.async { [weak self] in
-            guard let self = self else { return }
+        Task { @MainActor in
             guard !self.isFetching else { return }
             self.isFetching = true
 
             self.fetchVectorStores()
                 .sink(
                     receiveCompletion: { [weak self] completion in
-                        self?.fetchQueue.async { self?.isFetching = false }
-                        switch completion {
-                        case .finished:
-                            print("Successfully fetched vector stores.")
-                        case .failure(let error):
-                            print("Error fetching vector stores: \(error.localizedDescription)")
-                            DispatchQueue.main.async { [weak self] in
+                        Task { @MainActor in
+                            self?.isFetching = false
+                            switch completion {
+                            case .finished:
+                                print("Successfully fetched vector stores.")
+                            case .failure(let error):
+                                print("Error fetching vector stores: \(error.localizedDescription)")
                                 self?.alertMessage = error.localizedDescription
                                 self?.showAlert = true
                             }
                         }
                     },
                     receiveValue: { [weak self] stores in
-                        DispatchQueue.main.async { [weak self] in
+                        Task { @MainActor in
                             self?.vectorStores = stores
                         }
                     }
@@ -94,12 +96,12 @@ class VectorStoreManagerViewModel: BaseViewModel {
     private func setupVectorStoreObservers() {
         let center = NotificationCenter.default
         let names: [Notification.Name] = [
-            .vectorStoreCreated, .vectorStoreUpdated, .vectorStoreDeleted
+            .vectorStoreCreated, .vectorStoreUpdated, .vectorStoreDeleted,
         ]
 
         names.forEach { name in
             center.publisher(for: name)
-                .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
+                .debounce(for: .milliseconds(500), scheduler: RunLoop.main)  // Increased debounce to reduce rapid calls after deletion
                 .sink { [weak self] _ in self?.initializeAndFetch() }
                 .store(in: &cancellables)
         }
@@ -337,15 +339,9 @@ class VectorStoreManagerViewModel: BaseViewModel {
             Task { @MainActor in
                 // Use the refined handler that includes status code checking
                 self.handleDataTaskResponseWithStatusCodeCheck(
-                    data: data, response: response, error: error
-                ) { result in
-                    if case .success(let store) = result {
-                        DispatchQueue.main.async {
-                            NotificationCenter.default.post(name: .vectorStoreUpdated, object: store)
-                        }
-                    }
-                    completion(result)
-                }
+                    data: data, response: response, error: error,
+                    completion: completion as (Result<VectorStore, Error>) -> Void
+                )
             }
         }.resume()
     }
@@ -513,6 +509,25 @@ class VectorStoreManagerViewModel: BaseViewModel {
                             VectorStoreError.responseError(httpResponse.statusCode, errorMessage)))
                     return
                 }
+
+                // Update the cached files immediately to provide real-time UI updates
+                DispatchQueue.main.async {
+                    if let index = self.vectorStores.firstIndex(where: { $0.id == vectorStoreId }) {
+                        self.vectorStores[index].files?.removeAll { $0.id == fileId }
+                        print(
+                            "Updated cached files for vector store \(vectorStoreId) after file deletion"
+                        )
+                    }
+                }
+
+                // Post notification with delay to allow API to process deletion
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    NotificationCenter.default.post(
+                        name: .vectorStoreUpdated, object: vectorStoreId)
+                    print(
+                        "Posted delayed file deletion notification for vector store: \(vectorStoreId)"
+                    )
+                }
                 promise(.success(()))
             }.resume()
         }
@@ -531,7 +546,8 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 receiveValue: { _ in
                     print("Vector store deleted successfully.")
                     DispatchQueue.main.async {
-                        NotificationCenter.default.post(name: .vectorStoreDeleted, object: vectorStoreId)
+                        NotificationCenter.default.post(
+                            name: .vectorStoreDeleted, object: vectorStoreId)
                     }
                 }
             )
@@ -709,6 +725,34 @@ class VectorStoreManagerViewModel: BaseViewModel {
         Task { @MainActor in
             alertMessage = message
             showAlert = true
+        }
+    }
+
+    // MARK: - File Cache Management
+
+    /// Updates the file cache for a vector store
+    func updateFileCache(vectorStoreId: String, files: [VectorStoreFile]) {
+        fileCache[vectorStoreId] = files
+    }
+
+    /// Gets the current file count for a vector store (from cache if available, otherwise from API data)
+    func getCurrentFileCount(for vectorStoreId: String) -> Int {
+        if let cachedFiles = fileCache[vectorStoreId] {
+            return cachedFiles.count
+        }
+        // Fall back to API data
+        return vectorStores.first { $0.id == vectorStoreId }?.fileCounts.total ?? 0
+    }
+
+    /// Removes a file from the cache (for optimistic updates)
+    func removeFileFromCache(vectorStoreId: String, fileId: String) {
+        fileCache[vectorStoreId]?.removeAll { $0.id == fileId }
+    }
+
+    /// Adds a file to the cache (for optimistic updates)
+    func addFileToCache(vectorStoreId: String, file: VectorStoreFile) {
+        if fileCache[vectorStoreId] != nil {
+            fileCache[vectorStoreId]?.append(file)
         }
     }
 }

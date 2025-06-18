@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 // MARK: - VectorStoreListView
@@ -27,17 +27,23 @@ struct VectorStoreListView: View {
                     addButton
                 }
             }
-            .alert("Create New Vector Store", isPresented: $isShowingCreateAlert, actions: {
-                createAlertActions
-            }, message: {
-                Text("Enter a name for the new vector store.")
-            })
+            .alert(
+                "Create New Vector Store", isPresented: $isShowingCreateAlert,
+                actions: {
+                    createAlertActions
+                },
+                message: {
+                    Text("Enter a name for the new vector store.")
+                }
+            )
             .onAppear(perform: loadVectorStores)
             .onReceive(NotificationCenter.default.publisher(for: .settingsUpdated)) { _ in
                 loadVectorStores()
             }
             .alert(item: $viewModel.errorMessage) { error in
-                Alert(title: Text("Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
+                Alert(
+                    title: Text("Error"), message: Text(error.message),
+                    dismissButton: .default(Text("OK")))
             }
             .searchable(text: $searchText, prompt: "Search vector stores")
             .refreshable {
@@ -45,20 +51,20 @@ struct VectorStoreListView: View {
             }
         }
     }
-    
+
     private var loadingView: some View {
         VStack {
             ProgressView()
                 .progressViewStyle(CircularProgressViewStyle())
                 .scaleEffect(1.5)
-            
+
             Text("Loading Vector Stores...")
                 .font(.headline)
                 .foregroundColor(.secondary)
                 .padding(.top, 20)
         }
     }
-    
+
     private var mainListView: some View {
         List {
             if viewModel.vectorStores.isEmpty {
@@ -73,7 +79,7 @@ struct VectorStoreListView: View {
                             didDeleteFile: $didDeleteFile
                         )
                     ) {
-                        VectorStoreRow(vectorStore: vectorStore)
+                        VectorStoreRow(vectorStore: vectorStore, viewModel: viewModel)
                     }
                     .swipeActions {
                         Button(role: .destructive) {
@@ -86,22 +92,22 @@ struct VectorStoreListView: View {
             }
         }
     }
-    
+
     private var emptyStateView: some View {
         Section {
             VStack(spacing: 20) {
                 Image(systemName: "rectangle.stack.badge.plus")
                     .font(.system(size: 50))
                     .foregroundColor(.blue.opacity(0.8))
-                
+
                 Text("No Vector Stores Found")
                     .font(.headline)
-                
+
                 Text("Create a new vector store to get started")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                
+
                 Button("Create Vector Store") {
                     isShowingCreateAlert = true
                 }
@@ -119,8 +125,8 @@ struct VectorStoreListView: View {
             return viewModel.vectorStores
         } else {
             return viewModel.vectorStores.filter { store in
-                (store.name ?? "").localizedCaseInsensitiveContains(searchText) ||
-                store.id.localizedCaseInsensitiveContains(searchText)
+                (store.name ?? "").localizedCaseInsensitiveContains(searchText)
+                    || store.id.localizedCaseInsensitiveContains(searchText)
             }
         }
     }
@@ -158,7 +164,7 @@ struct VectorStoreListView: View {
             .assign(to: \.vectorStores, on: viewModel)
             .store(in: &viewModel.cancellables)
     }
-    
+
     private func refreshVectorStores() async {
         await withCheckedContinuation { continuation in
             viewModel.fetchVectorStores()
@@ -193,7 +199,8 @@ struct VectorStoreListView: View {
                         loadVectorStores()
                     case .failure(let error):
                         print("Error creating vector store: \(error.localizedDescription)")
-                        viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
+                        viewModel.errorMessage = IdentifiableError(
+                            message: error.localizedDescription)
                     }
                 },
                 receiveValue: { vectorStoreId in
@@ -207,17 +214,18 @@ struct VectorStoreListView: View {
 // MARK: - VectorStoreRow
 struct VectorStoreRow: View {
     let vectorStore: VectorStore
+    @ObservedObject var viewModel: VectorStoreManagerViewModel  // Add viewModel for real-time file counts
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(vectorStore.name ?? "Unnamed Vector Store")
                 .font(.headline)
-            
+
             HStack(spacing: 12) {
                 fileCountsIndicator
-                
+
                 Spacer()
-                
+
                 Text(formattedDate(from: vectorStore.createdAt))
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -225,19 +233,24 @@ struct VectorStoreRow: View {
         }
         .padding(.vertical, 4)
     }
-    
+
     private var fileCountsIndicator: some View {
         HStack(spacing: 8) {
-            Label("\(vectorStore.fileCounts.total)", systemImage: "doc.fill")
+            // Use real-time file count from viewModel instead of stale API data
+            let currentFileCount = viewModel.getCurrentFileCount(for: vectorStore.id)
+            Label("\(currentFileCount)", systemImage: "doc.fill")
                 .font(.caption)
                 .foregroundColor(.secondary)
-            
+
             if vectorStore.fileCounts.inProgress > 0 {
-                Label("\(vectorStore.fileCounts.inProgress)", systemImage: "arrow.triangle.2.circlepath")
-                    .font(.caption)
-                    .foregroundColor(.blue)
+                Label(
+                    "\(vectorStore.fileCounts.inProgress)",
+                    systemImage: "arrow.triangle.2.circlepath"
+                )
+                .font(.caption)
+                .foregroundColor(.blue)
             }
-            
+
             if vectorStore.fileCounts.failed > 0 {
                 Label("\(vectorStore.fileCounts.failed)", systemImage: "exclamationmark.circle")
                     .font(.caption)

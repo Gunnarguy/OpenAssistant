@@ -20,7 +20,7 @@ struct VectorStoreDetailView: View {
     var body: some View {
         List {
             VectorStoreDetailsSection(vectorStore: vectorStore)
-            FileCountsSection(fileCounts: vectorStore.fileCounts)
+            FileCountsSection(fileCounts: vectorStore.fileCounts, actualFiles: files)
             FilesSection(files: filteredFiles, isLoading: isLoading, onDelete: deleteFile)
             AddFileSection(isAddingFile: $isAddingFile)
         }
@@ -127,12 +127,19 @@ struct VectorStoreDetailView: View {
         let filesToDelete = offsets.map { files[$0] }
 
         for file in filesToDelete {
+            // Optimistically remove from UI immediately
+            if let index = self.files.firstIndex(where: { $0.id == file.id }) {
+                self.files.remove(at: index)
+            }
+
             viewModel.deleteFileFromVectorStore(vectorStoreId: vectorStore.id, fileId: file.id)
                 .sink(
                     receiveCompletion: { completion in
                         if case .failure(let error) = completion {
                             DispatchQueue.main.async {
-                                showAlert(
+                                // Re-add the file back if deletion failed
+                                self.files.append(file)
+                                self.showAlert(
                                     title: "Error",
                                     message: "Failed to delete file: \(error.localizedDescription)")
                             }
@@ -140,10 +147,15 @@ struct VectorStoreDetailView: View {
                     },
                     receiveValue: { _ in
                         DispatchQueue.main.async {
-                            if let index = self.files.firstIndex(where: { $0.id == file.id }) {
-                                self.files.remove(at: index)
+                            print(
+                                "File \(file.id) successfully deleted from vector store \(self.vectorStore.id)"
+                            )
+                            self.didDeleteFile = true
+
+                            // Delay refresh to give API time to process deletion
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                self.loadFiles()
                             }
-                            didDeleteFile = true
                         }
                     }
                 )
@@ -214,6 +226,7 @@ struct VectorStoreDetailsSection: View {
 
 struct FileCountsSection: View {
     let fileCounts: FileCounts
+    let actualFiles: [VectorStoreFile]  // Pass current files array for real-time count
 
     var body: some View {
         Section(header: Text("File Counts")) {
@@ -221,7 +234,8 @@ struct FileCountsSection: View {
             Text("Completed: \(fileCounts.completed)")
             Text("Failed: \(fileCounts.failed)")
             Text("Cancelled: \(fileCounts.cancelled)")
-            Text("Total: \(fileCounts.total)")
+            // Use actual file count for immediate updates
+            Text("Total: \(actualFiles.count)")
         }
     }
 }
