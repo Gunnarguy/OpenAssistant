@@ -9,6 +9,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
     private let session: URLSession
     var cancellables = Set<AnyCancellable>()  // Change access level to internal
     private var isFetching = false
+    private let fetchQueue = DispatchQueue(label: "com.openassistant.vectorStoreFetch")
     @Published var alertMessage: String?
     @Published var showAlert: Bool = false
 
@@ -60,27 +61,34 @@ class VectorStoreManagerViewModel: BaseViewModel {
     }
 
     func initializeAndFetch() {
-        guard !isFetching else { return }
-        isFetching = true
+        fetchQueue.async { [weak self] in
+            guard let self = self else { return }
+            guard !self.isFetching else { return }
+            self.isFetching = true
 
-        fetchVectorStores()
-            .sink(
-                receiveCompletion: { [weak self] completion in
-                    self?.isFetching = false
-                    switch completion {
-                    case .finished:
-                        print("Successfully fetched vector stores.")
-                    case .failure(let error):
-                        print("Error fetching vector stores: \(error.localizedDescription)")
-                        self?.alertMessage = error.localizedDescription
-                        self?.showAlert = true
+            self.fetchVectorStores()
+                .sink(
+                    receiveCompletion: { [weak self] completion in
+                        self?.fetchQueue.async { self?.isFetching = false }
+                        switch completion {
+                        case .finished:
+                            print("Successfully fetched vector stores.")
+                        case .failure(let error):
+                            print("Error fetching vector stores: \(error.localizedDescription)")
+                            DispatchQueue.main.async { [weak self] in
+                                self?.alertMessage = error.localizedDescription
+                                self?.showAlert = true
+                            }
+                        }
+                    },
+                    receiveValue: { [weak self] stores in
+                        DispatchQueue.main.async { [weak self] in
+                            self?.vectorStores = stores
+                        }
                     }
-                },
-                receiveValue: { [weak self] stores in
-                    self?.vectorStores = stores
-                }
-            )
-            .store(in: &cancellables)
+                )
+                .store(in: &self.cancellables)
+        }
     }
 
     private func setupVectorStoreObservers() {
@@ -91,6 +99,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
 
         names.forEach { name in
             center.publisher(for: name)
+                .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
                 .sink { [weak self] _ in self?.initializeAndFetch() }
                 .store(in: &cancellables)
         }

@@ -7,14 +7,24 @@ let package = Package(
         .iOS(.v15)
     ],
     products: [
-        .library(
-            name: "OpenAssistant",
-            targets: ["OpenAssistant"])
+        .library(name: "OpenAssistant", targets: ["OpenAssistant"])
     ],
     targets: [
         .target(
             name: "OpenAssistant",
-            path: "OpenAssistant"
+            path: "OpenAssistant",
+            exclude: [
+                "Assets.xcassets",
+                "Preview Content",
+                "Debug.xcconfig",
+                "Release.xcconfig",
+                "Info.plist",
+                "File",
+                "cline_docs",
+                "PrivacyInfo.xcprivacy",
+                "Main/Utils.swift",
+                "MVVMs/Bases/CommonMethods.swift"
+            ]
         )
     ]
 )
