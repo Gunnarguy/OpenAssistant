@@ -1,29 +1,21 @@
-import Foundation
 import Combine
+import Foundation
 import SwiftUI
 
 @MainActor
 class ContentViewModel: ObservableObject {
-    // MARK: - Loading State Enum
-    enum LoadingState {
-        case idle
-        case loading
-        case completed
-    }
-    
     // MARK: - Published Properties
     @Published var selectedAssistant: Assistant?
-    @Published private(set) var loadingState: LoadingState = .idle
-    
+    @Published var loadingMessage: String?
+
     // MARK: - Computed Properties
     var isLoading: Bool {
-        loadingState == .loading
+        loadingMessage != nil
     }
-    
+
     // MARK: - Private Properties
     private let assistantManagerViewModel: AssistantManagerViewModel
     private var cancellables = Set<AnyCancellable>()
-    private let loadingTime: TimeInterval = 2.0
 
     // MARK: - Initialization
     init(assistantManagerViewModel: AssistantManagerViewModel) {
@@ -37,33 +29,31 @@ class ContentViewModel: ObservableObject {
     }
 
     // MARK: - Public Methods
-    /// Simulates loading for UI transitions
-    func startLoading() {
-        guard loadingState != .loading else { return }
-        
-        loadingState = .loading
-        DispatchQueue.main.asyncAfter(deadline: .now() + loadingTime) { [weak self] in
-            Task { @MainActor in
-                self?.loadingState = .completed
-            }
-        }
-    }
-
     /// Called when the ContentView appears
     func onAppear() {
         logEvent("ContentView appeared")
+        refreshContent()
     }
 
     /// Refreshes content after settings changes
     func refreshContent() {
         logEvent("Refreshing content")
-        assistantManagerViewModel.fetchAssistants()
+        loadingMessage = "Updating assistants..."
+        Task {
+            // Simulate network delay for better visual feedback
+            try? await Task.sleep(for: .seconds(1.5))
+            assistantManagerViewModel.fetchAssistants()
+
+            await MainActor.run {
+                loadingMessage = nil
+            }
+        }
     }
-    
+
     // MARK: - Private Methods
     private func logEvent(_ message: String) {
         #if DEBUG
-        print("ContentViewModel: \(message)")
+            print("ContentViewModel: \(message)")
         #endif
     }
 }

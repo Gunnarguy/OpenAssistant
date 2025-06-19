@@ -7,40 +7,38 @@ struct AssistantManagerView: View {
     @State private var showingCreateAssistantSheet = false
 
     var body: some View {
-        NavigationView {
-            assistantList
-                .navigationTitle("Manage Assistants")
-                .toolbar {
-                    addButton
-                }
-        }
-        .onAppear {
-            viewModel.fetchAssistants()
-            // Observers might be better handled within the ViewModel's init or a dedicated setup method
-            // viewModel.setupNotificationObservers() // Ensure observers are set up if needed here
-        }
-        // Group notification receivers for clarity
-        .onReceive(NotificationCenter.default.publisher(for: .settingsUpdated)) { _ in
-            viewModel.fetchAssistants()  // Refresh on settings change
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .assistantCreated)) { _ in
-            viewModel.fetchAssistants()  // Refresh when an assistant is created
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .assistantUpdated)) { _ in
-            viewModel.fetchAssistants()  // Refresh when an assistant is updated
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .assistantDeleted)) { _ in
-            viewModel.fetchAssistants()  // Refresh when an assistant is deleted
-        }
-        .sheet(
-            isPresented: $showingCreateAssistantSheet,
-            onDismiss: {
-                // No need to fetch here if the create/update notifications handle it
-                // viewModel.fetchAssistants()
+        assistantList
+            .navigationTitle("Manage Assistants")
+            .toolbar {
+                addButton
             }
-        ) {
-            CreateAssistantView(viewModel: viewModel)
-        }
+            .onAppear {
+                viewModel.fetchAssistants()
+                // Observers might be better handled within the ViewModel's init or a dedicated setup method
+                // viewModel.setupNotificationObservers() // Ensure observers are set up if needed here
+            }
+            // Group notification receivers for clarity
+            .onReceive(NotificationCenter.default.publisher(for: .settingsUpdated)) { _ in
+                viewModel.fetchAssistants()  // Refresh on settings change
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .assistantCreated)) { _ in
+                viewModel.fetchAssistants()  // Refresh when an assistant is created
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .assistantUpdated)) { _ in
+                viewModel.fetchAssistants()  // Refresh when an assistant is updated
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .assistantDeleted)) { _ in
+                viewModel.fetchAssistants()  // Refresh when an assistant is deleted
+            }
+            .sheet(
+                isPresented: $showingCreateAssistantSheet,
+                onDismiss: {
+                    // No need to fetch here if the create/update notifications handle it
+                    // viewModel.fetchAssistants()
+                }
+            ) {
+                CreateAssistantView(viewModel: viewModel)
+            }
     }
 
     private var assistantList: some View {

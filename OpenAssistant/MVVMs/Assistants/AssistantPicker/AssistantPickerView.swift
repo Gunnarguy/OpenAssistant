@@ -31,8 +31,42 @@ struct AssistantPickerView: View {
         } else if let error = viewModel.errorMessage {
             // Pass the specific error message and retry action
             ErrorView(message: error.message, retryAction: viewModel.fetchAssistants)
+        } else if viewModel.assistants.isEmpty {
+            emptyStateView
         } else {
             assistantList
+        }
+    }
+
+    // MARK: - Empty State View
+    private var emptyStateView: some View {
+        VStack {
+            Spacer()
+            Image(systemName: "person.3.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.secondary)
+                .padding(.bottom, 20)
+            Text("No Assistants Yet")
+                .font(.title2)
+                .fontWeight(.bold)
+            Text("Tap the button below to create a new assistant.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+                .padding(.bottom, 30)
+            NavigationLink(destination: AssistantManagerView()) {
+                Text("Manage Assistants")
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.accentColor)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+            }
+            .padding(.horizontal, 40)
+            Spacer()
+            Spacer()
         }
     }
 

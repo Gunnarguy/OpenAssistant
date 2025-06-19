@@ -24,8 +24,7 @@ struct ContentView: View {
                 messageStore: messageStore  // Pass the environment object here
             )
             if viewModel.isLoading {
-                LoadingView()
-                    .onAppear(perform: viewModel.startLoading)
+                LoadingView(message: viewModel.loadingMessage ?? "Loading...")
             }
         }
         .onAppear(perform: viewModel.onAppear)

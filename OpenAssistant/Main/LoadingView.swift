@@ -5,47 +5,65 @@ import SwiftUI
 /// A view that displays a loading indicator with a message.
 struct LoadingView: View {
     // MARK: - Properties
-    
+
     var message: String
     var tint: Color
-    
+
     // MARK: - Initialization
-    
-    init(message: String = "Loading...", tint: Color = .blue) {
+
+    init(message: String = "Loading...", tint: Color = .accentColor) {
         self.message = message
         self.tint = tint
     }
-    
+
     // MARK: - Constants
-    
+
     private struct Constants {
-        static let backgroundColor = Color.white.opacity(0.8)
-        static let fontSize: Font = .title
-        static let progressViewScale: CGFloat = 2.0
-        static let padding: CGFloat = 16.0
+        static let cornerRadius: CGFloat = 20
+        static let shadowRadius: CGFloat = 10
+        static let padding: CGFloat = 24.0
+        static let spacing: CGFloat = 20.0
+        static let progressViewScale: CGFloat = 1.5
     }
-    
+
     // MARK: - Body
-    
+
     var body: some View {
-        VStack(spacing: Constants.padding) {
-            Text(message)
-                .font(Constants.fontSize)
-                .foregroundColor(tint)
-            
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: tint))
-                .scaleEffect(Constants.progressViewScale)
+        ZStack {
+            // Blurred background
+            VisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+                .edgesIgnoringSafeArea(.all)
+
+            VStack(spacing: Constants.spacing) {
+                Text(message)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(tint)
+                    .multilineTextAlignment(.center)
+
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: tint))
+                    .scaleEffect(Constants.progressViewScale)
+            }
+            .padding(Constants.padding)
+            .background(
+                RoundedRectangle(cornerRadius: Constants.cornerRadius)
+                    .fill(Color(.secondarySystemBackground))
+                    .shadow(radius: Constants.shadowRadius)
+            )
+            .padding()
         }
-        .padding(Constants.padding * 2)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Constants.backgroundColor)
-                .shadow(radius: 5)
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black.opacity(0.3))
-        .edgesIgnoringSafeArea(.all)
+    }
+}
+
+// MARK: - VisualEffectView for background blur
+struct VisualEffectView: UIViewRepresentable {
+    var effect: UIVisualEffect?
+    func makeUIView(context: UIViewRepresentableContext<Self>) -> UIVisualEffectView {
+        UIVisualEffectView()
+    }
+    func updateUIView(_ uiView: UIVisualEffectView, context: UIViewRepresentableContext<Self>) {
+        uiView.effect = effect
     }
 }
 
@@ -56,10 +74,10 @@ struct LoadingView_Previews: PreviewProvider {
         Group {
             LoadingView()
                 .previewDisplayName("Default")
-            
-            LoadingView(message: "Processing...", tint: .green)
+
+            LoadingView(message: "Processing your request, please wait...", tint: .purple)
                 .preferredColorScheme(.dark)
-                .previewDisplayName("Custom")
+                .previewDisplayName("Custom Dark")
         }
     }
 }
