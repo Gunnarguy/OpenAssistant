@@ -6,6 +6,9 @@ struct AssistantDetailsSection: View {
     @Binding var assistant: Assistant
     var availableModels: [String]
 
+    // Optional view model reference to trigger UI updates when bindings change
+    weak var viewModel: AssistantDetailViewModel?
+
     // State to track the original model type
     @State private var originalModelIsOseries: Bool = false
     @State private var originalModelIs4oFamily: Bool = false  // Renamed from originalModelIs4o
@@ -13,6 +16,67 @@ struct AssistantDetailsSection: View {
 
     // Available reasoning effort options for display
     private let reasoningOptions = ["low", "medium", "high"]
+
+    // Custom binding for name that triggers view model updates
+    private var nameBinding: Binding<String> {
+        Binding(
+            get: { assistant.name },
+            set: { newValue in
+                assistant.name = newValue
+                // Trigger view model update if available
+                viewModel?.objectWillChange.send()
+            }
+        )
+    }
+
+    // Custom binding for model that triggers view model updates
+    private var modelBinding: Binding<String> {
+        Binding(
+            get: { assistant.model },
+            set: { newValue in
+                assistant.model = newValue
+                // Trigger view model update if available
+                viewModel?.objectWillChange.send()
+            }
+        )
+    }
+
+    // Custom binding for instructions that triggers view model updates
+    private var instructionsBinding: Binding<String> {
+        Binding(
+            get: { assistant.instructions ?? "" },
+            set: { newValue in
+                assistant.instructions = newValue.isEmpty ? nil : newValue
+                // Trigger view model update if available
+                viewModel?.objectWillChange.send()
+            }
+        )
+    }
+
+    // Custom binding for description that triggers view model updates
+    private var descriptionBinding: Binding<String> {
+        Binding(
+            get: { assistant.description ?? "" },
+            set: { newValue in
+                assistant.description = newValue.isEmpty ? nil : newValue
+                // Trigger view model update if available
+                viewModel?.objectWillChange.send()
+            }
+        )
+    }
+
+    // Custom binding for reasoning effort that triggers view model updates
+    private var reasoningEffortBinding: Binding<String?> {
+        Binding(
+            get: { assistant.reasoning_effort },
+            set: { newValue in
+                assistant.reasoning_effort = newValue
+                // Trigger view model update if available
+                viewModel?.objectWillChange.send()
+                print("AssistantDetailsSection: reasoning_effort changed to \(newValue ?? "nil")")
+            }
+        )
+    }
 
     // Helper to check if the *current* selection is an O-series model
     private var isCurrentSelectionOModel: Bool {
@@ -56,7 +120,7 @@ struct AssistantDetailsSection: View {
             HStack {
                 Image(systemName: "textformat.abc")
                     .foregroundColor(.secondary)
-                NameField(name: $assistant.name)
+                NameField(name: nameBinding)
             }
 
             // Instructions (Editable) - Use HStack with icon and TextEditor
@@ -64,7 +128,7 @@ struct AssistantDetailsSection: View {
                 Image(systemName: "doc.text")
                     .foregroundColor(.secondary)
                     .padding(.top, 8)  // Adjust icon position slightly
-                InstructionsField(instructions: Binding($assistant.instructions, default: ""))
+                InstructionsField(instructions: instructionsBinding)
             }
 
             // Model Picker - Filtered based on original model type - Use HStack with icon
@@ -73,7 +137,7 @@ struct AssistantDetailsSection: View {
                     .foregroundColor(.secondary)
                 // Only show available models of the same family
                 if !filteredAvailableModels.isEmpty {
-                    Picker("Model", selection: $assistant.model) {
+                    Picker("Model", selection: modelBinding) {
                         ForEach(filteredAvailableModels, id: \.self) { model in
                             Text(model).tag(model)
                         }
@@ -104,7 +168,7 @@ struct AssistantDetailsSection: View {
                 Image(systemName: "info.circle")
                     .foregroundColor(.secondary)
                     .padding(.top, 8)  // Adjust icon position slightly
-                DescriptionField(description: Binding($assistant.description, default: ""))
+                DescriptionField(description: descriptionBinding)
             }
         }
         .onAppear {
@@ -129,7 +193,7 @@ struct AssistantDetailsSection: View {
                     // Reasoning Effort Picker
                     VStack(alignment: .leading) {
                         Label("Reasoning Effort", systemImage: "brain.head.profile")
-                        Picker("Reasoning Effort", selection: $assistant.reasoning_effort) {
+                        Picker("Reasoning Effort", selection: reasoningEffortBinding) {
                             ForEach(reasoningOptions, id: \.self) { effort in
                                 Text(effort.capitalized).tag(effort as String?)
                             }
@@ -150,7 +214,7 @@ struct AssistantDetailsSection: View {
                             "Temperature: \(assistant.temperature, specifier: "%.2f")",
                             systemImage: "thermometer.medium"
                         )
-                        Slider(value: $assistant.temperature, in: 0.0...2.0, step: 0.1)
+                        Slider(value: $assistant.temperature, in: 0.0...2.0)
                     }
                     .padding(.vertical, 4)
 
@@ -159,7 +223,7 @@ struct AssistantDetailsSection: View {
                         Label(
                             "Top P: \(assistant.top_p, specifier: "%.2f")", systemImage: "chart.pie"
                         )
-                        Slider(value: $assistant.top_p, in: 0.0...1.0, step: 0.1)
+                        Slider(value: $assistant.top_p, in: 0.0...1.0)
                     }
                     .padding(.vertical, 4)
                 }
@@ -235,7 +299,8 @@ struct AssistantDetailsSection_Previews: PreviewProvider {
             Form {
                 AssistantDetailsSection(
                     assistant: $previewAssistant,
-                    availableModels: ["gpt-3.5-turbo", "gpt-4", "gpt-4o", "o1-mini", "o1"]
+                    availableModels: ["gpt-3.5-turbo", "gpt-4", "gpt-4o", "o1-mini", "o1"],
+                    viewModel: nil
                 )
             }
             .navigationTitle("Assistant Details")

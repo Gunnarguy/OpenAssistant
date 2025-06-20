@@ -96,7 +96,7 @@ class VectorStoreManagerViewModel: BaseViewModel {
     private func setupVectorStoreObservers() {
         let center = NotificationCenter.default
         let names: [Notification.Name] = [
-            .vectorStoreCreated, .vectorStoreUpdated, .vectorStoreDeleted,
+            .vectorStoreUpdated, .vectorStoreDeleted,
         ]
 
         names.forEach { name in
@@ -155,11 +155,6 @@ class VectorStoreManagerViewModel: BaseViewModel {
                 }
                 return vectorStoreId
             }
-            .handleEvents(receiveOutput: { id in
-                DispatchQueue.main.async {
-                    NotificationCenter.default.post(name: .vectorStoreCreated, object: id)
-                }
-            })
             .eraseToAnyPublisher()
     }
 

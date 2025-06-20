@@ -26,9 +26,6 @@ struct AssistantManagerView: View {
         .onReceive(NotificationCenter.default.publisher(for: .assistantCreated)) { _ in
             viewModel.fetchAssistants()  // Refresh when an assistant is created
         }
-        .onReceive(NotificationCenter.default.publisher(for: .assistantUpdated)) { _ in
-            viewModel.fetchAssistants()  // Refresh when an assistant is updated
-        }
         .onReceive(NotificationCenter.default.publisher(for: .assistantDeleted)) { _ in
             viewModel.fetchAssistants()  // Refresh when an assistant is deleted
         }

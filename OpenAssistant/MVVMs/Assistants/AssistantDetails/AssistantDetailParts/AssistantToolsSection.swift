@@ -6,6 +6,9 @@ struct AssistantToolsSectionView: View {
     /// Binding to the assistant object being edited.
     @Binding var assistant: Assistant
 
+    /// Optional view model reference to trigger UI updates when bindings change
+    weak var viewModel: AssistantDetailViewModel?
+
     var body: some View {
         Section(header: Text("Capabilities")) {  // Consistent header
             // Toggle for enabling/disabling File Search capability.
@@ -49,6 +52,12 @@ struct AssistantToolsSectionView: View {
             // If disabled, remove the tool.
             assistant.tools.removeAll { $0.type == type }
         }
+
+        // Trigger view model update if available
+        viewModel?.objectWillChange.send()
+        print(
+            "AssistantToolsSection: tools changed, \(type) is now \(isEnabled ? "enabled" : "disabled")"
+        )
     }
 }
 
@@ -68,7 +77,7 @@ struct AssistantToolsSectionView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
             Form {
-                AssistantToolsSectionView(assistant: $previewAssistant)
+                AssistantToolsSectionView(assistant: $previewAssistant, viewModel: nil)
             }
             .navigationTitle("Capabilities")
         }

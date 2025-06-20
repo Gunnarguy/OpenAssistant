@@ -45,14 +45,36 @@ class AssistantPickerViewModel: BaseAssistantViewModel {
     override func setupNotificationObservers() {
         super.setupNotificationObservers()
         let notificationCenter = NotificationCenter.default
-        let notifications: [Notification.Name] = [
-            .assistantCreated, .assistantUpdated, .assistantDeleted, .settingsUpdated,
+
+        // Notifications that trigger a full refetch
+        let refetchNotifications: [Notification.Name] = [
+            .assistantCreated, .assistantDeleted, .didUpdateAssistant, .settingsUpdated,
         ]
 
-        notifications.forEach { notification in
-            notificationCenter.publisher(for: notification)
+        for notificationName in refetchNotifications {
+            notificationCenter.publisher(for: notificationName)
                 .sink { [weak self] _ in self?.fetchAssistants() }
                 .store(in: &cancellables)
         }
+
+        // Handle assistant updates more efficiently
+        notificationCenter.publisher(for: .assistantUpdated)
+            .sink { [weak self] notification in
+                guard let self = self, let updatedAssistant = notification.object as? Assistant
+                else {
+                    // Fallback to refetch if the object is not available
+                    self?.fetchAssistants()
+                    return
+                }
+
+                // Update the specific assistant in the list
+                if let index = self.assistants.firstIndex(where: { $0.id == updatedAssistant.id }) {
+                    self.assistants[index] = updatedAssistant
+                } else {
+                    // If not found, it might be a new assistant, so refetch all
+                    self.fetchAssistants()
+                }
+            }
+            .store(in: &cancellables)
     }
 }

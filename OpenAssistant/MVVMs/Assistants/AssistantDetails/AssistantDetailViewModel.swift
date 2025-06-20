@@ -7,10 +7,92 @@ class AssistantDetailViewModel: BaseViewModel {
     @Published var assistant: Assistant
     @Published var isLoading = false
     @Published var successMessage: SuccessMessage?
+    private var cancellables = Set<AnyCancellable>()
 
     init(assistant: Assistant) {
         self.assistant = assistant
         super.init()
+        setupNotificationObservers()
+    }
+
+    // MARK: - Notification Observers
+
+    // Set up observers for external assistant updates to refresh this view's data
+    private func setupNotificationObservers() {
+        let notificationCenter = NotificationCenter.default
+
+        // Listen for updates to any assistant to refresh our specific assistant data
+        notificationCenter.publisher(for: .assistantUpdated)
+            .sink { [weak self] notification in
+                guard let self = self else { return }
+                if let updatedAssistant = notification.object as? Assistant,
+                    updatedAssistant.id == self.assistant.id
+                {
+                    // Use the notification object directly for immediate UI updates
+                    // This prevents race conditions with server fetches
+                    print(
+                        "Assistant updated via notification: \(updatedAssistant.reasoning_effort ?? "nil"), current: \(self.assistant.reasoning_effort ?? "nil")"
+                    )
+                    self.assistant = updatedAssistant
+                    // Force a UI update by triggering objectWillChange
+                    self.objectWillChange.send()
+                } else {
+                    // Fallback: refresh from server if notification doesn't contain assistant object
+                    print("Notification without matching assistant object, fetching latest details")
+                    self.fetchLatestAssistantDetails()
+                }
+            }
+            .store(in: &cancellables)
+
+        // Also listen for the didUpdateAssistant notification for updates from other views
+        notificationCenter.publisher(for: .didUpdateAssistant)
+            .sink { [weak self] notification in
+                guard let self = self else { return }
+                if let updatedAssistant = notification.object as? Assistant,
+                    updatedAssistant.id == self.assistant.id
+                {
+                    // Use the notification object directly
+                    print(
+                        "Assistant updated via didUpdateAssistant notification: \(updatedAssistant.reasoning_effort ?? "nil")"
+                    )
+                    self.assistant = updatedAssistant
+                    // Force a UI update by triggering objectWillChange
+                    self.objectWillChange.send()
+                } else {
+                    // Fallback: refresh from server for non-specific notifications
+                    print(
+                        "didUpdateAssistant notification without matching assistant, fetching latest details"
+                    )
+                    self.fetchLatestAssistantDetails()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Fetch Latest Assistant Details
+
+    // Fetches the latest assistant details from the server to ensure UI is up-to-date
+    func fetchLatestAssistantDetails() {
+        print("Fetching latest assistant details for ID: \(assistant.id)")
+        performServiceAction { openAIService in
+            openAIService.fetchAssistantDetails(assistantId: assistant.id) { [weak self] result in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    switch result {
+                    case .success(let latestAssistant):
+                        print(
+                            "Successfully refreshed assistant details from server. Reasoning effort: \(latestAssistant.reasoning_effort ?? "nil")"
+                        )
+                        self.assistant = latestAssistant
+                        // Force a UI update by triggering objectWillChange
+                        self.objectWillChange.send()
+                    case .failure(let error):
+                        print("Failed to refresh assistant details: \(error.localizedDescription)")
+                    // Don't show error for background refresh, just log it
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Update Assistant
@@ -82,9 +164,20 @@ class AssistantDetailViewModel: BaseViewModel {
                         print(
                             "Update successful. Assistant ID: \(updatedAssistant.id), Model: \(updatedAssistant.model), Temp: \(updatedAssistant.temperature), TopP: \(updatedAssistant.top_p), Reasoning: \(updatedAssistant.reasoning_effort ?? "nil")"
                         )
+
+                        // Update the assistant object immediately to ensure UI reflects changes
                         self.assistant = updatedAssistant
+                        print(
+                            "Local assistant updated with reasoning_effort: \(self.assistant.reasoning_effort ?? "nil")"
+                        )
+
+                        // Force UI update
+                        self.objectWillChange.send()
+
+                        // Post the standard notification with the updated assistant object
                         NotificationCenter.default.post(
                             name: .assistantUpdated, object: updatedAssistant)
+
                         // Only set generic success message if no completion handler is provided
                         // or if the completion handler doesn't handle specific messages.
                         if completion == nil {
@@ -98,34 +191,10 @@ class AssistantDetailViewModel: BaseViewModel {
                         // ... existing error handling ...
                         let errorMessage = "Update assistant failed: \(error.localizedDescription)"
                         print("ERROR: \(errorMessage)")
-                        self.fetchAssistantDetails()  // Revert local state
+                        self.fetchLatestAssistantDetails()  // Revert local state
                         self.handleError(IdentifiableError(message: errorMessage))
                         // Call completion handler on failure
                         completion?(.failure(error))
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Fetch Assistant Details
-
-    // Fetches the latest assistant details, typically used to revert state after a failed update.
-    private func fetchAssistantDetails() {
-        performServiceAction { openAIService in
-            openAIService.fetchAssistantDetails(assistantId: assistant.id) { [weak self] result in
-                DispatchQueue.main.async {
-                    guard let self = self else { return }
-                    switch result {
-                    case .success(let fetchedAssistant):
-                        print("Successfully fetched latest assistant details after failed update.")
-                        self.assistant = fetchedAssistant  // Revert local state to fetched state
-                    case .failure(let fetchError):
-                        let fetchErrorMessage =
-                            "Failed to fetch assistant details after update failure: \(fetchError.localizedDescription)"
-                        print("ERROR: \(fetchErrorMessage)")
-                        // Optionally, show another error specific to the fetch failure
-                        self.handleError(IdentifiableError(message: fetchErrorMessage))
                     }
                 }
             }
@@ -137,13 +206,21 @@ class AssistantDetailViewModel: BaseViewModel {
     // Deletes the current assistant.
     func deleteAssistant() {
         performServiceAction { openAIService in
-            openAIService.deleteAssistant(assistantId: assistant.id) {
-                [weak self] (result: Result<Void, OpenAIServiceError>) in
-                self?.handleResult(result) { (_: Void) in
-                    NotificationCenter.default.post(
-                        name: .assistantDeleted, object: self?.assistant)
-                    // Consider dismissing the view or navigating away after successful deletion
-                    // self?.handleError(IdentifiableError(message: "Assistant deleted successfully")) // Maybe show a less alarming message
+            openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        print("Successfully deleted assistant.")
+                        // Post both notification types for broader compatibility
+                        NotificationCenter.default.post(
+                            name: .assistantDeleted, object: self?.assistant)
+                        NotificationCenter.default.post(name: .didUpdateAssistant, object: nil)
+                    case .failure(let error):
+                        self?.handleError(
+                            IdentifiableError(
+                                message: "Failed to delete assistant: \(error.localizedDescription)"
+                            ))
+                    }
                 }
             }
         }
@@ -253,8 +330,13 @@ class AssistantDetailViewModel: BaseViewModel {
                                             "Vector Store created and associated successfully.",
                                         didAssociateVectorStore: true  // Set the flag
                                     )
-                                // Optionally notify VectorStoreManagerViewModel directly or rely on view's onChange
-                                // NotificationCenter.default.post(name: .vectorStoreCreated, object: vectorStore)
+
+                                    // Post notification with the newly created vector store for immediate UI update
+                                    NotificationCenter.default.post(
+                                        name: .vectorStoreCreatedAndAssociated,
+                                        object: vectorStore
+                                    )
+
                                 case .failure(let updateError):
                                     // Handle the update failure specifically if needed,
                                     // otherwise the general error handling in updateAssistant might suffice.

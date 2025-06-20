@@ -25,16 +25,26 @@ struct AssistantDetailView: View {
         self.managerViewModel = managerViewModel
     }
 
+    // Computed property to generate a unique ID for forcing view recreation
+    private var assistantViewId: String {
+        let baseId = viewModel.assistant.id
+        let tempString = String(viewModel.assistant.temperature)
+        let topPString = String(viewModel.assistant.top_p)
+        let reasoningEffort = viewModel.assistant.reasoning_effort ?? ""
+        return baseId + tempString + topPString + reasoningEffort
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 // Core Details & Generation Settings
                 AssistantDetailsSection(
                     assistant: $viewModel.assistant,
-                    availableModels: managerViewModel.availableModels
+                    availableModels: managerViewModel.availableModels,
+                    viewModel: viewModel
                 )
                 // Capabilities (Tools) - Use extracted view
-                AssistantToolsSectionView(assistant: $viewModel.assistant)
+                AssistantToolsSectionView(assistant: $viewModel.assistant, viewModel: viewModel)
 
                 // Vector Store Management (Refined) - Use extracted view
                 VectorStoreManagementView(
@@ -74,6 +84,7 @@ struct AssistantDetailView: View {
                 }
                 .listRowBackground(Color(.systemGroupedBackground))
             }
+            .id(assistantViewId)  // Force view recreation when key properties change
             .onChange(of: vectorStoreManagerViewModel.vectorStores) { updatedStores in
                 updateVectorStore(with: updatedStores)
             }
@@ -104,6 +115,14 @@ struct AssistantDetailView: View {
             .onAppear(perform: onAppear)
             .onChange(of: managerViewModel.availableModels) { _ in
                 initializeModel()
+            }
+            .onChange(of: viewModel.assistant.reasoning_effort) { newValue in
+                print("AssistantDetailView detected reasoning_effort change: \(newValue ?? "nil")")
+            }
+            .onChange(of: viewModel.assistant) { newAssistant in
+                print(
+                    "AssistantDetailView detected assistant object change - reasoning_effort: \(newAssistant.reasoning_effort ?? "nil")"
+                )
             }
             .onDisappear(perform: onDisappear)
             .navigationDestination(isPresented: $showVectorStoreDetail) {
@@ -138,6 +157,27 @@ struct AssistantDetailView: View {
                     vectorStoreManagerViewModel.initializeAndFetch()
                 }
             }
+            // Add notification observer for newly created and associated vector stores
+            .onReceive(NotificationCenter.default.publisher(for: .vectorStoreCreatedAndAssociated))
+            { notification in
+                if let newVectorStore = notification.object as? VectorStore {
+                    print(
+                        "Received notification for newly created vector store: \(newVectorStore.id)"
+                    )
+
+                    // Add the new vector store to the manager's list immediately (avoid duplicates)
+                    if !vectorStoreManagerViewModel.vectorStores.contains(where: {
+                        $0.id == newVectorStore.id
+                    }) {
+                        vectorStoreManagerViewModel.vectorStores.insert(newVectorStore, at: 0)
+                    }
+
+                    // Update the local vectorStore variable immediately for UI display
+                    vectorStore = newVectorStore
+
+                    print("Vector store UI updated immediately - can now tap 'View Files'")
+                }
+            }
             .alert(item: $viewModel.successMessage) { successMessage in
                 Alert(
                     title: Text("Success"),
@@ -150,12 +190,24 @@ struct AssistantDetailView: View {
 
     private func handleSave() {
         if validateAssistant() {
-            print(
-                "Saving assistant with ID: \(viewModel.assistant.id), model: \(viewModel.assistant.model)"
-            )
-            viewModel.updateAssistant()
+            // Use the completion handler to dismiss the view only after a successful update.
+            // This prevents a race condition where the user navigates away before the
+            // update notification is processed.
+            viewModel.updateAssistant { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        // Dismiss the view upon successful save.
+                        self.presentationMode.wrappedValue.dismiss()
+                    case .failure(let error):
+                        // Show an alert if the update fails.
+                        self.showAlert(
+                            message: "Failed to update assistant: \(error.localizedDescription)")
+                    }
+                }
+            }
         } else {
-            showAlert(message: "Please fill in all required fields.")
+            showAlert(message: "Assistant name and model cannot be empty.")
         }
     }
 
@@ -196,10 +248,18 @@ struct AssistantDetailView: View {
     }
 
     private func onAppear() {
+        print(
+            "AssistantDetailView onAppear - current reasoning_effort: \(viewModel.assistant.reasoning_effort ?? "nil")"
+        )
         managerViewModel.fetchAvailableModels()
         initializeModel()
         // Ensure vector store manager is properly initialized
         vectorStoreManagerViewModel.initializeAndFetch()
+
+        // ALWAYS refresh assistant details to ensure we have the latest data from server
+        // This fixes the issue where locally cached data might be stale
+        print("Refreshing assistant details from server to ensure UI shows latest values")
+        viewModel.fetchLatestAssistantDetails()
     }
 
     private func onDisappear() {
@@ -208,7 +268,10 @@ struct AssistantDetailView: View {
     }
 
     private func createVectorStore() {
+        guard !vectorStoreName.isEmpty else { return }
         viewModel.createAndAssociateVectorStore(name: vectorStoreName)
+        // Clear the name field after initiating creation
+        vectorStoreName = ""
     }
 }
 

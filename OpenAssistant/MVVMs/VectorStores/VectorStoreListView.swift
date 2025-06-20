@@ -10,6 +10,7 @@ struct VectorStoreListView: View {
     @State private var isAddingFile = false
     @State private var didDeleteFile = false
     @State private var isLoading = false
+    @State private var isCreatingVectorStore = false  // Add loading state for creation
     @State private var searchText = ""
 
     var body: some View {
@@ -67,7 +68,21 @@ struct VectorStoreListView: View {
 
     private var mainListView: some View {
         List {
-            if viewModel.vectorStores.isEmpty {
+            // Show creating indicator if vector store is being created
+            if isCreatingVectorStore {
+                HStack {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                    Text("Creating vector store...")
+                        .foregroundColor(.secondary)
+                        .italic()
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+                .listRowBackground(Color(.systemGroupedBackground))
+            }
+
+            if viewModel.vectorStores.isEmpty && !isCreatingVectorStore {
                 emptyStateView
             } else {
                 ForEach(filteredStores) { vectorStore in
@@ -143,11 +158,15 @@ struct VectorStoreListView: View {
         Group {
             TextField("Vector Store Name", text: $newVectorStoreName)
             Button("Create", action: createVectorStore)
+                .disabled(isCreatingVectorStore || newVectorStoreName.isEmpty)  // Disable while creating
             Button("Cancel", role: .cancel, action: {})
         }
     }
 
     private func loadVectorStores() {
+        // Prevent concurrent loading operations
+        guard !isLoading else { return }
+
         isLoading = true
         viewModel.fetchVectorStores()
             .receive(on: DispatchQueue.main)
@@ -159,9 +178,16 @@ struct VectorStoreListView: View {
                 }
             })
             .catch { error -> AnyPublisher<[VectorStore], Never> in
+                // Show error and return empty array to prevent app crash
+                DispatchQueue.main.async {
+                    viewModel.errorMessage = IdentifiableError(message: error.localizedDescription)
+                }
                 return Just([]).eraseToAnyPublisher()
             }
-            .assign(to: \.vectorStores, on: viewModel)
+            .sink(receiveValue: { vectorStores in
+                // Update the vector stores immediately
+                viewModel.vectorStores = vectorStores
+            })
             .store(in: &viewModel.cancellables)
     }
 
@@ -181,30 +207,70 @@ struct VectorStoreListView: View {
         }
     }
 
+    /// Creates a new vector store with real-time UI updates
+    /// Shows immediate feedback to the user and optimistically updates the list
     private func createVectorStore() {
         guard !newVectorStoreName.isEmpty else {
             viewModel.showNotification(message: "Vector store name cannot be empty.")
             return
         }
 
-        viewModel.createVectorStore(name: newVectorStoreName)
+        // Store the name to use in the success handler
+        let storeName = newVectorStoreName
+
+        // Set creating state for UI feedback
+        isCreatingVectorStore = true
+
+        // Clear the alert immediately for better UX
+        isShowingCreateAlert = false
+        newVectorStoreName = ""
+
+        viewModel.createVectorStore(name: storeName)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { completion in
+                    isCreatingVectorStore = false  // Reset creating state
                     switch completion {
                     case .finished:
                         print("Successfully created vector store.")
-                        isShowingCreateAlert = false
-                        newVectorStoreName = ""
-                        loadVectorStores()
+                    // Don't call loadVectorStores() here - we already have optimistic update
+                    // The fetchNewlyCreatedVectorStore() method handles adding the new store
                     case .failure(let error):
                         print("Error creating vector store: \(error.localizedDescription)")
                         viewModel.errorMessage = IdentifiableError(
                             message: error.localizedDescription)
+                        // Re-show the alert if creation failed
+                        isShowingCreateAlert = true
+                        newVectorStoreName = storeName
                     }
                 },
                 receiveValue: { vectorStoreId in
                     print("Vector Store Created with ID: \(vectorStoreId)")
+                    // Optimistically fetch the newly created vector store details
+                    fetchNewlyCreatedVectorStore(id: vectorStoreId)
+                }
+            )
+            .store(in: &viewModel.cancellables)
+    }
+
+    /// Fetches and adds the newly created vector store to the list immediately
+    /// This provides instant feedback rather than waiting for a full list refresh
+    private func fetchNewlyCreatedVectorStore(id: String) {
+        viewModel.fetchVectorStore(id: id)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { completion in
+                    if case .failure(let error) = completion {
+                        print(
+                            "Failed to fetch newly created vector store details: \(error.localizedDescription)"
+                        )
+                        // Fall back to full refresh if individual fetch fails
+                        loadVectorStores()
+                    }
+                },
+                receiveValue: { newVectorStore in
+                    // Add the new vector store to the beginning of the list for immediate visibility
+                    viewModel.vectorStores.insert(newVectorStore, at: 0)
                 }
             )
             .store(in: &viewModel.cancellables)

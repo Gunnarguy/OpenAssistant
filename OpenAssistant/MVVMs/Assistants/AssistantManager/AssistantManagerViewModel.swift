@@ -259,13 +259,23 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
         performServiceAction { openAIService in
             openAIService.deleteAssistant(assistantId: assistant.id) { [weak self] result in
                 DispatchQueue.main.async {
-                    self?.handleResult(result) {
-                        if let index = self?.assistants.firstIndex(where: { $0.id == assistant.id })
-                        {
-                            self?.assistants.remove(at: index)
-                            NotificationCenter.default.post(
-                                name: .assistantDeleted, object: assistant)
-                        }
+                    switch result {
+                    case .success:
+                        // Remove the assistant from the local array
+                        self?.assistants.removeAll { $0.id == assistant.id }
+
+                        // Post notification that an assistant was deleted
+                        NotificationCenter.default.post(name: .assistantDeleted, object: nil)
+
+                        print("Assistant '\(assistant.name)' deleted successfully")
+                    case .failure(let error):
+                        // Handle the error
+                        self?.handleError(
+                            IdentifiableError(
+                                message: "Delete assistant failed: \(error.localizedDescription)"
+                            )
+                        )
+                        print("Error deleting assistant: \(error.localizedDescription)")
                     }
                 }
             }
@@ -274,18 +284,51 @@ class AssistantManagerViewModel: BaseAssistantViewModel {
 
     // MARK: - Notification Observers
 
+    // Handles the notification when an assistant is updated
+    @objc private func assistantDidUpdate() {
+        fetchAssistants()
+    }
+
     override func setupNotificationObservers() {
         super.setupNotificationObservers()
         let notificationCenter = NotificationCenter.default
-        let notifications: [Notification.Name] = [
-            .assistantCreated, .assistantUpdated, .assistantDeleted,
+
+        // Listen for standard assistant notifications using publisher pattern
+        let refetchNotifications: [Notification.Name] = [
+            .assistantCreated, .assistantDeleted,
         ]
 
-        notifications.forEach { notification in
-            notificationCenter.publisher(for: notification)
-                .receive(on: DispatchQueue.main)  // Ensure updates happen on the main thread
+        refetchNotifications.forEach { notificationName in
+            notificationCenter.publisher(for: notificationName)
+                .receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in self?.fetchAssistants() }
                 .store(in: &cancellables)
         }
+
+        // Handle assistant updates more efficiently
+        notificationCenter.publisher(for: .assistantUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self = self, let updatedAssistant = notification.object as? Assistant
+                else {
+                    self?.fetchAssistants()  // Fallback to refetch
+                    return
+                }
+
+                if let index = self.assistants.firstIndex(where: { $0.id == updatedAssistant.id }) {
+                    self.assistants[index] = updatedAssistant
+                } else {
+                    self.fetchAssistants()  // If not found, refetch
+                }
+            }
+            .store(in: &cancellables)
+
+        // Also add observer for the custom didUpdateAssistant notification
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(assistantDidUpdate),
+            name: .didUpdateAssistant,
+            object: nil
+        )
     }
 }
