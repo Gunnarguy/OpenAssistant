@@ -130,15 +130,16 @@ struct AssistantDetailsSection: View {
                     VStack(alignment: .leading) {
                         Label("Reasoning Effort", systemImage: "brain.head.profile")
                         Picker("Reasoning Effort", selection: $assistant.reasoning_effort) {
-                            Text("Default (medium)").tag(nil as String?)
                             ForEach(reasoningOptions, id: \.self) { effort in
                                 Text(effort.capitalized).tag(effort as String?)
                             }
                         }
                         .pickerStyle(SegmentedPickerStyle())
-                        Text("Affects model behavior (cost, latency, performance).")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text(
+                            "Medium is default. Affects model behavior (cost, latency, performance)."
+                        )
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     }
                     .padding(.vertical, 4)
 
