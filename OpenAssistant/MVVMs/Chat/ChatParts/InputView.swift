@@ -12,10 +12,11 @@ struct InputView: View {
     private let horizontalPadding: CGFloat = 10
     // Single vertical padding - simpler approach to prevent text cut-off
     private let verticalPadding: CGFloat = 6
-    private let inputAreaHeight: CGFloat = 40  // Increased height to accommodate text fully
+    private let minInputHeight: CGFloat = 40  // Minimum height for single line
+    private let maxInputHeight: CGFloat = 120  // Maximum height before scrolling kicks in
 
     var body: some View {
-        HStack(alignment: .center, spacing: 8) {  // Align items vertically center
+        HStack(alignment: .bottom, spacing: 8) {  // Changed to bottom alignment for multiline support
             // Message Input Text Field Area
             inputFieldArea
 
@@ -51,22 +52,23 @@ struct InputView: View {
     @ViewBuilder
     private var inputFieldArea: some View {
         // Simplified ZStack with consistent padding for TextEditor and placeholder
-        ZStack(alignment: .leading) {
+        ZStack(alignment: .topLeading) {  // Changed to topLeading for multiline alignment
             // Placeholder text shown when input is empty
             if viewModel.inputText.isEmpty {
                 Text("Type a message...")
                     .font(.system(size: inputFontSize))
                     .foregroundColor(Color(UIColor.placeholderText))
+                    .padding(.top, 8)  // Align with text editor's top padding
             }
 
-            // Multi-line text editor without scrolling to prevent jiggle
+            // Multi-line text editor with dynamic height
             TextEditor(text: $viewModel.inputText)
                 .focused($isTextFieldFocused)
                 .font(.system(size: inputFontSize))
                 .foregroundColor(colorScheme == .dark ? .white : .black)
                 .background(Color.clear)
                 .scrollContentBackground(.hidden)
-                .scrollDisabled(true)
+                .scrollDisabled(false)  // Allow scrolling when content exceeds max height
                 .onAppear {
                     DispatchQueue.main.async {
                         isTextFieldFocused = viewModel.shouldFocusTextField
@@ -76,7 +78,7 @@ struct InputView: View {
         // Apply consistent horizontal and vertical padding
         .padding(.horizontal, horizontalPadding)
         .padding(.vertical, verticalPadding)
-        .frame(height: inputAreaHeight)  // Apply fixed height to the container
+        .frame(minHeight: minInputHeight, maxHeight: maxInputHeight)  // Dynamic height with constraints
         .background(Color(UIColor.systemGray6))  // Use slightly lighter gray
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))  // Slightly smaller radius
         .overlay(
