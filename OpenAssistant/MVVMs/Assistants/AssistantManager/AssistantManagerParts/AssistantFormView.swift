@@ -142,28 +142,48 @@ struct AssistantFormView: View {
     // Save or update assistant, with optional delete action when editing
     private var actionButtons: some View {
         Section {
-            HStack {
-                Spacer()
-                // Save/Update Button with Icon
-                Button {
-                    onSave()
-                } label: {
-                    Label(isEditing ? "Update" : "Save", systemImage: "checkmark.circle.fill")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
+            if isEditing, let onDelete = onDelete {
+                // Editing mode: side-by-side buttons
+                HStack(spacing: 16) {
+                    // Save/Update Button with Icon
+                    Button {
+                        onSave()
+                    } label: {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text(isEditing ? "Update" : "Save")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .frame(maxWidth: .infinity)
 
-                // Delete Button with Icon (if editing)
-                if isEditing, let onDelete = onDelete {
+                    // Delete Button with Icon
                     Button(role: .destructive) {
                         onDelete()
                     } label: {
-                        Label("Delete", systemImage: "trash.fill")
+                        HStack {
+                            Image(systemName: "trash.fill")
+                            Text("Delete")
+                        }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
+                    .frame(maxWidth: .infinity)
                 }
-                Spacer()
+            } else {
+                // Creation mode: centered button
+                Button {
+                    onSave()
+                } label: {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text(isEditing ? "Update" : "Save")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                .frame(maxWidth: .infinity)
             }
         }
         .listRowBackground(Color.clear)

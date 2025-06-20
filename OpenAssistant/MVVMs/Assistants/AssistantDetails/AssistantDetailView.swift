@@ -7,7 +7,7 @@ import SwiftUI
 
 struct AssistantDetailView: View {
     @StateObject private var viewModel: AssistantDetailViewModel
-    @ObservedObject private var vectorStoreManagerViewModel = VectorStoreManagerViewModel()
+    @StateObject private var vectorStoreManagerViewModel = VectorStoreManagerViewModel()
     @Environment(\.presentationMode) var presentationMode
     @State private var vectorStore: VectorStore?
     @State private var cancellables = Set<AnyCancellable>()
@@ -18,6 +18,7 @@ struct AssistantDetailView: View {
     @State private var isAddingFile = false
     @State private var didDeleteFile = false
     @State private var vectorStoreName: String = ""
+    @State private var shouldShowAddFileView = false
 
     init(assistant: Assistant, managerViewModel: AssistantManagerViewModel) {
         _viewModel = StateObject(wrappedValue: AssistantDetailViewModel(assistant: assistant))
@@ -106,7 +107,7 @@ struct AssistantDetailView: View {
             }
             .onDisappear(perform: onDisappear)
             .navigationDestination(isPresented: $showVectorStoreDetail) {
-                VectorStoreDetailView(
+                VectorStoreDetailViewWrapper(
                     viewModel: vectorStoreManagerViewModel,
                     vectorStore: vectorStore
                         ?? VectorStore(
@@ -116,9 +117,16 @@ struct AssistantDetailView: View {
                                 inProgress: 0, completed: 0, failed: 0, cancelled: 0, total: 0),
                             metadata: nil, expiresAfter: nil, expiresAt: nil, lastActiveAt: nil,
                             files: nil),
-                    isAddingFile: $isAddingFile,
-                    didDeleteFile: $didDeleteFile
+                    parentDidDeleteFile: $didDeleteFile
                 )
+                .onAppear {
+                    print("VectorStoreDetailView appeared from AssistantDetailView")
+                    // Ensure vector store manager is ready when VectorStoreDetailView appears
+                    vectorStoreManagerViewModel.initializeAndFetch()
+                }
+                .onDisappear {
+                    print("VectorStoreDetailView disappeared")
+                }
             }
             // Add onChange modifier to react to success messages indicating VS association
             .onChange(of: viewModel.successMessage) { successInfo in
@@ -190,6 +198,8 @@ struct AssistantDetailView: View {
     private func onAppear() {
         managerViewModel.fetchAvailableModels()
         initializeModel()
+        // Ensure vector store manager is properly initialized
+        vectorStoreManagerViewModel.initializeAndFetch()
     }
 
     private func onDisappear() {
@@ -199,6 +209,31 @@ struct AssistantDetailView: View {
 
     private func createVectorStore() {
         viewModel.createAndAssociateVectorStore(name: vectorStoreName)
+    }
+}
+
+// MARK: - VectorStoreDetailView Wrapper
+/// A wrapper view that manages its own local state for the AddFileView sheet
+struct VectorStoreDetailViewWrapper: View {
+    @ObservedObject var viewModel: VectorStoreManagerViewModel
+    let vectorStore: VectorStore
+    @Binding var parentDidDeleteFile: Bool
+    @State private var localIsAddingFile = false
+    @State private var localDidDeleteFile = false
+
+    var body: some View {
+        VectorStoreDetailView(
+            viewModel: viewModel,
+            vectorStore: vectorStore,
+            isAddingFile: $localIsAddingFile,
+            didDeleteFile: $localDidDeleteFile
+        )
+        .onChange(of: localDidDeleteFile) { newValue in
+            if newValue {
+                parentDidDeleteFile = true
+                localDidDeleteFile = false
+            }
+        }
     }
 }
 

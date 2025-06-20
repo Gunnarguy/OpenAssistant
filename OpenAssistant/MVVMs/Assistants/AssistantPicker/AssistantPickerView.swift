@@ -6,6 +6,7 @@ struct AssistantPickerView: View {
     // MARK: - Dependencies
     @StateObject private var viewModel = AssistantPickerViewModel()
     @ObservedObject var messageStore: MessageStore
+    @Binding var selectedTab: Tab
 
     // MARK: - Body
     var body: some View {
@@ -43,7 +44,7 @@ struct AssistantPickerView: View {
         VStack {
             Spacer()
             Image(systemName: "person.3.fill")
-                .font(.system(size: 60))
+                .font(.system(size: 50))
                 .foregroundColor(.secondary)
                 .padding(.bottom, 20)
             Text("No Assistants Yet")
@@ -52,14 +53,14 @@ struct AssistantPickerView: View {
             Text("Tap the button below to create a new assistant.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
                 .padding(.bottom, 30)
-            NavigationLink(destination: AssistantManagerView()) {
+            Button(action: {
+                selectedTab = .manage
+            }) {
                 Text("Manage Assistants")
                     .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity)
-                    .padding()
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 30)
                     .background(Color.accentColor)
                     .foregroundColor(.white)
                     .cornerRadius(10)
@@ -76,22 +77,11 @@ struct AssistantPickerView: View {
         List {
             // Iterate through assistants and display them in cards
             ForEach(viewModel.assistants) { assistant in
-                // NavigationLink to transition to the ChatView
-                NavigationLink {
-                    ChatView(assistant: assistant, messageStore: messageStore)
-                } label: {
-                    // Wrap the card in a ZStack to potentially hide the default list chevron
-                    ZStack {
-                        AssistantCard(assistant: assistant)
-                    }
-                    // Ensure the entire ZStack area is tappable for the NavigationLink
-                    .contentShape(Rectangle())
+                NavigationLink(
+                    destination: ChatView(assistant: assistant, messageStore: messageStore)
+                ) {
+                    AssistantCard(assistant: assistant)
                 }
-                // Remove default padding for custom card layout
-                .listRowInsets(EdgeInsets())
-                // Apply padding around the card itself
-                .padding(.horizontal)
-                .padding(.vertical, 4)  // Reduced vertical padding between cards
             }
             // Set background to clear to allow List styling to show
             .listRowBackground(Color.clear)
@@ -214,14 +204,24 @@ struct AssistantPickerView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             // Preview in light mode
-            AssistantPickerView(messageStore: MessageStore())
-                .preferredColorScheme(.light)
-                .previewDisplayName("Light Mode")
+            AssistantPickerView(
+                messageStore: MessageStore(), selectedTab: .constant(Tab.assistants)
+            )
+            .preferredColorScheme(.light)
+            .previewDisplayName("Light Mode")
 
             // Preview in dark mode
-            AssistantPickerView(messageStore: MessageStore())
-                .preferredColorScheme(.dark)
-                .previewDisplayName("Dark Mode")
+            AssistantPickerView(
+                messageStore: MessageStore(), selectedTab: .constant(Tab.assistants)
+            )
+            .preferredColorScheme(.dark)
+            .previewDisplayName("Dark Mode")
+
+            // Preview with empty state
+            AssistantPickerView(
+                messageStore: MessageStore(), selectedTab: .constant(Tab.assistants)
+            )
+            .previewDisplayName("Empty State")
         }
     }
 }

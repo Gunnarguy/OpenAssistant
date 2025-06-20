@@ -4,7 +4,7 @@ import SwiftUI
 
 // MARK: - VectorStoreListView
 struct VectorStoreListView: View {
-    @ObservedObject var viewModel = VectorStoreManagerViewModel()
+    @ObservedObject var viewModel: VectorStoreManagerViewModel
     @State private var isShowingCreateAlert = false
     @State private var newVectorStoreName = ""
     @State private var isAddingFile = false

@@ -37,15 +37,31 @@ struct VectorStoreDetailView: View {
             }
         }
         .sheet(isPresented: $isAddingFile) {
-            AddFileView(
-                viewModel: viewModel, vectorStoreId: vectorStore, chunkSize: $chunkSize,
-                overlapSize: $overlapSize
-            )
-            .onDisappear {
-                if didDeleteFile {
-                    loadFiles()
+            NavigationView {
+                AddFileView(
+                    viewModel: viewModel, vectorStoreId: vectorStore, chunkSize: $chunkSize,
+                    overlapSize: $overlapSize
+                )
+                .navigationTitle("Add Files")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            isAddingFile = false
+                        }
+                    }
                 }
             }
+            .onDisappear {
+                // Refresh files when AddFileView is dismissed to update counts
+                loadFiles()
+                if didDeleteFile {
+                    didDeleteFile = false  // Reset the flag
+                }
+            }
+        }
+        .onChange(of: isAddingFile) { newValue in
+            print("isAddingFile changed to: \(newValue)")
         }
         .alert(item: $alert) { alert in
             Alert(
@@ -228,14 +244,61 @@ struct FileCountsSection: View {
     let fileCounts: FileCounts
     let actualFiles: [VectorStoreFile]  // Pass current files array for real-time count
 
+    // Calculate dynamic counts based on actual files
+    private var dynamicCounts:
+        (inProgress: Int, completed: Int, failed: Int, cancelled: Int, total: Int)
+    {
+        let inProgress = actualFiles.filter { $0.status == "in_progress" }.count
+        let completed = actualFiles.filter { $0.status == "completed" }.count
+        let failed = actualFiles.filter { $0.status == "failed" }.count
+        let cancelled = actualFiles.filter { $0.status == "cancelled" }.count
+        let total = actualFiles.count
+
+        return (inProgress, completed, failed, cancelled, total)
+    }
+
     var body: some View {
         Section(header: Text("File Counts")) {
-            Text("In Progress: \(fileCounts.inProgress)")
-            Text("Completed: \(fileCounts.completed)")
-            Text("Failed: \(fileCounts.failed)")
-            Text("Cancelled: \(fileCounts.cancelled)")
-            // Use actual file count for immediate updates
-            Text("Total: \(actualFiles.count)")
+            let counts = dynamicCounts
+
+            HStack {
+                Text("In Progress:")
+                Spacer()
+                Text("\(counts.inProgress)")
+                    .foregroundColor(counts.inProgress > 0 ? .blue : .secondary)
+            }
+
+            HStack {
+                Text("Completed:")
+                Spacer()
+                Text("\(counts.completed)")
+                    .foregroundColor(counts.completed > 0 ? .green : .secondary)
+            }
+
+            HStack {
+                Text("Failed:")
+                Spacer()
+                Text("\(counts.failed)")
+                    .foregroundColor(counts.failed > 0 ? .red : .secondary)
+            }
+
+            HStack {
+                Text("Cancelled:")
+                Spacer()
+                Text("\(counts.cancelled)")
+                    .foregroundColor(counts.cancelled > 0 ? .orange : .secondary)
+            }
+
+            Divider()
+
+            HStack {
+                Text("Total:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("\(counts.total)")
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+            }
         }
     }
 }
@@ -270,9 +333,13 @@ struct AddFileSection: View {
 
     var body: some View {
         Section {
-            Button(action: { isAddingFile = true }) {
+            Button(action: {
+                print("Add File button tapped, setting isAddingFile to true")
+                isAddingFile = true
+            }) {
                 Label("Add File", systemImage: "plus.circle")
             }
+            .disabled(isAddingFile)  // Prevent multiple taps while sheet is opening
         }
     }
 }
