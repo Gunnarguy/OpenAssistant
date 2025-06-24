@@ -1,0 +1,126 @@
+<<<<<<< HEAD
+# Xcode Build Artifacts
+build/
+DerivedData/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM
+
+# User-Specific Settings
+xcuserdata/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Package.resolved
+.swiftpm/xcode/package.xcworkspace/
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+Carthage/Checkouts/
+Carthage/Build/iOS/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# General macOS Files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+Icon?
+Icon\r
+Thumbs.db
+
+# Backup Files
+*.swp
+*.swo
+*.tmp
+*.DS_Store
+
+# Logs
+*.log
+
+# Generated Schemes
+xcshareddata/xcschemes/*.xcscheme
+
+# GitHub Actions
+/.github/workflows/*
+=======
+# Xcode Workspace/Project
+*.xcworkspace/
+!default.xcworkspace
+*.xcsettings
+*.xcscmblueprint
+
+# Simulator Devices
+~/Library/Developer/CoreSimulator/Devices/
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# SwiftPM Artifacts
+/.build/
+.build/
+.swiftpm/
+Package.pins
+
+# Crash Reports
+*.crash
+*.xccrashpoint
+
+# Archives
+*.xcarchive
+
+# App Sandbox
+*.entitlements
+
+# Test Results
+*.xcresult
+
+# Firebase
+GoogleService-Info.plist
+
+# Environment files
+.env
+.env.*
+
+# VSCode
+.vscode/
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Misc
+*.orig
+*.rej
+*.bak
+*.old
+*.swp
+*.swo
+*.tmp
+*.temp
+*.cache
+*.log
+*.out
+*.pid
+*.seed
+*.pid.lock
+>>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
