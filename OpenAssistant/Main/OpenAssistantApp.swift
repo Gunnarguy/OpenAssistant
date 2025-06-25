@@ -47,5 +47,6 @@ struct OpenAssistantApp: App {
     private func handleOnAppear() {
         assistantManagerViewModel.fetchAssistants()
         showSettingsView = apiKey.isEmpty
+        IAPManager.shared.startObservingTransactions()
     }
 }
