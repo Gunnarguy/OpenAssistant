@@ -4,6 +4,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage("OpenAI_API_Key") private var apiKey: String = ""
+    @AppStorage("tokenBalance") private var tokenBalance: Int = 0
     // Use AppearanceMode enum for storing preference
     @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode.RawValue =
         AppearanceMode.system.rawValue
@@ -21,6 +22,7 @@ struct SettingsView: View {
         Form {
             apiKeySection  // Section for API Key
             appearanceSection  // Section for Appearance
+            creditsSection
         }
         .navigationBarTitle("Settings", displayMode: .inline)
         // Apply preferred color scheme based on selection using the global enum's helper
@@ -78,6 +80,18 @@ struct SettingsView: View {
             }
             // Use MenuPickerStyle for dropdown appearance
             .pickerStyle(MenuPickerStyle())
+        }
+    }
+
+    private var creditsSection: some View {
+        Section(header: Label("Credits", systemImage: "cart")) {
+            NavigationLink(destination: CreditsView()) {
+                HStack {
+                    Text("Balance")
+                    Spacer()
+                    Text("\(tokenBalance)")
+                }
+            }
         }
     }
 

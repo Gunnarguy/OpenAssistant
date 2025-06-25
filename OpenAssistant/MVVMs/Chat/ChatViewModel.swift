@@ -32,6 +32,7 @@ class ChatViewModel: BaseViewModel {
     @Published var stepCounter: Int = 0
     @Published var loadingState: LoadingState = .idle
     @Published var shouldFocusTextField: Bool = false  // Add state to control focus
+    @AppStorage("tokenBalance") private var tokenBalance: Int = 0
 
     // Expose the thread ID as a computed property
     var threadId: String? {
@@ -270,6 +271,10 @@ class ChatViewModel: BaseViewModel {
 
     func sendMessage() {
         guard let thread = thread, !inputText.isEmpty else { return }
+        guard tokenBalance > 0 else {
+            errorMessage = IdentifiableError(message: "Not enough tokens. Visit Credits to buy more.")
+            return
+        }
         let textToSend = inputText  // Capture text before clearing
         inputText = ""  // Clear input field immediately
 
@@ -305,6 +310,7 @@ class ChatViewModel: BaseViewModel {
                 self?.handleSendMessageResult(result)
             }
         }
+        tokenBalance -= 1
     }
 
     // Updated to accept content directly
