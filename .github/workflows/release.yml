@@ -1,0 +1,51 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  create-release:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Build for Release
+        run: |
+          xcodebuild -project OpenAssistant.xcodeproj \
+                     -scheme OpenAssistant \
+                     -configuration Release \
+                     -derivedDataPath build/ \
+                     clean build
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ## What's Changed
+            - Auto-generated release from tag ${{ github.ref }}
+
+            ## Installation
+            1. Clone the repository
+            2. Open in Xcode
+            3. Build and run on your device
+            4. Add your OpenAI API key in Settings
+
+            ## Requirements
+            - iOS 15.0+
+            - Xcode 15+
+            - Valid OpenAI API key
+          draft: false
+          prerelease: false

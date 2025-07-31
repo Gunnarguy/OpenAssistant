@@ -1,0 +1,21 @@
+name: "codeql-config"
+
+queries:
+  - uses: security-and-quality
+  - uses: security-extended
+
+paths-ignore:
+  - ".build/**"
+  - "**/Preview Content/**"
+  - "**/.swiftpm/**"
+  - "**/Pods/**"
+  - "**/DerivedData/**"
+
+paths:
+  - "OpenAssistant/**"
+
+query-filters:
+  - exclude:
+      id: swift/hardcoded-credentials
+
+disable-default-queries: false

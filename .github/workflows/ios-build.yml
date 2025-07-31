@@ -1,0 +1,71 @@
+name: iOS Build and Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  SCHEME: OpenAssistant
+  PROJECT: OpenAssistant.xcodeproj
+
+jobs:
+  build-and-test:
+    name: Build and Test iOS App
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Cache DerivedData
+        uses: actions/cache@v3
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-derived-data-${{ hashFiles('**/*.xcodeproj') }}
+          restore-keys: |
+            ${{ runner.os }}-derived-data-
+
+      - name: Build for iOS Simulator
+        run: |
+          xcodebuild clean build \
+            -project ${{ env.PROJECT }} \
+            -scheme ${{ env.SCHEME }} \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}
+
+      - name: Swift Package Manager - Validate
+        run: |
+          swift build -c debug
+
+      - name: Check for Swift warnings
+        run: |
+          xcodebuild clean build \
+            -project ${{ env.PROJECT }} \
+            -scheme ${{ env.SCHEME }} \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CLANG_WARN_EVERYTHING=YES \
+            GCC_TREAT_WARNINGS_AS_ERRORS=NO \
+            | xcpretty
+
+  # Optional: Add SwiftLint if you want code style checking
+  # swiftlint:
+  #   name: SwiftLint
+  #   runs-on: macos-latest
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - name: SwiftLint
+  #     run: |
+  #       brew install swiftlint
+  #       swiftlint --strict

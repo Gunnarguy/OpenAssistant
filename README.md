@@ -15,6 +15,14 @@ OpenAssistant (iOS Client)
 <img src="https://img.shields.io/badge/Combine-007AFF.svg?style=for-the-badge&logo=Combine&logoColor=white" alt="Combine Framework" />
 <img src="https://img.shields.io/badge/OpenAI%20API-412991.svg?style=for-the-badge&logo=OpenAI&logoColor=white" alt="OpenAI API" />
 </p>
+
+<p align="center">
+<img src="https://img.shields.io/badge/iOS-15.0+-blue?style=flat-square" alt="iOS 15.0+">
+<img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License">
+<img src="https://img.shields.io/github/issues/Gunnarguy/OpenAssistant?style=flat-square" alt="GitHub issues">
+<img src="https://img.shields.io/github/stars/Gunnarguy/OpenAssistant?style=flat-square" alt="GitHub stars">
+<img src="https://img.shields.io/github/forks/Gunnarguy/OpenAssistant?style=flat-square" alt="GitHub forks">
+</p>
 </div>
 
 ---
@@ -23,16 +31,37 @@ OpenAssistant (iOS Client)
 
 - [📍 Overview](#-overview)
 - [✨ Key Features](#-key-features)
-- [🌟 Codebase Quality & Practices](#-codebase-quality--practices)
-- [📐 Architecture (MVVM)](#-architecture-mvvm)
-- [📂 Detailed Project Structure](#-detailed-project-structure)
-- [🌊 Core Application & Data Flow](#-core-application--data-flow)
-- [🧩 Core Components & Their Interactions](#-core-components--their-interactions)
-- [📊 Visualizing Interactions (`interactions.html`)](#-visualizing-interactions-interactionshtml)
-- [🛠️ Potential Refinements & Considerations](#️-potential-refinements--considerations)
-- [🚀 Getting Started](#-getting-started)
+- [🚀 Quick Start](#-quick-start)
+- [📖 Documentation](#-documentation)
+- [🏗️ Architecture](#-architecture)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
+
+## 🚀 Quick Start
+
+### Prerequisites
+- iOS 15.0+ device
+- Xcode 15+
+- OpenAI API key
+
+### Installation
+```bash
+git clone https://github.com/Gunnarguy/OpenAssistant.git
+cd OpenAssistant
+open OpenAssistant.xcodeproj
+```
+
+**Detailed setup instructions**: [docs/installation/INSTALLATION.md](docs/installation/INSTALLATION.md)
+
+## � Documentation
+
+All documentation is organized in the [`docs/`](docs/) directory:
+
+- **[📖 Documentation Index](docs/README.md)** - Complete documentation overview
+- **[�️ Installation Guide](docs/installation/INSTALLATION.md)** - Setup instructions
+- **[🤝 Contributing](docs/contributing/CONTRIBUTING.md)** - How to contribute
+- **[� Privacy Policy](docs/PRIVACY.md)** - Data handling information
+- **[🏗️ Architecture Diagram](docs/interactions.html)** - Visual component interactions
 
 ---
 
@@ -377,17 +406,55 @@ The `interactions.html` file provides a visual, interactive diagram of the compo
 
 4.  **Build and run** the project on your iOS device or simulator.
 
------
+---
+
+## 🏗️ Architecture
+
+OpenAssistant follows the **MVVM (Model-View-ViewModel)** pattern with:
+
+- **Models**: OpenAI API entities (`Assistant`, `Message`, `VectorStore`)
+- **Views**: SwiftUI components (`ChatView`, `AssistantManagerView`)
+- **ViewModels**: Business logic and state management
+- **Services**: API communication layer
+
+```
+OpenAssistant/
+├── Main/                   # App entry point & core utilities
+├── APIService/             # OpenAI API integration layer
+├── MVVMs/                  # ViewModels and Views by feature
+│   ├── Bases/              # Base classes for inheritance
+│   ├── Chat/               # Chat interface components
+│   ├── Assistants/         # Assistant management
+│   └── VectorStores/       # File and vector store management
+└── Assets.xcassets/        # App icons and resources
+```
+
+**See detailed architecture**: [docs/interactions.html](docs/interactions.html)
+
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome\! Please fork the repository and submit a pull request with your changes.
+We welcome contributions! Please see our [Contributing Guide](docs/contributing/CONTRIBUTING.md) for:
 
------
+- Development setup
+- Code style guidelines  
+- Pull request process
+- Architecture patterns
+
+**Quick start for contributors:**
+1. Fork the repository
+2. Create a feature branch
+3. Follow our MVVM patterns
+4. Submit a pull request
+
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the `LICENSE` file for more details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+**TL;DR**: Free to use, modify, and distribute. No warranty provided.
 
 ```
 ```

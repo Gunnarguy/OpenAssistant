@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Xcode Build Artifacts
 build/
 DerivedData/
@@ -20,6 +19,7 @@ xcuserdata/
 .swiftpm/
 .build/
 Package.resolved
+Package.pins
 .swiftpm/xcode/package.xcworkspace/
 
 # CocoaPods
@@ -51,17 +51,16 @@ Thumbs.db
 *.swp
 *.swo
 *.tmp
-*.DS_Store
+*.bak
+*.old
 
 # Logs
 *.log
+*.out
+*.pid
+*.seed
+*.pid.lock
 
-# Generated Schemes
-xcshareddata/xcschemes/*.xcscheme
-
-# GitHub Actions
-/.github/workflows/*
-=======
 # Xcode Workspace/Project
 *.xcworkspace/
 !default.xcworkspace
@@ -74,12 +73,6 @@ xcshareddata/xcschemes/*.xcscheme
 # Playgrounds
 timeline.xctimeline
 playground.xcworkspace
-
-# SwiftPM Artifacts
-/.build/
-.build/
-.swiftpm/
-Package.pins
 
 # Crash Reports
 *.crash
@@ -94,33 +87,26 @@ Package.pins
 # Test Results
 *.xcresult
 
-# Firebase
+# Firebase/Google Services
 GoogleService-Info.plist
 
 # Environment files
 .env
 .env.*
 
-# VSCode
-.vscode/
+# API Keys and Secrets
+config.json
+secrets.plist
+*.apikey
 
-# JetBrains IDEs
+# Development Tools
+.vscode/
 .idea/
 *.iml
 
-# Misc
-*.orig
-*.rej
-*.bak
-*.old
-*.swp
-*.swo
-*.tmp
-*.temp
+# Temporary Files
 *.cache
-*.log
-*.out
-*.pid
-*.seed
-*.pid.lock
->>>>>>> f4401e5 (Add release configuration, fix App Store rejection issues, and update documentation)
+*.temp
+
+# Documentation Artifacts
+OpenAssistant/cline_docs/
