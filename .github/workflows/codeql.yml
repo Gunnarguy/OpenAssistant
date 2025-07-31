@@ -43,7 +43,7 @@ jobs:
           xcodebuild clean build \
             -project OpenAssistant.xcodeproj \
             -scheme OpenAssistant \
-            -destination 'platform=iOS Simulator,name=iPhone 14' \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO
 
