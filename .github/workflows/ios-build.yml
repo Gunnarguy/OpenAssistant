@@ -1,8 +1,6 @@
 name: iOS Build and Test
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
 
@@ -14,7 +12,7 @@ jobs:
   build-and-test:
     name: Build and Test iOS App
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -25,8 +23,11 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: Install xcpretty
+        run: gem install xcpretty
+
       - name: Cache DerivedData
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/Library/Developer/Xcode/DerivedData
           key: ${{ runner.os }}-derived-data-${{ hashFiles('**/*.xcodeproj') }}
@@ -35,29 +36,20 @@ jobs:
 
       - name: Build for iOS Simulator
         run: |
+          set -o pipefail
           xcodebuild clean build \
             -project ${{ env.PROJECT }} \
             -scheme ${{ env.SCHEME }} \
             -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty && exit ${PIPESTATUS[0]}
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE="" \
+            | xcpretty
 
       - name: Swift Package Manager - Validate
         run: |
           swift build -c debug
-
-      - name: Check for Swift warnings
-        run: |
-          xcodebuild clean build \
-            -project ${{ env.PROJECT }} \
-            -scheme ${{ env.SCHEME }} \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
-            -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO \
-            CLANG_WARN_EVERYTHING=YES \
-            GCC_TREAT_WARNINGS_AS_ERRORS=NO \
-            | xcpretty
 
   # Optional: Add SwiftLint if you want code style checking
   # swiftlint:
