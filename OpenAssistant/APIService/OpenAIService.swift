@@ -163,21 +163,64 @@ class OpenAIService {
     // MARK: - HandleResponse
     internal func handleResponse<T: Decodable>(
         _ data: Data?, _ response: URLResponse?, _ error: Error?,
-        completion: @escaping (Result<T, OpenAIServiceError>) -> Void
+        completion: @escaping @Sendable (Result<T, OpenAIServiceError>) -> Void
     ) {
-        handleDataTaskResponse(data: data, response: response, error: error) {
-            (result: Result<T, Error>) in
-            switch result {
-            case .success(let decodedResponse):
-                DispatchQueue.main.async {
-                    completion(.success(decodedResponse))
+        // Capture needed values to avoid closure capture issues
+        let capturedResponse = response
+
+        // Handle the response directly without calling handleDataTaskResponse to avoid generic type capture
+        if let error = error {
+            DispatchQueue.main.async {
+                completion(.failure(.networkError(error)))
+            }
+            return
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse,
+            (200...299).contains(httpResponse.statusCode)
+        else {
+            let openAIError: OpenAIServiceError
+            if let httpResponse = capturedResponse as? HTTPURLResponse {
+                switch httpResponse.statusCode {
+                case 401:
+                    openAIError = .authenticationError(nil)
+                case 404:
+                    openAIError = .custom("Resource not found")
+                case 429:
+                    openAIError = .rateLimitExceeded(1)
+                case 500...599:
+                    openAIError = .internalServerError
+                default:
+                    let statusCode = httpResponse.statusCode
+                    let errorDescription = HTTPURLResponse.localizedString(
+                        forStatusCode: statusCode)
+                    openAIError = .custom(errorDescription)
                 }
-            case .failure(let error):
-                let openAIError = self.mapToOpenAIServiceError(
-                    error: error, data: data, response: response)
-                DispatchQueue.main.async {
-                    completion(.failure(openAIError))
-                }
+            } else {
+                openAIError = .custom("Invalid response")
+            }
+
+            DispatchQueue.main.async {
+                completion(.failure(openAIError))
+            }
+            return
+        }
+
+        guard let data = data else {
+            DispatchQueue.main.async {
+                completion(.failure(.custom("No data received")))
+            }
+            return
+        }
+
+        do {
+            let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+            DispatchQueue.main.async {
+                completion(.success(decodedResponse))
+            }
+        } catch {
+            DispatchQueue.main.async {
+                completion(.failure(.decodingError(data, error)))
             }
         }
     }
@@ -486,7 +529,7 @@ extension OpenAIService {
     /// Create a model response with advanced options
     func createResponse(
         request: ResponseRequest,
-        completion: @escaping (Result<ResponseResult, OpenAIServiceError>) -> Void
+        completion: @escaping @Sendable (Result<ResponseResult, OpenAIServiceError>) -> Void
     ) {
         // Encode request to JSON and convert to dictionary
         guard let jsonData = try? JSONEncoder().encode(request),
@@ -505,7 +548,7 @@ extension OpenAIService {
     /// Retrieve a model response by ID
     func getResponse(
         responseId: String,
-        completion: @escaping (Result<ResponseResult, OpenAIServiceError>) -> Void
+        completion: @escaping @Sendable (Result<ResponseResult, OpenAIServiceError>) -> Void
     ) {
         let endpoint = "responses/\(responseId)"
         guard let request = makeRequest(endpoint: endpoint) else {

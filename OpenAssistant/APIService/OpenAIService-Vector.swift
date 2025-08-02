@@ -43,16 +43,6 @@ extension OpenAIService {
 
     /// Adds common headers required for OpenAI requests
 
-    /// Executes a URLSession data task and handles decoding the response
-    func handleURLSessionDataTask<T: Decodable>(
-        request: URLRequest, completion: @escaping (Result<T, Error>) -> Void
-    ) {
-        session.dataTask(with: request) { data, response, error in
-            self.handleDataTaskResponse(
-                data: data, response: response, error: error, completion: completion)
-        }.resume()
-    }
-
     // MARK: - Request Configuration
 
     func createVectorStore(name: String) -> AnyPublisher<String, Error> {
@@ -141,7 +131,8 @@ extension OpenAIService {
     }
 
     func createVectorStore(
-        name: String, completion: @escaping (Result<VectorStore, OpenAIServiceError>) -> Void
+        name: String,
+        completion: @escaping @Sendable (Result<VectorStore, OpenAIServiceError>) -> Void
     ) {
         let endpoint = "vector_stores"
         let body: [String: Any] = ["name": name]
@@ -203,8 +194,15 @@ extension OpenAIService {
             }
             // Use the new retry mechanism
             self.performDataTaskWithRetry(request) { data, response, error in
-                self.handleDataTaskResponse(
-                    data: data, response: response, error: error, completion: promise)
+                self.handleDataTaskResponse(data: data, response: response, error: error) {
+                    (result: Result<VectorStore, Error>) in
+                    switch result {
+                    case .success(let vectorStore):
+                        promise(.success(vectorStore))
+                    case .failure(let error):
+                        promise(.failure(error))
+                    }
+                }
             }
         }
     }
@@ -410,7 +408,7 @@ extension OpenAIService {
     func modifyVectorStore(
         vectorStoreId: String, name: String? = nil, expiresAfter: [String: Any]? = nil,
         metadata: [String: String]? = nil, files: [[String: Any]]? = nil,
-        completion: @escaping (Result<VectorStore, Error>) -> Void
+        completion: @escaping @Sendable (Result<VectorStore, Error>) -> Void
     ) {
         let endpoint = "vector_stores/\(vectorStoreId)"
         var body: [String: Any] = [:]

@@ -5,7 +5,8 @@ import SwiftUI
 extension OpenAIService {
 
     // MARK: - Create Thread
-    func createThread(completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void) {
+    func createThread(completion: @escaping @Sendable (Result<Thread, OpenAIServiceError>) -> Void)
+    {
         guard let request = makeRequest(endpoint: "threads", httpMethod: .post) else {
             completion(.failure(.custom("Failed to create request")))
             return
@@ -18,7 +19,7 @@ extension OpenAIService {
     // MARK: - Run Assistant on Thread
     func runAssistantOnThread(
         threadId: String, assistantId: String,
-        completion: @escaping (Result<Run, OpenAIServiceError>) -> Void
+        completion: @escaping @Sendable (Result<Run, OpenAIServiceError>) -> Void
     ) {
         let endpoint = "threads/\(threadId)/runs"
         let body: [String: Any] = ["assistant_id": assistantId]
@@ -38,7 +39,7 @@ extension OpenAIService {
     // MARK: - Fetch Run Status
     func fetchRunStatus(
         threadId: String, runId: String,
-        completion: @escaping (Result<Run, OpenAIServiceError>) -> Void
+        completion: @escaping @Sendable (Result<Run, OpenAIServiceError>) -> Void
     ) {
         let endpoint = "threads/\(threadId)/runs/\(runId)"
         guard let request = makeRequest(endpoint: endpoint) else {
@@ -52,7 +53,8 @@ extension OpenAIService {
 
     // MARK: - Fetch Run Messages
     func fetchRunMessages(
-        threadId: String, completion: @escaping (Result<[Message], OpenAIServiceError>) -> Void
+        threadId: String,
+        completion: @escaping @Sendable (Result<[Message], OpenAIServiceError>) -> Void
     ) {
         let endpoint = "threads/\(threadId)/messages"
         guard let request = makeRequest(endpoint: endpoint) else {
@@ -75,7 +77,7 @@ extension OpenAIService {
     // MARK: - Add Message to Thread
     func addMessageToThread(
         threadId: String, message: Message,
-        completion: @escaping (Result<Void, OpenAIServiceError>) -> Void
+        completion: @escaping @Sendable (Result<Void, OpenAIServiceError>) -> Void
     ) {
         let endpoint = "threads/\(threadId)/messages"
         let body: [String: Any] = [
@@ -113,7 +115,8 @@ extension OpenAIService {
 
     // MARK: - Fetch Thread Details
     func fetchThreadDetails(
-        threadId: String, completion: @escaping (Result<Thread, OpenAIServiceError>) -> Void
+        threadId: String,
+        completion: @escaping @Sendable (Result<Thread, OpenAIServiceError>) -> Void
     ) {
         let endpoint = "threads/\(threadId)"
         guard let request = makeRequest(endpoint: endpoint) else {

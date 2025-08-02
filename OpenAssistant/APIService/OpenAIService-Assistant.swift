@@ -29,7 +29,7 @@ extension OpenAIService {
     // MARK: - Fetch Assistant Settings
     func fetchAssistantSettings(
         assistantId: String,
-        completion: @escaping (Result<AssistantSettings, OpenAIServiceError>) -> Void
+        completion: @escaping @Sendable (Result<AssistantSettings, OpenAIServiceError>) -> Void
     ) {
         guard let request = makeRequest(endpoint: "assistants/\(assistantId)/settings") else {
             completion(.failure(.invalidRequest))
@@ -54,7 +54,7 @@ extension OpenAIService {
         topP: Double? = nil,
         reasoningEffort: String? = nil,
         responseFormat: ResponseFormat? = nil,
-        completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
+        completion: @escaping @Sendable (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
         var body: [String: Any] = ["model": model]
 
@@ -103,7 +103,7 @@ extension OpenAIService {
         topP: Double? = nil,  // Intended topP for the target model
         reasoningEffort: String? = nil,  // Intended reasoning effort for the target model
         responseFormat: ResponseFormat? = nil,
-        completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
+        completion: @escaping @Sendable (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
         // Ensure the target model is specified for parameter validation, even if not sent.
         guard let targetModelId = model else {
@@ -194,7 +194,8 @@ extension OpenAIService {
     // MARK: - Delete Assistant
 
     func deleteAssistant(
-        assistantId: String, completion: @escaping (Result<Void, OpenAIServiceError>) -> Void
+        assistantId: String,
+        completion: @escaping @Sendable (Result<Void, OpenAIServiceError>) -> Void
     ) {
         guard let request = makeRequest(endpoint: "assistants/\(assistantId)", httpMethod: .delete)
         else {
@@ -209,7 +210,8 @@ extension OpenAIService {
 
     // New: Fetch Assistant Details
     func fetchAssistantDetails(
-        assistantId: String, completion: @escaping (Result<Assistant, OpenAIServiceError>) -> Void
+        assistantId: String,
+        completion: @escaping @Sendable (Result<Assistant, OpenAIServiceError>) -> Void
     ) {
         let endpoint = "assistants/\(assistantId)"
         guard let request = makeRequest(endpoint: endpoint) else {
