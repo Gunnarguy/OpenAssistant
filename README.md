@@ -89,22 +89,6 @@ OpenAssistant is a feature-rich, native iOS application built meticulously with 
 
 ---
 
-## 🌟 Codebase Quality & Practices
-
-| Feature | Description |
-|---|---|
-| **🏗 Structure and Organization** | The codebase follows a structured organization with separate directories for different functionalities like Chat, Assistants, API, and Main. This separation promotes maintainability and ease of navigation within the project. |
-| **📝 Code Documentation** | The code features detailed inline documentation, providing clear explanations and context for classes, methods, and data structures. Code comments enhance readability and facilitate understanding for developers working on the project. |
-| **🧩 Dependency Management** | The project incorporates appropriate dependency management tools or practices, ensuring effective handling of external libraries or dependencies. Clear separation of dependencies and consistent usage across the project enhances reliability and scalability. |
-| **♻️ Modularity and Reusability** | The code demonstrates modularity through the use of separate files for different features and functionalities like Chat views, Assistant management, and API interactions. This modularity enhances reusability and facilitates the maintenance of individual components. |
-| **✔️ Testing and Quality Assurance** | The codebase includes comprehensive testing strategies to ensure code quality and functionality stability. Unit tests, integration tests, or other quality assurance measures contribute to the reliability and robustness of the application. |
-| **⚡️ Performance and Optimization** | The codebase might implement performance optimizations such as async/await for asynchronous operations, Combine framework for reactive programming, and dedicated architecture design for efficient data flow and rendering. These practices contribute to enhanced app performance and responsiveness. |
-| **🔒 Security Measures** | The codebase may feature security measures like handling API keys securely, encrypted data transmission, and data validation to prevent vulnerabilities. Implementing security protocols ensures data protection and mitigates security risks. |
-| **🔄 Version Control and Collaboration** | Leveraging version control with Git enables efficient collaboration by tracking changes, managing branches, and facilitating team contributions. Clear commit messages and branching strategies enhance transparency and workflow coordination. |
-| **🔌 External Integrations** | The project integrates external services like OpenAI through dedicated API service classes, demonstrating seamless interaction with external APIs. Using clear interfaces and services for integrations ensures. |
-
----
-
 ## 📐 Architecture (MVVM)
 
 The application is architected using the **Model-View-ViewModel (MVVM)** pattern, a cornerstone for building scalable and maintainable SwiftUI applications.
