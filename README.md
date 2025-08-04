@@ -226,8 +226,8 @@ graph TD
 
 The project is organized into several directories, each serving a specific purpose. Here's a detailed breakdown:
 
-\<details\>
-\<summary\>\<strong\>APIService (Networking & OpenAI Interaction)\</strong\>\</summary\>
+<details>
+<summary><strong>APIService (Networking & OpenAI Interaction)</strong></summary>
 
 | File | Summary |
 | :--- | :--- |
@@ -240,10 +240,10 @@ The project is organized into several directories, each serving a specific purpo
 | OpenAIService.swift | The main `OpenAIService` class for handling API requests, responses, and errors. |
 | OpenAIServiceError.swift | Defines custom error types for `OpenAIService` operations. |
 
-\</details\>
+</details>
 
-\<details\>
-\<summary\>\<strong\>Main Application Logic & Shared Components (Main/)\</strong\>\</summary\>
+<details>
+<summary><strong>Main Application Logic & Shared Components (Main/)</strong></summary>
 
 | File | Summary |
 | :--- | :--- |
@@ -259,10 +259,10 @@ The project is organized into several directories, each serving a specific purpo
 | Content/ContentView.swift | The root view of the application. |
 | Content/ContentViewModel.swift | The view model for the `ContentView`. |
 
-\</details\>
+</details>
 
-\<details\>
-\<summary\>\<strong\>MVVM Components (MVVMs/)\</strong\>\</summary\>
+<details>
+<summary><strong>MVVM Components (MVVMs/)</strong></summary>
 
 | File | Summary |
 | :--- | :--- |
@@ -286,7 +286,7 @@ The project is organized into several directories, each serving a specific purpo
 | VectorStoreManagerViewModel.swift | Manages all API interactions for vector stores. |
 | AddFileView.swift | SwiftUI view for uploading files to a vector store. |
 
-\</details\>
+</details>
 
 -----
 
