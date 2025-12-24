@@ -2,6 +2,16 @@ import Combine
 import Foundation
 import SwiftUI
 import Firebase
+import UIKit
+import FirebaseCore
+
+class AppLifecycleDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        FirebaseApp.configure()
+        return true
+    }
+}
 
 @main
 struct OpenAssistantApp: App {
@@ -15,7 +25,7 @@ struct OpenAssistantApp: App {
     @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode.RawValue =
         AppearanceMode.system.rawValue
     @State private var showSettingsView = false
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @UIApplicationDelegateAdaptor(AppLifecycleDelegate.self) var appDelegate
 
     // MARK: - Body
     var body: some Scene {
@@ -31,10 +41,8 @@ struct OpenAssistantApp: App {
                 .onAppear(perform: handleOnAppear)
                 .onOpenURL(perform: handleDeepLink)  // Handle deep links
                 .sheet(isPresented: $showSettingsView) {
-                    SettingsView(
-                        assistantManagerViewModel: assistantManagerViewModel,
-                        vectorStoreViewModel: vectorStoreViewModel
-                    )
+                    SettingsView()
+                        .environmentObject(assistantManagerViewModel)
                 }
         }
     }
@@ -43,6 +51,16 @@ struct OpenAssistantApp: App {
     private func handleOnAppear() {
         assistantManagerViewModel.fetchAssistants()
         showSettingsView = apiKey.isEmpty
+    }
+    
+    private func handleDeepLink(_ url: URL) {
+        #if DEBUG
+        print("Received deep link: \(url.absoluteString)")
+        #endif
+        // Example: open settings when the URL indicates it
+        if url.host == "settings" || url.pathComponents.contains("settings") {
+            showSettingsView = true
+        }
     }
 }
 
