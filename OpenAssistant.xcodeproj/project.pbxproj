@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1FA299B63060E5CBCFEEA1EA /* Pods_OpenAssistant.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B02250020D83E987EC5B6304 /* Pods_OpenAssistant.framework */; };
 		B0067AF62CA8B43E0043E2DD /* BaseAssistantViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0067AF52CA8B43E0043E2DD /* BaseAssistantViewModel.swift */; };
 		B0067AFB2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */; };
 		B033D41A2CCAFECD00984B82 /* OpenAIService-Vector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */; };
@@ -60,8 +61,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		011FCA37AA9DA6A569910BA0 /* Pods-OpenAssistant.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OpenAssistant.debug.xcconfig"; path = "Target Support Files/Pods-OpenAssistant/Pods-OpenAssistant.debug.xcconfig"; sourceTree = "<group>"; };
+		4213FA0DBE5BD0386426A413 /* Pods-OpenAssistant.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OpenAssistant.release.xcconfig"; path = "Target Support Files/Pods-OpenAssistant/Pods-OpenAssistant.release.xcconfig"; sourceTree = "<group>"; };
 		B0067AF52CA8B43E0043E2DD /* BaseAssistantViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseAssistantViewModel.swift; sourceTree = "<group>"; };
 		B0067AFA2CA8F4BE0043E2DD /* AssistantDetailSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantDetailSectionView.swift; sourceTree = "<group>"; };
+		B02250020D83E987EC5B6304 /* Pods_OpenAssistant.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_OpenAssistant.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B033D4192CCAFECD00984B82 /* OpenAIService-Vector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Vector.swift"; sourceTree = "<group>"; };
 		B033D41B2CCB05F700984B82 /* OpenAIService-Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Assistant.swift"; sourceTree = "<group>"; };
 		B033D41D2CCB0AB000984B82 /* OpenAIService-Threads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenAIService-Threads.swift"; sourceTree = "<group>"; };
@@ -122,12 +126,31 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1FA299B63060E5CBCFEEA1EA /* Pods_OpenAssistant.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1D6AE71BE89148783ECEF768 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				011FCA37AA9DA6A569910BA0 /* Pods-OpenAssistant.debug.xcconfig */,
+				4213FA0DBE5BD0386426A413 /* Pods-OpenAssistant.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		24BF0B4B9CA47B494BCF4CBC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B02250020D83E987EC5B6304 /* Pods_OpenAssistant.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		B0113FF82DC7110D00C980C9 /* ChatParts */ = {
 			isa = PBXGroup;
 			children = (
@@ -275,6 +298,8 @@
 			children = (
 				B0EEE70C2C9932580012F2BA /* OpenAssistant */,
 				B0EEE70B2C9932580012F2BA /* Products */,
+				1D6AE71BE89148783ECEF768 /* Pods */,
+				24BF0B4B9CA47B494BCF4CBC /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -340,9 +365,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B0EEE7182C9932590012F2BA /* Build configuration list for PBXNativeTarget "OpenAssistant" */;
 			buildPhases = (
+				BD400382D1E0C8B743A07665 /* [CP] Check Pods Manifest.lock */,
 				B0EEE7062C9932580012F2BA /* Sources */,
 				B0EEE7072C9932580012F2BA /* Frameworks */,
 				B0EEE7082C9932580012F2BA /* Resources */,
+				BEA2016B11AA6A8BAC0B27CB /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -397,6 +424,48 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		BD400382D1E0C8B743A07665 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-OpenAssistant-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		BEA2016B11AA6A8BAC0B27CB /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-OpenAssistant/Pods-OpenAssistant-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-OpenAssistant/Pods-OpenAssistant-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OpenAssistant/Pods-OpenAssistant-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		B0EEE7062C9932580012F2BA /* Sources */ = {

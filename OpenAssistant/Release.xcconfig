@@ -8,6 +8,8 @@
 // Configuration settings file format documentation can be found at:
 // https://help.apple.com/xcode/#/dev745c5c974
 
+#include "Pods/Target Support Files/Pods-OpenAssistant/Pods-OpenAssistant.release.xcconfig"
+
 // MARK: - Build Settings
 
 // Disable debugging

@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import SwiftUI
+import Firebase
 
 @main
 struct OpenAssistantApp: App {
@@ -14,6 +15,7 @@ struct OpenAssistantApp: App {
     @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode.RawValue =
         AppearanceMode.system.rawValue
     @State private var showSettingsView = false
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     // MARK: - Body
     var body: some Scene {
@@ -27,25 +29,20 @@ struct OpenAssistantApp: App {
                     (AppearanceMode(rawValue: appearanceMode) ?? .system).colorScheme
                 )
                 .onAppear(perform: handleOnAppear)
+                .onOpenURL(perform: handleDeepLink)  // Handle deep links
                 .sheet(isPresented: $showSettingsView) {
-                    // Wrap SettingsView in NavigationView to show title and Done button
-                    NavigationView {
-                        SettingsView()
-                            .environmentObject(assistantManagerViewModel)
-                        // Inject messageStore into SettingsView if needed
-                        // .environmentObject(messageStore)
-                    }
-                    // Apply preferred color scheme to the sheet as well
-                    .preferredColorScheme(
-                        (AppearanceMode(rawValue: appearanceMode) ?? .system).colorScheme)
+                    SettingsView(
+                        assistantManagerViewModel: assistantManagerViewModel,
+                        vectorStoreViewModel: vectorStoreViewModel
+                    )
                 }
         }
     }
 
     // MARK: - Methods
-    /// Handles actions to perform when the view appears
     private func handleOnAppear() {
         assistantManagerViewModel.fetchAssistants()
         showSettingsView = apiKey.isEmpty
     }
 }
+
