@@ -26,15 +26,34 @@ jobs:
           [ -z "$DEVICE" ] && DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [^(]+' | head -1 | xargs)
           echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
 
+      - name: Install CocoaPods
+        run: |
+          if [ -f Podfile ]; then
+            gem install cocoapods
+            pod install --repo-update
+          fi
+
       - name: Build for Release
         run: |
-          xcodebuild -project OpenAssistant.xcodeproj \
-            -scheme OpenAssistant \
-            -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
-            -configuration Release \
-            -derivedDataPath build/ \
-            CODE_SIGNING_ALLOWED=NO \
-            clean build
+          if [ -f OpenAssistant.xcworkspace/contents.xcworkspacedata ]; then
+            xcodebuild \
+              -workspace OpenAssistant.xcworkspace \
+              -scheme OpenAssistant \
+              -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
+              -configuration Release \
+              -derivedDataPath build/ \
+              CODE_SIGNING_ALLOWED=NO \
+              clean build
+          else
+            xcodebuild \
+              -project OpenAssistant.xcodeproj \
+              -scheme OpenAssistant \
+              -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
+              -configuration Release \
+              -derivedDataPath build/ \
+              CODE_SIGNING_ALLOWED=NO \
+              clean build
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v1

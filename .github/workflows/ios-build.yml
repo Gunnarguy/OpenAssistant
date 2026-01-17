@@ -34,6 +34,23 @@ jobs:
           echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
           echo "Using simulator: $DEVICE"
 
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install CocoaPods
+        run: |
+          if [ -f Podfile ]; then
+            gem install cocoapods
+            pod install --repo-update
+          else
+            echo "No Podfile found, skipping pod install"
+          fi
+
       - name: Cache DerivedData
         uses: actions/cache@v4
         with:
@@ -44,11 +61,23 @@ jobs:
 
       - name: Build for iOS Simulator
         run: |
-          xcodebuild clean build \
-            -project ${{ env.PROJECT }} \
-            -scheme ${{ env.SCHEME }} \
-            -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
-            -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_IDENTITY="" \
-            PROVISIONING_PROFILE=""
+          # Use workspace if Pods exist, otherwise project
+          if [ -f OpenAssistant.xcworkspace/contents.xcworkspacedata ]; then
+            xcodebuild clean build \
+              -workspace OpenAssistant.xcworkspace \
+              -scheme ${{ env.SCHEME }} \
+              -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
+              -configuration Debug \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGN_IDENTITY="" \
+              PROVISIONING_PROFILE=""
+          else
+            xcodebuild clean build \
+              -project ${{ env.PROJECT }} \
+              -scheme ${{ env.SCHEME }} \
+              -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
+              -configuration Debug \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGN_IDENTITY="" \
+              PROVISIONING_PROFILE=""
+          fi

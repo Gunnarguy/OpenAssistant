@@ -46,14 +46,30 @@ jobs:
           [ -z "$DEVICE" ] && DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [^(]+' | head -1 | xargs)
           echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
 
+      - name: Install CocoaPods
+        run: |
+          if [ -f Podfile ]; then
+            gem install cocoapods
+            pod install --repo-update
+          fi
+
       - name: Build project
         run: |
-          xcodebuild clean build \
-            -project OpenAssistant.xcodeproj \
-            -scheme OpenAssistant \
-            -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
-            -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO
+          if [ -f OpenAssistant.xcworkspace/contents.xcworkspacedata ]; then
+            xcodebuild clean build \
+              -workspace OpenAssistant.xcworkspace \
+              -scheme OpenAssistant \
+              -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
+              -configuration Debug \
+              CODE_SIGNING_ALLOWED=NO
+          else
+            xcodebuild clean build \
+              -project OpenAssistant.xcodeproj \
+              -scheme OpenAssistant \
+              -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
+              -configuration Debug \
+              CODE_SIGNING_ALLOWED=NO
+          fi
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
