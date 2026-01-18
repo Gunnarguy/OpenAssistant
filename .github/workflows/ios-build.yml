@@ -20,19 +20,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Xcode
+      - name: Setup Xcode 26.2
         run: |
-          XCODE_PATH=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1 || echo "/Applications/Xcode.app")
-          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
           echo "Using: $(xcodebuild -version | head -1)"
 
       - name: Get Simulator
         id: sim
         run: |
-          DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [0-9]+ Pro' | head -1 | xargs)
-          [ -z "$DEVICE" ] && DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [^(]+' | head -1 | xargs)
+          # Prefer iPhone 17 Pro Max, fallback through available devices
+          for DEVICE in "iPhone 17 Pro Max" "iPhone 17 Pro" "iPhone 16 Pro Max" "iPhone 16 Pro"; do
+            if xcrun simctl list devices available | grep -q "$DEVICE"; then
+              echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
+              echo "Using simulator: $DEVICE"
+              exit 0
+            fi
+          done
+          # Ultimate fallback
+          DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [^(]+' | head -1 | xargs)
           echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
-          echo "Using simulator: $DEVICE"
 
       - name: Cache CocoaPods
         uses: actions/cache@v4
@@ -51,33 +57,20 @@ jobs:
             echo "No Podfile found, skipping pod install"
           fi
 
-      - name: Cache DerivedData
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-derived-data-${{ hashFiles('**/*.xcodeproj') }}
-          restore-keys: |
-            ${{ runner.os }}-derived-data-
-
       - name: Build for iOS Simulator
         run: |
-          # Use workspace if Pods exist, otherwise project
           if [ -f OpenAssistant.xcworkspace/contents.xcworkspacedata ]; then
             xcodebuild clean build \
               -workspace OpenAssistant.xcworkspace \
               -scheme ${{ env.SCHEME }} \
               -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
               -configuration Debug \
-              CODE_SIGNING_ALLOWED=NO \
-              CODE_SIGN_IDENTITY="" \
-              PROVISIONING_PROFILE=""
+              CODE_SIGNING_ALLOWED=NO
           else
             xcodebuild clean build \
               -project ${{ env.PROJECT }} \
               -scheme ${{ env.SCHEME }} \
               -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
               -configuration Debug \
-              CODE_SIGNING_ALLOWED=NO \
-              CODE_SIGN_IDENTITY="" \
-              PROVISIONING_PROFILE=""
+              CODE_SIGNING_ALLOWED=NO
           fi

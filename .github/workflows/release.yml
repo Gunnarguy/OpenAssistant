@@ -13,17 +13,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Xcode
+      - name: Setup Xcode 26.2
         run: |
-          XCODE_PATH=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1 || echo "/Applications/Xcode.app")
-          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
           echo "Using: $(xcodebuild -version | head -1)"
 
       - name: Get Simulator
         id: sim
         run: |
-          DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [0-9]+ Pro' | head -1 | xargs)
-          [ -z "$DEVICE" ] && DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [^(]+' | head -1 | xargs)
+          for DEVICE in "iPhone 17 Pro Max" "iPhone 17 Pro" "iPhone 16 Pro Max" "iPhone 16 Pro"; do
+            if xcrun simctl list devices available | grep -q "$DEVICE"; then
+              echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [^(]+' | head -1 | xargs)
           echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
 
       - name: Install CocoaPods
@@ -65,13 +69,13 @@ jobs:
 
             ## Installation
             1. Clone the repository
-            2. Open in Xcode
+            2. Open in Xcode 26+
             3. Build and run on your device
             4. Add your OpenAI API key in Settings
 
             ## Requirements
-            - iOS 15.0+
-            - Xcode 16+
+            - iOS 26.0+
+            - Xcode 26+
             - Valid OpenAI API key
           draft: false
           prerelease: false
