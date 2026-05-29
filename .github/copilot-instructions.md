@@ -1,102 +1,77 @@
-# OpenAssistant iOS Client Development Guide
+# OpenAssistant iOS Client Developer Copilot Instructions
 
-## Architecture & Core Patterns
+## 📍 1. Project Identity
 
-### MVVM with Inheritance Hierarchy
+**OpenAssistant** is a native iOS client built in SwiftUI that interacts directly with the stateful **OpenAI Assistants API (v2)**. The application implements an MVVM-S architecture to cleanly separate UI presentation, reactive business controllers, and async networking. It features an on-device document preprocessing strategy pipeline to convert media formats locally before transmission, and orchestrates stateful run executions via safe timer status polling.
 
-- **Base Classes**: All ViewModels inherit from `BaseViewModel` or `BaseAssistantViewModel` in `MVVMs/Bases/`
-- **Service Injection**: Use `performServiceAction { openAIService in ... }` pattern for API calls
-- **Error Handling**: Use `handleResult()` method and `IdentifiableError` for consistent error presentation
-- **API Initialization**: Service auto-reinitializes via `OpenAIServiceInitializer.initialize()` when API key changes
+---
 
-### Decoupled Communication via NotificationCenter
+## 🎯 2. Prime Directives
 
-Critical notification patterns defined in `Main/Extensions.swift`:
+- **Adhere strictly to verified facts**: Never assume, guess, or invent APIs, files, or completed capabilities. If a detail cannot be verified by scanning the codebase, mark it as `Needs verification`.
+- **Maintain Design Patterns**: Ensure any additions conform to the established MVVM-S framework, MainActor VM pinning, base class inheritance, and event synchronization patterns.
+- **Maintain Document Integrity**: Keep all file headers, copyright symbols, and code documentation intact unless explicitly instructed otherwise.
 
-```swift
-.assistantCreated, .assistantUpdated, .assistantDeleted
-.vectorStoreCreated, .vectorStoreUpdated, .vectorStoreDeleted
-.settingsUpdated, .didUpdateAssistant
-```
+---
 
-- ViewModels subscribe to relevant notifications in `setupNotificationObservers()`
-- Post notifications after successful API operations for real-time UI sync
-- Use `.receive(on: DispatchQueue.main)` for UI updates
+## 🏗️ 3. Architecture Rules
 
-### Message Persistence & Threading
+- **ViewModels**: All ViewModels must reside in `OpenAssistant/MVVMs/` and inherit from `BaseViewModel` or `BaseAssistantViewModel` located in `OpenAssistant/MVVMs/Bases/`.
+- **MainActor Pinning**: ViewModels must be annotated with `@MainActor` to prevent multi-threading UI mutations.
+- **Unidirectional Flow**: Views must never contact networking services directly. They must only invoke methods on ViewModels and observe published changes.
+- **Decoupled Notification Bus**: Coordinate data updates across views via `NotificationCenter` using the custom notifications defined in `Main/Extensions.swift`. Do not establish direct delegation or references between Tab ViewModels.
+- **Strategy Pattern for Ingestion**: Place any file processing logic inside a strategy class implementing `FileConversionStrategy` in `FileUploadService.swift`.
 
-- **MessageStore**: Central chat history manager using `@AppStorage` with JSON serialization
-- **Thread Management**: Each chat creates OpenAI threads; messages filtered by `thread_id`
-- **Deduplication**: Store handles message deduplication by ID automatically
-- **Loading Strategy**: Call `messageStore.addMessages()` for assistant responses, `messageStore.addMessage()` for user messages
+---
 
-### API Service Architecture
+## 🗂️ 4. Key Files by Concern
 
-- **Main Service**: `OpenAIService` with method extensions in separate files (`OpenAIService-Assistant.swift`, etc.)
-- **Retry Logic**: Built-in exponential backoff in `performDataTaskWithRetry()`
-- **Request Pattern**: Use `makeRequest()` with proper headers (`assistants=v2` beta header required)
-- **Error Types**: Custom `OpenAIServiceError` enum for typed error handling
+- **App Entry**: [OpenAssistantApp.swift](OpenAssistant/Main/OpenAssistantApp.swift) (bootstrapping, environment inject).
+- **Core Models**: [OpenAIService-Threads.swift](OpenAssistant/APIService/OpenAIService-Threads.swift) (e.g. `Message`, `Thread`, `Run`).
+- **Main Services**: [OpenAIService.swift](OpenAssistant/APIService/OpenAIService.swift) (base networking, retry backoff logic).
+- **Ingestion/Conversions**: [FileUploadService.swift](OpenAssistant/MVVMs/VectorStores/Files/FileUploadService.swift) (strategies, multipart form builders).
+- **Storage/Persistence**: [MessageStore.swift](OpenAssistant/MVVMs/Chat/ChatParts/MessageStore.swift) (UserDefaults JSON history cache).
 
-## Development Workflows
+---
 
-### Building & Running
+## ⚙️ 5. Build and Test Commands
 
-- **iOS Target**: Minimum deployment iOS 15.0 (defined in `Package.swift`)
-- **Swift Package**: Use `swift build` for package validation
-- **Xcode**: Open `OpenAssistant.xcodeproj` for full iOS development
+- **Build Package Validation**:
+  ```bash
+  swift build
+  ```
+- **Xcode Command-Line Build (No Signing)**:
+  ```bash
+  xcodebuild -workspace OpenAssistant.xcworkspace -scheme OpenAssistant -sdk iphonesimulator build CODE_SIGNING_ALLOWED=NO
+  ```
+- **Local Dev Setup**:
+  ```bash
+  chmod +x setup.sh
+  ./setup.sh
+  ```
 
-### File Organization Conventions
+---
 
-- **Feature-based**: Each MVVM feature in `MVVMs/{FeatureName}/` with View+ViewModel pairs
-- **Shared Views**: Feature-specific sub-components in `{Feature}Parts/` directories
-- **API Extensions**: Separate service functionality by domain (Assistant, Threads, Vector)
+## 🧼 6. Logging and Debugging Conventions
 
-### State Management Patterns
+- **Console Logging**: Use `print()` statement macros for detailed execution diagnostics, tracking serialized request bodies, response payloads, and polling ticks.
+- **No Production Key Logging**: Ensure raw API tokens, credential variables, or decryption logs are never written to the console in release configurations.
+- **Error Presentation**: Intercept failures using the `OpenAIServiceError` enum and map them to UI alert dialogs using the base helper `IdentifiableError`.
 
-- **Loading States**: Use enum-based loading states (see `ChatViewModel.LoadingState`)
-- **Published Properties**: All UI state as `@Published` in ViewModels
-- **Background Tasks**: Mark long-running API operations with `isBackground: true` in UI
+---
 
-## Project-Specific Conventions
+## 🔒 7. Security and Data sovereignty Rules
 
-### Vector Store & File Management
+- **Credential Safety**: Always store API keys in `UserDefaults` (`@AppStorage("OpenAI_API_Key")`) locally. Never hardcode credentials in code blocks or configuration parameters.
+- **Purge Temporary Files**: Ensure any media binaries written to `tmp/` during conversions are deleted immediately after the network transaction completes.
+- **TLS Enforcements**: Do not bypass App Transport Security (ATS) rules. Only TLS 1.3/1.2 connections to OpenAI are allowed.
 
-- **Dual API Pattern**: Both Combine publishers and completion handler APIs available
-- **File Caching**: `VectorStoreManagerViewModel` maintains local file cache for performance
-- **Chunking Strategy**: Always specify `ChunkingStrategy` for file uploads
-- **Optimistic Updates**: Update local caches immediately, then refresh from API
+---
 
-### Assistant Configuration
+## 📖 8. Documentation Update Rules
 
-- **Tool Resources**: Assistant tools managed via `tool_resources.fileSearch.vectorStoreIds` array
-- **Model Capabilities**: Check O-series model support for `reasoning_effort` parameter
-- **Dynamic Updates**: Use completion handlers in update operations for proper sequencing
-
-### Environment & Configuration
-
-- **API Key Storage**: Secured via `@AppStorage("OpenAI_API_Key")`
-- **Appearance**: System-level theme support through `AppearanceMode` enum
-- **Service Initialization**: Lazy initialization pattern with thread-safe singleton
-
-### Testing & Debugging
-
-- **Logging Pattern**: Extensive `print()` statements for operation tracing (remove in production)
-- **Preview Support**: All views include `#Preview` with mock data
-- **Error Recovery**: Graceful degradation with user-friendly error messages
-
-## Integration Points
-
-### OpenAI API Specifics
-
-- **Beta Headers**: Always include `OpenAI-Beta: assistants=v2` header
-- **Polling Pattern**: Use timer-based polling for run status updates (2-second intervals)
-- **File Types**: Support PDF, TXT, DOCX with proper MIME type handling
-- **Rate Limiting**: Built-in retry logic handles transient failures
-
-### Platform Integration
-
-- **SwiftUI Lifecycle**: Proper `@MainActor` usage for all ViewModels
-- **Combine Framework**: Extensive use for reactive data flow and async operations
-- **URLSession**: Custom session configuration for API requests with timeout handling
-
-Focus on maintaining the established patterns when adding features. The architecture prioritizes type safety, reactive updates, and clear separation of concerns across the MVVM layers.
+- **Keep Specs Aligned**: If you add new parameters, files, or endpoints, update the following files:
+  - `README.md` (overview and tables)
+  - `ARCHITECTURE.md` (concurrency diagrams, APIs)
+  - `docs/CASE_STUDY.md` (engineering challenges and solutions)
+- **Repo-Relative Links**: All markdown links must use repo-relative paths (`[README.md](README.md)`) and never absolute local machine paths (`file:///Users/...`).

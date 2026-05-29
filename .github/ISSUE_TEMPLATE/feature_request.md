@@ -1,25 +1,37 @@
 ---
-name: Feature Request
-about: Suggest an idea for this project
+name: ✨ Feature Request
+about: Suggest a new capability or enhancement for OpenAssistant
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## Description
+A clear and concise description of the proposed feature. Ex: *I would like the app to support Whisper voice transcription.*
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+---
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## 💡 User Story
+- **As a**: [e.g. Developer, power-user]
+- **I want to**: [e.g. record my voice inside a chat thread]
+- **So that**: [e.g. I can talk directly to my assistants instead of typing on a mobile keyboard]
 
-**OpenAI API Compatibility**
-Does this feature require any specific OpenAI API capabilities or endpoints?
+---
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## 🎨 Proposed Solution
+A clear and concise description of how you want this feature to behave and look in the UI.
 
-**Implementation Notes**
-If you have ideas about how this could be implemented, please share them.
+---
+
+## ♻️ Alternatives Considered
+A clear and concise description of any alternative designs or workflows you've considered.
+
+---
+
+## 📡 OpenAI API Compatibility
+Does this feature require specific OpenAI API endpoints or parameter configurations (e.g. v2 features, model compatibility parameters, custom headers)?
+
+---
+
+## 🔧 Implementation Notes
+If you have suggestions on how to implement this within our MVVM-S structure (e.g., creating a new `FileConversionStrategy` or adding a helper in `OpenAIService`), please detail them here.

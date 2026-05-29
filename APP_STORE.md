@@ -1,48 +1,50 @@
-# App Store Connect Listing Copy & Review Guidelines
-> **Last updated: 2026-05-29**
-> Metadata assets, reviewer notes, and manual testing procedures.
+# App Store Connect Listing Copy & Reviewer Guidelines
+> **Last updated: May 29, 2026**
+<p align="center">
+  <strong>Prepared promotional materials, reviewer credentials, and step-by-step verification flows.</strong>
+</p>
 
 ---
 
-## 📝 App Store Listing Copy
+## 📝 1. App Store Connect Listing Metadata
 
-### 1. Promotional Text
-> Bring the full power of OpenAI’s Assistants API directly to your pocket. Connect custom AI agents, attach vector stores, and upload documents locally.
+### Promotional Text
+> Bring the full power of OpenAI’s stateful Assistants API directly to your pocket. Connect custom AI agents, attach vector stores, and upload documents locally.
 
-### 2. Description
+### Description
 OpenAssistant is a native SwiftUI client designed for developers, researchers, and power users who want complete mobile control over the OpenAI Assistants API (v2). 
 
 Enter your personal OpenAI API key and start orchestrating your custom AI assistants, thread histories, and knowledge vector stores in a beautifully designed, responsive iOS dashboard.
 
-**Key Features:**
-* **Assistant Lifecycle CRUD:** Create, view, edit, and delete assistants. Fully configure names, instructions, models (including GPT-4o and o-series reasoning models), temperature, Top-P, and reasoning effort.
-* **Knowledge Retrieval via Vector Stores:** Create, inspect, and manage Vector Stores on OpenAI. Link stores to assistants to enable semantic document retrieval.
-* **On-Device File Processing:** Upload files (PDFs, TXT, DOCX) directly. Features local, on-device conversion of unsupported types (HEIC to JPEG, RTF to TXT, and audio files to plain text placeholders) before transmission to save bandwidth.
-* **Interactive Markdown Chat:** Chat with your assistants in a conversational interface featuring Markdown formatting, persistent local history cache (`MessageStore`), and automatic thread execution run polling.
-* **Privacy-First Architecture:** Direct TLS communication with OpenAI. Your API key and chats reside locally inside your device’s sandbox (`UserDefaults`). No third-party servers, tracking pixels, or advertising SDKs.
+**Core Capabilities:**
+- **Assistant Lifecycle CRUD**: Create, view, edit, and delete assistants. Fully configure names, instructions, models (including `gpt-4o` and reasoning-effort options for supported models), temperature, and Top-P.
+- **Knowledge Retrieval via Vector Stores**: Create, inspect, and manage Vector Stores on OpenAI. Link stores to assistants to enable semantic document retrieval.
+- **On-Device File Processing**: Upload files (PDFs, TXT, DOCX) directly. Features local, on-device conversion of unsupported types (HEIC to JPEG, RTF to TXT, and audio files to plain text placeholders) before transmission to save bandwidth.
+- **Interactive Markdown Chat**: Chat with your assistants in a conversational interface featuring Markdown formatting, persistent local history cache (`MessageStore`), and automatic thread execution run polling.
+- **Privacy-First Architecture**: Direct TLS communication with OpenAI. Your API key and chats reside locally inside your device’s sandbox (`UserDefaults`). No third-party servers, tracking pixels, or advertising SDKs.
 
-### 3. Keywords
+### Keywords
 `openai,assistant,ai,agent,vector,rag,chatgpt,gpt4o,o1,developer,playground,swiftui,ios`
 
-### 4. Support & Privacy Links
-- **Support URL:** [https://gunzino.me/openassistant/support/](https://gunzino.me/openassistant/support/)
-- **Privacy Policy URL:** [https://gunzino.me/openassistant/privacy/](https://gunzino.me/openassistant/privacy/)
+### Support & Privacy URLs
+- **Support URL**: [https://gunzino.me/openassistant/support/](https://gunzino.me/openassistant/support/)
+- **Privacy Policy URL**: [https://gunzino.me/openassistant/privacy/](https://gunzino.me/openassistant/privacy/)
 
 ---
 
-## 🔑 App Reviewer Credentials & Notes
+## 🔑 2. App Reviewer Credentials & Notes
 
 ### API Authentication Setup
-OpenAssistant is a **Bring-Your-Own-Key (BYOK)** client. The application requires a valid OpenAI API key with active billing permissions to perform network operations. 
+OpenAssistant is a **Bring-Your-Own-Key (BYOK)** client. The application requires a valid OpenAI API key with active billing permissions to perform network operations.
 
 > [!IMPORTANT]
-> **For the App Review Team:**
+> **For the Apple App Review Team:**
 > - To review the app's functionality, please input a valid OpenAI API key in the **Settings** view when prompted on first launch.
-> - We recommend using a key restricted to low usage limits for safety. No credentials are transmitted to any servers other than OpenAI (`api.openai.com`).
+> - We recommend using a key restricted to low usage limits for safety. No credentials are transmitted to any servers other than OpenAI (`api.openai.com`) and Firebase telemetry (`firebasestate.google.com`).
 
 ---
 
-## 📋 Step-by-Step Manual Testing Walkthrough
+## 📋 3. Step-by-Step Manual Testing Walkthrough
 
 Follow these instructions to verify the core capabilities of the app:
 
@@ -55,10 +57,10 @@ Follow these instructions to verify the core capabilities of the app:
 1. Tap the **Manage** tab (third tab) to view your Assistants list.
 2. Tap the `+` button in the top-right corner to open the **Create Assistant** screen.
 3. Configure the assistant:
-   - **Name:** Enter "Reviewer Bot".
-   - **Model:** Select `gpt-4o` from the dropdown list.
-   - **Instructions:** Enter "You are a helpful QA assistant."
-   - **Tools:** Toggle **Code Interpreter** to enabled.
+   - **Name**: Enter "Reviewer Bot".
+   - **Model**: Select `gpt-4o` from the dropdown list.
+   - **Instructions**: Enter "You are a helpful QA assistant."
+   - **Tools**: Toggle **Code Interpreter** to enabled.
 4. Tap **Create**. The sheet will dismiss, and "Reviewer Bot" will appear in the list.
 
 ### 3. Vector Store Creation & File Ingest

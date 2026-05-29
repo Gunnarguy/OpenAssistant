@@ -1,34 +1,43 @@
-# Security Guidelines & Secrets Management
-> **Last updated: 2026-05-29**
-> Security policies, secrets isolation, compile constraints, and scanning rules.
+# Security Policy & Secrets Management
+<p align="center">
+  <strong>Guidelines outlining secret isolation, network boundary controls, local storage rules, and developer safeguards.</strong>
+</p>
 
 ---
 
-## 🔒 Secrets Management & Storage Architecture
+## 🔒 1. Secrets Management & Storage Model
 
-OpenAssistant handles the user's personal OpenAI API Key. It does not utilize intermediate servers or proxies. 
+OpenAssistant is a **Bring-Your-Own-Key (BYOK)** native application. It requires a personal OpenAI API Key to perform network calls. Keeping this key secure is the application's top priority.
 
-### 1. On-Device Storage Sandbox
-- **Current State:** The API Key is persisted locally using SwiftUI's `@AppStorage("OpenAI_API_Key")` wrapper, which interfaces with `UserDefaults`. 
-  - On iOS, `UserDefaults` plist files are stored within the application's container sandbox and are encrypted at rest by the operating system when the device is locked (using default iOS file protection).
-- **Security Limitation:** On jailbroken devices, sandbox files can be accessed via root explorer utilities.
-- **Future Migration Target:** We plan to migrate the API key storage to Apple's **Keychain Services API** (using the Secure Enclave) to require biometric verification (Face ID / Touch ID) before retrieving the key.
+### Key Storage Model
+- **Current State**: The API Key is persisted locally using SwiftUI's `@AppStorage("OpenAI_API_Key")` wrapper, which interfaces with `UserDefaults`.
+  - On iOS, the `UserDefaults` plist file is sandboxed within the application container. The operating system encrypts this data at rest when the device is locked (using default iOS file protection policies).
+- **Identified Risk**: On jailbroken iOS devices with root accessibility, sandboxed plist configuration files can be inspected using root file browsers.
+- **Migration Target**: We plan to migrate the API key storage to Apple's **Keychain Services API** (leveraging the Secure Enclave) to require biometric verification (Face ID / Touch ID) before retrieving the key.
 
-### 2. Networking Hygiene
-- All connections to `api.openai.com` and `firebasestate` endpoints use **TLS 1.3** (or TLS 1.2 fallback).
-- Cleartext HTTP transmission is blocked by iOS App Transport Security (ATS) rules in `Info.plist`.
+### Session Logs
+Conversation history is saved as a JSON string inside `UserDefaults` under the key `savedMessages` in [MessageStore.swift](OpenAssistant/MVVMs/Chat/ChatParts/MessageStore.swift). No remote database engines are used.
 
 ---
 
-## 🛡️ Archiving & Build Guards
+## 📡 2. Network Boundary Controls
 
-To prevent accidental distribution of builds containing developer-owned credentials:
+To guarantee data sovereignty and privacy, OpenAssistant strictly restricts network communication:
+1. **Direct TLS 1.3 Communication**: The application talks directly to OpenAI's server (`api.openai.com`). No intermediate proxy servers or developer-owned servers are used.
+2. **ATS Rules Enforced**: App Transport Security (ATS) rules configured in `Info.plist` block cleartext HTTP traffic. Only secure HTTPS communication is permitted.
+3. **Telemetry Restrictions**: Anonymized crash logs and device metrics are sent to Google Firebase (`firebasestate.google.com`). Firebase configuration parameters contain no custom developer keys or user identification data.
+
+---
+
+## 🛡️ 3. Release-Build Safeguards & Commit Guards
+
+To prevent accidental distribution of developer-owned API keys:
 
 ### 1. Git Pre-Commit Secret Scanner
-During the developer onboarding setup (`setup.sh`), a local pre-commit hook is installed at `.git/hooks/pre-commit`. This script automatically scans changed files for raw OpenAI API key patterns (`sk-[a-zA-Z0-9]{32,}`) and aborts the commit if a potential leak is found:
+During developer setup (`setup.sh`), a pre-commit hook is installed at `.git/hooks/pre-commit`. The hook automatically scans files staged for commits for OpenAI API key patterns (`sk-[a-zA-Z0-9]{32,}`) and aborts the commit if a match is found:
 
 ```bash
-# Detected raw keys block commits automatically
+# Checks if API key patterns are staged for git commits
 KEY_PATTERN="sk-[a-zA-Z0-9]{32,}"
 if grep -qE "$KEY_PATTERN" "$FILE"; then
     echo "❌ ERROR: Potential hardcoded OpenAI API Key detected in: $FILE"
@@ -36,22 +45,23 @@ if grep -qE "$KEY_PATTERN" "$FILE"; then
 fi
 ```
 
-### 2. Configuration Profiles (`.xcconfig`)
-Signing identities and build optimization profiles are stored in `Debug.xcconfig` and `Release.xcconfig` instead of the project file:
-- `DEVELOPMENT_TEAM = YOUR_TEAM_ID`
-- `PROVISIONING_PROFILE_SPECIFIER = YOUR_PROVISIONING_PROFILE`
-
-This ensures team credentials remain local and placeholders are checked in, requiring developers to configure their signing locally in Xcode.
+### 2. Signing Profiles (.xcconfig)
+Build configuration variables (such as Apple Developer Team IDs and Bundle Identifiers) are stored in local `.xcconfig` templates (`Debug.xcconfig` and `Release.xcconfig`) instead of the project file. Placeholder values are tracked, forcing developers to configure signing credentials locally.
 
 ---
 
-## 🧼 Security Hygiene & CI/CD Pipelines
+## 🧼 4. Security Checklist for Future Changes
 
-Automated checks are run on every pull request to `main`:
+When modifying the codebase, developers must adhere to the following:
+- **No API Key Storage in Code**: Never commit mock API keys, raw strings, or test tokens. Use on-device input forms only.
+- **Background Purge of Files**: Ensure any temporary files stored in the sandbox `tmp/` folder during file processing are deleted immediately after transmission.
+- **No Console Key Leakage**: Never print raw API keys, thread authorization tokens, or decrypted user payloads in console logging commands.
+- **Dependencies Verification**: Run `pod update` regularly to scan CocoaPods dependencies (Firebase Core/Analytics) for vulnerabilities.
 
-1. **CodeQL Analysis (`codeql.yml`):**
-   Scans the Swift codebase for concurrency race conditions, injection vulnerabilities, and memory leak patterns.
-2. **Xcode Build Validation:**
-   The CI environment compiles the project on a macOS runner with `CODE_SIGNING_ALLOWED=NO` to ensure clean compilation without signing key pollution.
-3. **No Hardcoded Keys Audits:**
-   If you need to report security vulnerabilities, do not file public GitHub issues. Email the developer directly at `privacy@fascinaiting.me`.
+---
+
+## 📣 5. Vulnerability Reporting Process
+
+If you discover a potential security vulnerability in this repository, please do not file a public issue. Email the developer directly:
+- **Email**: [security@fascinaiting.me](mailto:security@fascinaiting.me)
+- **Mailing Address**: OpenAssistant Security Team, 548 Market St PMB 32110, San Francisco, CA 94104, USA.
