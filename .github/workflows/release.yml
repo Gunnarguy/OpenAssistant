@@ -13,28 +13,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Xcode 26.2
+      - name: Setup Xcode
         run: |
-          sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+          XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE_PATH" ]; then
+            XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          fi
+          [ -z "$XCODE_PATH" ] && XCODE_PATH="/Applications/Xcode.app"
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
           echo "Using: $(xcodebuild -version | head -1)"
-
-      - name: Get Simulator
-        id: sim
-        run: |
-          for DEVICE in "iPhone 17 Pro Max" "iPhone 17 Pro" "iPhone 16 Pro Max" "iPhone 16 Pro"; do
-            if xcrun simctl list devices available | grep -q "$DEVICE"; then
-              echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          done
-          DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [^(]+' | head -1 | xargs)
-          echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
 
       - name: Install CocoaPods
         run: |
           if [ -f Podfile ]; then
             gem install cocoapods
-            pod install --repo-update
+            if [ -f Podfile.lock ]; then
+              pod install --deployment
+            else
+              pod install --repo-update
+            fi
           fi
 
       - name: Build for Release
@@ -43,7 +40,7 @@ jobs:
             xcodebuild \
               -workspace OpenAssistant.xcworkspace \
               -scheme OpenAssistant \
-              -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
+              -destination 'generic/platform=iOS Simulator' \
               -configuration Release \
               -derivedDataPath build/ \
               CODE_SIGNING_ALLOWED=NO \
@@ -52,7 +49,7 @@ jobs:
             xcodebuild \
               -project OpenAssistant.xcodeproj \
               -scheme OpenAssistant \
-              -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.device }}' \
+              -destination 'generic/platform=iOS Simulator' \
               -configuration Release \
               -derivedDataPath build/ \
               CODE_SIGNING_ALLOWED=NO \
