@@ -1,7 +1,7 @@
 # Case Study: OpenAssistant iOS Client
 > **Last updated: May 29, 2026**
 <p align="center">
-  <strong>A portfolio narrative detailing the engineering decisions, core constraints, technical challenges, and outcomes of building a native SwiftUI dashboard for the stateful OpenAI Assistants API (v2).</strong>
+  <strong>A technical deep dive detailing the engineering decisions, core constraints, technical challenges, and outcomes of building a native SwiftUI dashboard for the stateful OpenAI Assistants API (v2).</strong>
 </p>
 
 ---
@@ -66,7 +66,7 @@ flowchart LR
 
 ## 📊 5. Outcome & Engineering Metrics
 
-The resulting codebase demonstrates:
+The implementation includes:
 - **API Scope**: Mapped 10+ core endpoints of the stateful OpenAI Assistants API (v2).
 - **Service Layers**: 4 distinct layers (Views, MainActor ViewModels, API Services, and Local MessageStore).
 - **Processing Strategies**: 3 concrete strategies (HEIC to JPEG, RTF to TXT, Audio transcription placeholder) running locally.

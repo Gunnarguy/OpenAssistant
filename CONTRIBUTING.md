@@ -7,7 +7,7 @@
 
 ## 📍 1. Project Status & Vision
 
-OpenAssistant is an active native iOS/SwiftUI portfolio application. We welcome contributions that improve features, upgrade stability, and maintain clean architectural compliance with our **MVVM-S** design patterns.
+OpenAssistant is an active native iOS/SwiftUI application. We welcome contributions that improve features, upgrade stability, and maintain clean architectural compliance with our **MVVM-S** design patterns.
 
 ---
 

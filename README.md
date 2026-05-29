@@ -1,244 +1,176 @@
 # OpenAssistant
 <p align="center">
-  <strong>Native SwiftUI client for the OpenAI Assistants API (v2) demonstrating strategy-driven on-device file conversions, reactive resource orchestration, and memory-safe asynchronous run polling.</strong>
+  <img src="OpenAssistant/Assets.xcassets/AppIcon.appiconset/AppIcon.png" alt="OpenAssistant app icon" width="128" height="128">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Swift-5.9-F05138.svg?style=flat-square&logo=Swift&logoColor=white" alt="Swift" />
-  <img src="https://img.shields.io/badge/iOS-15.0+-000000.svg?style=flat-square&logo=Apple&logoColor=white" alt="iOS" />
-  <img src="https://img.shields.io/badge/Xcode-15.0+-147EFB.svg?style=flat-square&logo=Xcode&logoColor=white" alt="Xcode" />
-  <img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/badge/AppStore-Bring--Your--Own--Key-orange.svg?style=flat-square" alt="App Store" />
+  <strong>Native SwiftUI client for the OpenAI Assistants API (v2) with strategy-driven local file preprocessing and memory-safe run polling.</strong>
+</p>
+
+<p align="center">
+  <a href="Needs App Store URL"> <!-- TODO: Replace with real App Store URL -->
+    <img alt="Download on the App Store" src="https://img.shields.io/badge/App%20Store-Download-0D96F6?style=for-the-badge&logo=appstore&logoColor=white">
+  </a>
+  <img alt="Swift" src="https://img.shields.io/badge/Swift-5.9-F05138?style=for-the-badge&logo=swift&logoColor=white">
+  <img alt="iOS" src="https://img.shields.io/badge/iOS-15.0%2B-111827?style=for-the-badge&logo=apple&logoColor=white">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge">
 </p>
 
 ---
 
-## 📍 Overview
+## Overview
 
-**OpenAssistant** is a native iOS client built using **SwiftUI** and the **Combine framework**. It provides a mobile dashboard for interacting with the stateful **OpenAI Assistants API (v2)**. The app enables developers, researchers, and power users to securely manage their custom AI assistants, thread histories, and vector store knowledge bases directly from their iPhone or iPad.
+OpenAssistant is a native iOS client built using **SwiftUI** and the **Combine framework** that provides a mobile dashboard for interacting with the stateful **OpenAI Assistants API (v2)**. The app enables users to manage custom AI assistants, thread histories, and vector store knowledge bases directly from an iPhone or iPad.
 
-### Why It's Technically Interesting
+### Technical Problem Solved
 Unlike simple chat completions that rely on stateless inputs, the OpenAI Assistants API is stateful and asynchronous. OpenAssistant orchestrates the multi-phase lifecycle of thread runs (Queued → In Progress → Completed) using a memory-safe, active timer-based polling system. 
 
-Additionally, the Assistants API rejected common mobile formats (like HEIC images or RTF documents) directly. OpenAssistant implements an on-device preprocessing pipeline using the **Strategy Pattern** to convert these file formats locally before transmission. This saves bandwidth, prevents server-side failures, and provides a seamless mobile user experience.
-
-### Portfolio Distinction
-Within Gunnar Hostetler's iOS portfolio, OpenAssistant is the premier demonstration of **RAG (Retrieval-Augmented Generation) infrastructure management** and **asynchronous state polling**. While other apps focus on local inference or stateless playground prompts, this client showcases direct integration with enterprise-grade cloud vector stores and stateful AI run execution models.
+Additionally, because the Assistants API rejects common mobile formats (like HEIC images or RTF documents) directly, OpenAssistant implements an on-device preprocessing pipeline using the **Strategy Pattern** to convert these file formats locally before transmission. This saves bandwidth and prevents server-side failures.
 
 ---
 
-## 📊 Product Snapshot
+## Product Snapshot
 
 | Dimension | Detail |
 |---|---|
-| **Platform** | iOS 15.0+ / iPadOS 15.0+ |
-| **Language** | Swift (Concurrency, Combine) |
-| **UI** | SwiftUI |
-| **Architecture** | MVVM-S (Model-View-ViewModel-Service) |
-| **Primary APIs** | OpenAI Assistants API (v2) / Firebase Core |
-| **Storage** | UserDefaults (via `@AppStorage`) |
-| **Status** | Active / Portfolio Prototype |
-| **App Store** | Not published (Bring-Your-Own-Key client) |
-| **License** | [MIT](LICENSE) |
+| Platform | iOS 15.0+ / iPadOS 15.0+ |
+| Language | Swift |
+| UI | SwiftUI |
+| Architecture | MVVM-S |
+| Primary APIs | OpenAI Assistants API (v2) / Firebase Core |
+| Storage | UserDefaults (via `@AppStorage`) |
+| App Store | [Download](Needs App Store URL) <!-- TODO: Replace with real App Store URL --> |
+| Status | Active |
+| License | [MIT](LICENSE) |
 
 ---
 
-## 🧠 What This App Demonstrates
+## Key Capabilities
 
 - **Asynchronous Run Orchestration**: Active polling pipeline (2.0s interval) with memory-safe `[weak self]` captures and explicit timer invalidation to prevent reference cycles.
 - **Strategy-Driven File Preprocessing**: Local, on-device conversion strategies (HEIC to JPEG, RTF to UTF-8 plain text, and voice memo transcription routing) executing off the main thread.
-- **Decoupled State Synchronization**: Cross-module notifications using `NotificationCenter` to synchronize lists (Assistants, Vector Stores) across tab views without direct VM coupling.
-- **Strict Data Sovereignty**: All API credentials reside in local user storage (`UserDefaults`) and connect directly to OpenAI via TLS 1.3, bypassing external proxy servers.
+- **Decoupled State Synchronization**: Cross-module notifications using `NotificationCenter` to synchronize lists (Assistants, Vector Stores) across tab views without direct ViewModel coupling.
+- **Data Sovereignty**: All API credentials reside in local user storage (`UserDefaults`) and connect directly to OpenAI via TLS 1.3, bypassing external proxy servers.
 - **Adaptive UI & Design System**: Responsive SwiftUI layouts utilizing dark/light/system appearance modes and custom feedback states (creating thread, running assistant, processing, completing).
-- **Security pre-commit hooks**: Automated script verification preventing accidental commits of hardcoded developer API keys.
+- **Security Pre-Commit Hooks**: Automated script verification preventing accidental commits of hardcoded developer API keys.
 
 ---
 
-## 🗺️ End-to-End User Journey
+## How It Works
 
 This flowchart maps the user experience from launching the app, through credential verification, and into main chat/vector store interaction pipelines:
 
 ```mermaid
 flowchart TD
-    User([User]) --> A[Launch App]
-    A --> B{API Key Configured?}
+    Launch[Launch App] --> CheckKey{Has API Key?}
+    CheckKey -->|No| Settings[Settings View]
+    Settings -->|Enter Key| SaveKey[Save & Initialize]
+    SaveKey --> Dashboard[Dashboard]
+    CheckKey -->|Yes| Dashboard
     
-    B -->|No| C[Onboarding / Settings View]
-    C --> D[User Enters OpenAI API Key]
-    D --> E[Validate & Store Key locally]
-    E --> F[Post .settingsUpdated notification]
-    F --> G[Initialize OpenAIService]
+    Dashboard --> VectorStore[Vector Stores]
+    VectorStore --> FileIngest[File Ingest]
+    FileIngest --> IngestStrategy[Apply Conversion Strategy]
+    IngestStrategy --> Upload[Upload & Index]
+    Upload --> Dashboard
     
-    B -->|Yes| G
-    
-    G --> H[MainTabView Dashboard]
-    
-    H --> I[Manage Vector Stores & Ingestion]
-    I --> I1[Pick Document / Image]
-    I1 --> I2[Apply On-device Format Strategy]
-    I2 --> I3[Upload to OpenAI & Link Store]
-    I3 --> H
-    
-    H --> J[Select Assistant & Open Chat]
-    J --> K[Send Message]
-    K --> K1[Append locally & persist message]
-    K1 --> K2[Run Thread on OpenAI]
-    K2 --> L[Timer-Based Run Polling]
-    L --> M{Status Completed?}
-    M -->|No| L
-    M -->|Yes| N[Fetch Assistant Output]
-    N --> O[Deduplicate & Persist to Local Store]
-    O --> P[Render Markdown Chat response]
-    P --> User
+    Dashboard --> Chat[Select Assistant & Chat]
+    Chat --> SendMsg[Send Message]
+    SendMsg --> LocalSave[Save locally]
+    LocalSave --> ThreadRun[Run Thread]
+    ThreadRun --> Poll{Run Done?}
+    Poll -->|No| Poll
+    Poll -->|Yes| FetchMsg[Fetch Output]
+    FetchMsg --> SaveLocal[Deduplicate & Persist]
+    SaveLocal --> Render[Render Output]
 ```
 
 ---
 
-## 🏗️ System Architecture
+## Architecture
 
 OpenAssistant utilizes the **MVVM-S** design pattern. The View layer remains thin and declarative, observing reactive ViewModels that inherit from core base classes, which communicate with dedicated Services.
 
 ```mermaid
-flowchart TD
-    subgraph UI ["SwiftUI Views (UI Layer)"]
-        V_Tab[MainTabView]
-        V_Chat[ChatView]
-        V_Asst[AssistantDetailView]
-        V_Vector[VectorStoreListView]
-        V_Settings[SettingsView]
+flowchart LR
+    subgraph UI ["Views"]
+        Chat[ChatView]
+        Vector[VectorStoreListView]
+        Settings[SettingsView]
     end
-
-    subgraph VM ["ViewModels (Reactive Business Logic)"]
-        VM_Base[BaseViewModel]
+    subgraph Logic ["ViewModels"]
         VM_Chat[ChatViewModel]
-        VM_Asst[AssistantManagerViewModel]
         VM_Vector[VectorStoreManagerViewModel]
     end
-
-    subgraph Services ["Service & Storage Layer"]
-        S_Init[OpenAIInitializer]
+    subgraph Storage ["Storage & Service"]
         S_API[OpenAIService]
         S_Upload[FileUploadService]
-        P_Message[MessageStore]
-        P_Storage["@AppStorage (UserDefaults)"]
+        P_Msg[MessageStore]
     end
-
-    subgraph Boundary ["External API Boundary"]
-        E_OpenAI[OpenAI Assistants API]
-        E_Firebase[Firebase Analytics / Crashlytics]
+    subgraph External ["Cloud"]
+        E_OpenAI[OpenAI API]
     end
-
-    %% Bindings
-    V_Tab --> VM_Chat
-    V_Chat --> VM_Chat
-    V_Asst --> VM_Asst
-    V_Vector --> VM_Vector
-    V_Settings --> P_Storage
     
-    VM_Chat -.-> VM_Base
-    VM_Asst -.-> VM_Base
-    VM_Vector -.-> VM_Base
-    
-    VM_Base -.-> S_API
-    VM_Chat <--> P_Message
-    VM_Vector -.-> S_Upload
-    S_Upload -.-> S_API
-    
-    %% API connections
-    S_API --> E_OpenAI
-    S_Upload --> E_OpenAI
-    V_Tab --> E_Firebase
+    UI --> Logic
+    Logic --> Storage
+    Storage --> External
+    VM_Chat <--> P_Msg
 ```
 
 ---
 
-## 🌊 Core Pipelines
+## Core Workflows
 
-### 1. Strategy-Driven File Ingestion Pipeline
+### Strategy-Driven File Ingestion Pipeline
 When a document is picked, the application routes the binary through an on-device conversion processor before packaging the payload:
 
 ```mermaid
 flowchart TD
-    A[User Selects File] --> B{Verify Extension}
-    
-    B -->|Directly Supported| C[Read raw bytes & mime]
-    B -->|heic| D[HEICToJPEGStrategy: UI/CGImage to JPEG]
-    B -->|rtf| E[RTFToTXTStrategy: NSAttributedString parse]
-    B -->|m4a / mp3 / wav / mp4 / mov| F[AudioTranscriptionStrategy: Placeholder text conversion]
-    B -->|Other plain text| G[Fallback: ASCII/UTF-8 Text Extraction]
-    B -->|Unsupported Binary| H[Throw unsupportedFileType Error]
-    
-    D --> C
+    A[Select File] --> B{Supported?}
+    B -->|Yes| C[Read raw bytes]
+    B -->|No| D{Extension?}
+    D -->|heic| E[HEIC to JPEG]
+    D -->|rtf| F[RTF to TXT]
+    D -->|audio| G[Audio placeholder]
+    D -->|unsupported| H[Throw Error]
     E --> C
     F --> C
     G --> C
-    
-    C --> I[Construct Multipart Request]
-    I --> J[POST to OpenAI /v1/files]
-    J --> K[Retrieve File ID]
-    K --> L[POST file batch index to Vector Store]
-    L --> M[Refresh local Vector Store cache]
+    C --> I[POST /v1/files]
+    I --> J[Link to Vector Store]
 ```
 
-### 2. Thread Run Execution & Status Polling Pipeline
-Because thread executions are stateful on OpenAI's servers, the client initiates a secure polling mechanism to check for execution completions:
+---
+
+## Data Flow
+
+This diagram illustrates how data passes between the local device sandbox, secure transport layers, and external service boundaries:
 
 ```mermaid
 flowchart TD
-    A[User triggers chat message] --> B[Append local message to MessageStore]
-    B --> C[POST message to Thread endpoint]
-    C --> D[POST Run creation for Assistant]
-    D --> E[Start Polling Timer: 2.0s interval]
-    E --> F[GET status of Run]
-    F --> G{Evaluate Run Status}
-    
-    G -->|queued / in_progress| E
-    G -->|failed / cancelled| H[Display UI error banner & Stop Timer]
-    G -->|completed| I[Invalidate Polling Timer]
-    
-    I --> J[GET /v1/threads/:id/messages]
-    J --> K[Filter assistant-role outputs]
-    K --> L[Deduplicate & save to MessageStore]
-    L --> M[Update UI & scroll list to bottom]
+    subgraph Device ["On-Device Sandbox"]
+        Key[API Key in AppStorage]
+        Msg[Saved Messages in AppStorage]
+        Tmp[Temporary File in tmp/]
+    end
+    subgraph Transport ["Network Transport"]
+        TLS[TLS 1.3 Encryption]
+    end
+    subgraph Cloud ["External Services"]
+        OpenAI[OpenAI Servers]
+        Firebase[Firebase Telemetry]
+    end
+
+    Key --> TLS
+    Tmp --> TLS
+    TLS --> OpenAI
+    Msg -.-> Msg
+    Device --> Firebase
 ```
 
 ---
 
-## 📡 Ingestion / Processing / Retrieval Details
-
-### Ingestion
-OpenAssistant supports importing documents via the system file picker and photo library. Accepted extensions are routed dynamically:
-- **Direct Support**: `.pdf`, `.txt`, `.docx`, `.json`, `.csv`, `.html`, `.jpeg`, `.png`, `.gif` etc.
-- **Converted/Processed Support**: `.heic`, `.rtf`, `.m4a`, `.mp3`, `.wav`, `.mp4`, `.mov`.
-
-### Processing
-The file conversions execute locally on background threads:
-- **`HEICToJPEGStrategy`**: Instantiates a `UIImage` from binary data, extracting JPEG data at 80% compression quality.
-- **`RTFToTXTStrategy`**: Instantiates an `NSAttributedString` using the RTF document reader option, stripping styled metadata and returning plain UTF-8 bytes.
-- **`AudioTranscriptionStrategy`**: Serves as a placeholder strategy representing transcription routing. (In production, this would route to speech-to-text endpoints).
-
-### Retrieval / Querying
-Knowledge retrieval is managed via OpenAI Vector Stores linked to assistants. The client handles the association by updating the assistant's `tool_resources` with the active `vector_store_id` list, enabling OpenAI-managed semantic file searches during runs.
-
-### Generation / Output
-Responses are rendered dynamically in the chat layout. Markdown structures are parsed, and the chat supports automatic loading states. Run status updates are reflected in the progress loader.
-
----
-
-## ⚖️ Key Technical Decisions
-
-| Decision | Rationale | Tradeoff |
-|---|---|---|
-| **UserDefaults (`@AppStorage`) for Keys** | Avoids external database configuration overhead, keeping storage simple. | Key is stored in plist which can be extracted on jailbroken devices. (Keychain migration planned). |
-| **Strategy Pattern for Processing** | Isolates file conversion logic from the uploader, allowing new formats to be added cleanly. | Adds slightly more file overhead structure to the project. |
-| **`NotificationCenter` Event Bus** | Prevents tight coupling or direct delegation between tabs (`VectorStores` & `Assistants`). | Direct state tracking is not compile-time guaranteed; relies on string keys. |
-| **Active 2.0s Polling** | Standard polling mechanism for OpenAI Assistants API. | Higher mobile battery usage and network request overhead than WebSockets. |
-| **Base ViewModel Inheritance** | DRY principle; common loader, error alerts, and action runners are shared. | Strict class hierarchy is less flexible than protocol-oriented patterns. |
-| **Combine + async/await Mix** | Combines Swift concurrency for networking with Combine publishers for reactive UI state. | Developer must manage two asynchronous paradigms in the same codebase. |
-
----
-
-## 🗂️ File Entry Points
+## File Entry Points
 
 | Concern | Files | Responsibility |
 |---|---|---|
@@ -251,7 +183,7 @@ Responses are rendered dynamically in the chat layout. Markdown structures are p
 
 ---
 
-## ⚙️ Configuration Catalog
+## Configuration
 
 The app's environment is parameterized by the following values:
 
@@ -264,7 +196,7 @@ The app's environment is parameterized by the following values:
 
 ---
 
-## 🚀 Getting Started
+## Build & Run
 
 ### Local Setup Instructions
 
@@ -274,7 +206,7 @@ The app's environment is parameterized by the following values:
    cd OpenAssistant
    ```
 2. **Execute the Setup Helper Script:**
-   The script checks prerequisites, runs CocoaPods installation, and installs local Git pre-commit hooks to safeguard against API key leaks:
+   The script checks prerequisites, runs CocoaPods installation, and installs local Git pre-commit security hooks to safeguard against API key leaks:
    ```bash
    chmod +x setup.sh
    ./setup.sh
@@ -289,7 +221,7 @@ The app's environment is parameterized by the following values:
 
 ---
 
-## 🧪 Testing and QA
+## Testing
 
 The repository does not currently contain automated unit test targets. All validation must be performed manually:
 
@@ -301,37 +233,31 @@ The repository does not currently contain automated unit test targets. All valid
 | **Manual QA (Assistant)** | Create assistant "QA Bot", select model, tap Save. | Assistant appears in picker list. |
 | **Manual QA (Chat)** | Type "Hello" inside "QA Bot" thread, send message. | Run lifecycle states progress to completed; text renders. |
 
-### Recommended Minimal Test Plan
-- **Mock Service Testing**: Abstract `OpenAIService` behind a protocol to mock API responses and verify ViewModel state changes in isolation.
-- **Conversion Strategy Tests**: Create unit tests parsing sample `.heic` and `.rtf` files, verifying that output types match JPEG/TXT expectations.
-
 ---
 
-## 🔒 Privacy and Security
+## Privacy & Security
 
 - **Local Storage Sandbox**: API keys and message histories reside inside the app container's sandbox. Files copied to the app's `tmp/` folder are purged immediately upon upload.
-- **Network Protection**: App Transport Security (ATS) rules restrict all API traffic to TLS 1.3 connections directly to OpenAI (`api.openai.com`). No proxy servers are used.
-- **Pre-Commit hook**: Scans changed files locally for keys before staging commits to avoid remote exposure.
+- **Network Protection**: App Transport Security (ATS) rules restrict all API traffic to TLS 1.3 connections directly to OpenAI (`api.openai.com`). Requests are sent directly from the app to the API without a custom proxy server.
+- **Pre-Commit Hook**: Scans changed files locally for keys before staging commits to avoid remote exposure.
 - For detailed information, review [SECURITY.md](SECURITY.md) and [PRIVACY.md](PRIVACY.md).
 
 ---
 
-## 📖 Documentation Index
+## Documentation
 
 | Document | Purpose |
 |---|---|
-| [README.md](README.md) | High-level system overview, visual pipelines, and developer onboarding. |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Architectural specification, state patterns, and API specifications. |
-| [ROADMAP.md](ROADMAP.md) | Project status, active items, and planned milestones. |
-| [SECURITY.md](SECURITY.md) | Security assertions, secrets isolation, and commit guards. |
-| [PRIVACY.md](PRIVACY.md) | Data handling, sandboxing, and network transmission disclosures. |
-| [APP_STORE.md](APP_STORE.md) | Connect listing data, reviewer setup notes, and testing paths. |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Developer guidelines, code standards, and PR workflows. |
-| [docs/CASE_STUDY.md](docs/CASE_STUDY.md) | Deep technical breakdown of engineering challenges solved. |
+| [Architecture](ARCHITECTURE.md) | System design, data flow, and service boundaries |
+| [Security](SECURITY.md) | Secret handling, local storage, and release checks |
+| [Privacy](PRIVACY.md) | Data storage, API transmission, and user controls |
+| [Roadmap](ROADMAP.md) | Current status, planned work, and known gaps |
+| [App Store Notes](APP_STORE.md) | App Store metadata, review notes, and release checklist |
+| [Case Study](docs/CASE_STUDY.md) | Engineering retrospective and implementation notes |
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - `[x]` Strategy-driven file format converters (JPEG, TXT conversions).
 - `[x]` Decoupled state notification bus.
@@ -341,6 +267,6 @@ The repository does not currently contain automated unit test targets. All valid
 
 ---
 
-## 📄 License
+## License
 
 OpenAssistant is licensed under the MIT License. See [LICENSE](LICENSE) for more details.

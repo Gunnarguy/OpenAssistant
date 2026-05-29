@@ -8,7 +8,7 @@
 
 ## 🚦 1. Current Status
 
-OpenAssistant has completed its core migration to the **OpenAI Assistants API (v2)** and is in **Active Development / Portfolio-Ready Status**. The application fully compiles on Xcode 15.0+ and operates on iOS 15.0+ devices. Development focuses on security hardening, adding automated testing coverage, and improving audio ingestion workflows.
+OpenAssistant has completed its core migration to the **OpenAI Assistants API (v2)** and is in **Active Development Status**. The application compiles on Xcode 15.0+ and operates on iOS 15.0+ devices. Development focuses on security hardening, adding automated testing coverage, and improving audio ingestion workflows.
 
 ---
 
