@@ -1,13 +1,15 @@
 # Architecture Specification
 <p align="center">
-  <strong>System blueprint detailing design patterns, component relationships, tech stacks, concurrency models, and API specifications.</strong>
+    <strong>System blueprint for the archived OpenAssistant product line, detailing design patterns, component relationships, tech stacks, concurrency models, and API specifications.</strong>
 </p>
 
 ---
 
 ## 🏛️ 1. Architectural Thesis
 
-OpenAssistant is structured using the **MVVM-S (Model-View-ViewModel-Service)** architecture, tailored to support reactive SwiftUI layouts. The primary goal is separation of concerns and unidirectional data flow. 
+OpenAssistant is structured using the **MVVM-S (Model-View-ViewModel-Service)** architecture, tailored to support reactive SwiftUI layouts. The primary goal is separation of concerns and unidirectional data flow.
+
+This document describes the legacy Assistants API client architecture. It should be read as an archived design record, not as the current primary direction of Gunnar Hostetler's API-tooling work. That role moved to OpenResponses.
 
 To prevent architectural decay, the codebase enforces the following:
 - **Thin Declarative Views**: Views only layout elements and bind to ViewModel states. They perform no network operations or business logic.
@@ -178,9 +180,10 @@ The repository does not contain active unit tests. Verification relies on manual
 
 ## ⚖️ 9. Architectural Tradeoffs
 
-- **UserDefaults vs Keychain**: AppStorage provides native SwiftUI integrations but lacks secure Keychain storage. Keychain encryption is planned as a milestone.
+- **UserDefaults vs Keychain**: AppStorage provides native SwiftUI integrations but lacks secure Keychain storage. Keychain encryption was identified as future hardening work, but the repo is now archived rather than actively evolving toward that milestone.
 - **Polling vs WebSockets**: The Assistants API relies on REST endpoints requiring polling. This increases battery consumption compared to real-time WebSockets.
 - **Direct-to-API Architecture**: Running the client directly off OpenAI ensures privacy and simplicity, but limits the ability to hide credentials or cache vector queries in a central server.
+- **Legacy API Model**: The design is tightly coupled to assistants, threads, and runs. That stateful model is the main reason the active product line moved to the Responses API in OpenResponses.
 
 ---
 

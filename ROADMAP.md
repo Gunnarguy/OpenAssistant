@@ -8,7 +8,7 @@
 
 ## 🚦 1. Current Status
 
-OpenAssistant has completed its core migration to the **OpenAI Assistants API (v2)** and is in **Active Development Status**. The application compiles on Xcode 15.0+ and operates on iOS 15.0+ devices. Development focuses on security hardening, adding automated testing coverage, and improving audio ingestion workflows.
+OpenAssistant completed its core migration to the **OpenAI Assistants API (v2)** before the project was archived. The application remains a functional reference build for Xcode 15.0+ and iOS 15.0+ environments, but current product work has moved to **OpenResponses**, which targets the Responses API directly.
 
 ---
 
@@ -40,14 +40,16 @@ OpenAssistant has completed its core migration to the **OpenAI Assistants API (v
 
 ---
 
-## 🚧 3. Active Work
+## 🚧 3. Historical Follow-Up Work
 
-- **Documentation Overhaul**: Audit and upgrade all project documentation to professional, portfolio-grade specifications with clean Mermaid diagrams.
-- **Git Security Hooks**: Integrate automated hooks rejecting commits containing raw API keys to protect developers from accidental credential exposure.
+- **Documentation Overhaul**: Complete the archive pass so the docs clearly mark OpenAssistant as legacy software and point new users to OpenResponses.
+- **Git Security Hooks**: Preserve the original security-hardening notes as reference work for anyone studying the old codebase.
 
 ---
 
 ## 🚀 4. Planned Improvements
+
+The items below are retained as historical roadmap notes from the pre-archive development period. They are not scheduled for current implementation.
 
 - **Keychain Integration**: Migrate the OpenAI API Key from plain `UserDefaults` to Apple's Keychain Services with Face ID / Touch ID validation constraints.
 - **Whisper Integration**: Replace on-device audio transcription placeholders with direct calls to OpenAI's Whisper API.

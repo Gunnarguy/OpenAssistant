@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <strong>Native SwiftUI client for the OpenAI Assistants API (v2) with strategy-driven local file preprocessing and memory-safe run polling.</strong>
+    <strong>Archived SwiftUI client for the OpenAI Assistants API (v2) with strategy-driven local file preprocessing and memory-safe run polling.</strong>
 </p>
 
 <p align="center">
@@ -21,6 +21,8 @@
 ## Overview
 
 OpenAssistant is a native iOS client built using **SwiftUI** and the **Combine framework** that provides a mobile dashboard for interacting with the stateful **OpenAI Assistants API (v2)**. The app enables users to manage custom AI assistants, thread histories, and vector store knowledge bases directly from an iPhone or iPad.
+
+This repository now represents the legacy Assistants API line in Gunnar Hostetler's product catalog. The active direct-API successor is **OpenResponses**, which moved the product focus to the Responses API.
 
 ### Technical Problem Solved
 Unlike simple chat completions that rely on stateless inputs, the OpenAI Assistants API is stateful and asynchronous. OpenAssistant orchestrates the multi-phase lifecycle of thread runs (Queued → In Progress → Completed) using a memory-safe, active timer-based polling system. 
@@ -40,7 +42,7 @@ Additionally, because the Assistants API rejects common mobile formats (like HEI
 | Primary APIs | OpenAI Assistants API (v2) / Firebase Core |
 | Storage | UserDefaults (via `@AppStorage`) |
 | App Store | [Download](https://apps.apple.com/us/app/openassistant/id6692613772) |
-| Status | Active |
+| Status | Archived |
 | License | [MIT](LICENSE) |
 
 ---
@@ -53,6 +55,7 @@ Additionally, because the Assistants API rejects common mobile formats (like HEI
 - **Data Sovereignty**: All API credentials reside in local user storage (`UserDefaults`) and connect directly to OpenAI via TLS 1.3, bypassing external proxy servers.
 - **Adaptive UI & Design System**: Responsive SwiftUI layouts utilizing dark/light/system appearance modes and custom feedback states (creating thread, running assistant, processing, completing).
 - **Security Pre-Commit Hooks**: Automated script verification preventing accidental commits of hardcoded developer API keys.
+- **Successor Path**: The repo remains useful as a reference for Assistants API-era mobile orchestration, but current product work now lives in OpenResponses.
 
 ---
 

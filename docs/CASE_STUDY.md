@@ -4,6 +4,8 @@
   <strong>A technical deep dive detailing the engineering decisions, core constraints, technical challenges, and outcomes of building a native SwiftUI dashboard for the stateful OpenAI Assistants API (v2).</strong>
 </p>
 
+This document is preserved as an archived engineering record. OpenAssistant is no longer the active product line; OpenResponses is the current direct-API successor.
+
 ---
 
 ## 📍 1. Problem & Context

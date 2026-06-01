@@ -1,15 +1,17 @@
 # OpenAssistant Documentation
 
-Welcome to the OpenAssistant documentation! This directory contains comprehensive guides for users, contributors, and developers.
+Welcome to the OpenAssistant documentation. This directory is retained as the archived documentation set for the legacy OpenAI Assistants API client.
 
-## 📖 **For Users**
+OpenAssistant is no longer the active product line. For current direct OpenAI API tooling, see OpenResponses.
+
+## 📖 **For Legacy Users**
 
 ### Getting Started
 - **[Installation Guide](installation/INSTALLATION.md)** - How to build and run the app
 - **[Distribution Options](installation/DISTRIBUTION.md)** - App Store, TestFlight, and sideloading
 - **[Privacy Policy](PRIVACY.md)** - How your data is handled
 
-## 🛠️ **For Contributors**
+## 🛠️ **For Maintainers and Contributors**
 
 ### Development
 - **[Contributing Guidelines](contributing/CONTRIBUTING.md)** - How to contribute to the project
@@ -54,8 +56,9 @@ OpenAssistant/
 
 - [Main README](../README.md) - Project overview
 - [GitHub Repository](https://github.com/Gunnarguy/OpenAssistant)
+- [OpenResponses Successor](https://github.com/Gunnarguy/OpenResponses)
 - [OpenAI API Documentation](https://platform.openai.com/docs)
 
 ---
 
-**Need help?** Open an issue on [GitHub](https://github.com/Gunnarguy/OpenAssistant/issues)!
+**Need help?** Use the archived support routes or open an issue on [GitHub](https://github.com/Gunnarguy/OpenAssistant/issues).
