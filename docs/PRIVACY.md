@@ -11,7 +11,7 @@ OpenAssistant collects and processes the following data:
 - Assistant configurations
 - File uploads for vector stores
 
-#### How We Use Your Information:
+#### How I Use Your Information:
 - API key: Used exclusively to authenticate with OpenAI services
 - Messages: Sent to OpenAI for AI response generation
 - Files: Uploaded to OpenAI for knowledge retrieval features
@@ -21,8 +21,8 @@ OpenAssistant collects and processes the following data:
 - **Third-Party Storage**: OpenAI receives your messages and files per their privacy policy
 
 #### Data Sharing:
-- We do not share your data with any parties except OpenAI (required for functionality)
-- Your OpenAI API key is never transmitted to our servers
+- I do not share your data with any parties except OpenAI (required for functionality)
+- Your OpenAI API key is never transmitted to a server of mine
 
 #### Your Rights:
 - Delete chat history anytime within the app
