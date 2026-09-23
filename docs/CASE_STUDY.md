@@ -46,8 +46,8 @@ flowchart LR
 
 ### Challenge 2: Memory-Safe Active Status Polling
 - **The Problem**: Querying run status requires active polling (sending GET requests at 2-second intervals). If the user exits the chat window during a long-running execution, strong references in background closures can trigger memory leaks, retaining the ViewModel and View in memory.
-- **The Solution**: The polling mechanism captures `[weak self]` in closures and registers the timer on the main run loop. The timer is explicitly invalidated when a status completes, fails, or when the view model is deinitialized.
-- **Code Reference**: [ChatViewModel.swift](../OpenAssistant/MVVMs/Chat/ChatViewModel.swift#L320-L365)
+- **The Solution**: The polling mechanism captures `[weak self]` in closures and registers the timer on the main run loop. The timer is explicitly invalidated when a run completes, fails, or a status request errors.
+- **Code Reference**: [ChatViewModel.swift](../OpenAssistant/MVVMs/Chat/ChatViewModel.swift#L155-L207)
 
 ### Challenge 3: Decoupled Multi-View State Synchronization
 - **The Problem**: Creating or deleting an assistant in the "Manage" tab must update the selector list in the "Chat" tab. Binding these ViewModels directly together creates tight coupling, making testing difficult and increasing initialization complexity.
@@ -59,7 +59,7 @@ flowchart LR
 ## ⚖️ 4. Technical Tradeoffs
 
 ### 1. Active Polling vs WebSocket Middlewares
-- **Tradeoff**: WebSockets or Server-Sent Events (SSE) would reduce request overhead and battery drain, but require setting up a custom backend proxy. The app connects directly to OpenAI REST endpoints using active polling to guarantee complete data privacy.
+- **Tradeoff**: WebSockets or Server-Sent Events (SSE) would reduce request overhead and battery drain, but require setting up a custom backend proxy. The app connects directly to OpenAI REST endpoints using active polling with no custom backend proxy in between.
 
 ### 2. UserDefaults (`@AppStorage`) vs Keychain Services
 - **Tradeoff**: `@AppStorage` provides native SwiftUI bindings, which simplified initial prototyping. However, UserDefaults is stored in sandboxed plist files that can be read on jailbroken devices. Key migration to the Keychain API is prioritized on the roadmap.
@@ -72,7 +72,7 @@ The implementation includes:
 - **API Scope**: Mapped 10+ core endpoints of the stateful OpenAI Assistants API (v2).
 - **Service Layers**: 4 distinct layers (Views, MainActor ViewModels, API Services, and Local MessageStore).
 - **Processing Strategies**: 3 concrete strategies (HEIC to JPEG, RTF to TXT, Audio transcription placeholder) running locally.
-- **Privacy Protections**: 3 layers of safeguards (Direct TLS 1.3 endpoints, sandboxed local storage, and pre-commit secret scanners).
+- **Privacy Protections**: 3 layers of safeguards (Direct HTTPS endpoints under App Transport Security defaults (TLS 1.2 or later), sandboxed local storage, and pre-commit secret scanners).
 
 ---
 

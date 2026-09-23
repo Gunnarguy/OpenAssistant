@@ -21,11 +21,10 @@ OpenAssistant collects and processes the following data:
 - **Third-Party Storage**: OpenAI receives your messages and files per their privacy policy
 
 #### Data Sharing:
-- I do not share your data with any parties except OpenAI (required for functionality)
+- I do not share your data with any parties except OpenAI (required for functionality). Builds from the current source also include Firebase Analytics; the App Store build (3.2) did not.
 - Your OpenAI API key is never transmitted to a server of mine
 
 #### Your Rights:
-- Delete chat history anytime within the app
 - Remove API key to disconnect from OpenAI
 - Control file uploads to vector stores
 
@@ -34,6 +33,7 @@ OpenAssistant collects and processes the following data:
 This app integrates with:
 - **OpenAI API**: Subject to [OpenAI's Privacy Policy](https://openai.com/privacy/)
 - **Apple iOS**: Subject to Apple's privacy policies
+- **Firebase Analytics**: builds from the current source
 
 ### Contact
 For privacy concerns, open an issue on the [GitHub repository](https://github.com/Gunnarguy/OpenAssistant/issues).

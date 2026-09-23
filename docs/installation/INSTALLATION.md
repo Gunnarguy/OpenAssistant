@@ -3,7 +3,7 @@
 ## For End Users
 
 ### Prerequisites
-- iOS device running iOS 15.0 or later
+- iOS device running iOS 16.0 or later
 - Xcode 15+ (for building the app)
 - Valid OpenAI API key with API access
 

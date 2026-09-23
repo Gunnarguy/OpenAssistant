@@ -8,9 +8,6 @@
 </p>
 
 <p align="center">
-  <a href="https://apps.apple.com/us/app/openassistant/id6692613772">
-    <img alt="Download on the App Store" src="https://img.shields.io/badge/App%20Store-Download-0D96F6?style=for-the-badge&logo=appstore&logoColor=white">
-  </a>
   <img alt="Swift" src="https://img.shields.io/badge/Swift-5.9-F05138?style=for-the-badge&logo=swift&logoColor=white">
   <img alt="iOS" src="https://img.shields.io/badge/iOS-16.0%2B-111827?style=for-the-badge&logo=apple&logoColor=white">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge">
@@ -41,9 +38,9 @@ Additionally, because the Assistants API rejects common mobile formats (like HEI
 | Language | Swift |
 | UI | SwiftUI |
 | Architecture | MVVM-S |
-| Primary APIs | OpenAI Assistants API (v2) / Firebase Core |
+| Primary APIs | OpenAI Assistants API (v2) / Firebase Analytics |
 | Storage | UserDefaults (via `@AppStorage`) |
-| App Store | [Download](https://apps.apple.com/us/app/openassistant/id6692613772) |
+| App Store | Removed from sale on September 23, 2026 |
 | Status | Archived |
 | License | [MIT](LICENSE) |
 
@@ -156,7 +153,7 @@ flowchart TD
     subgraph Device ["On-Device Sandbox"]
         Key[API Key in AppStorage]
         Msg[Saved Messages in AppStorage]
-        Tmp[Temporary File in tmp/]
+        Tmp[Picked file read in place and uploaded from memory]
     end
     subgraph Transport ["Network Transport"]
         TLS[TLS Encryption]
@@ -233,16 +230,18 @@ The repository does not currently contain automated unit test targets. All valid
 | Validation | Procedure | Expected Result |
 |---|---|---|
 | **Build verification** | Run `xcodebuild -workspace OpenAssistant.xcworkspace -scheme OpenAssistant -sdk iphonesimulator build CODE_SIGNING_ALLOWED=NO` | Build succeeds with zero errors. |
-| **Pre-Commit Scan** | Attempt to commit a file containing `sk-proj-abc123xyz...` | Commit is aborted with a warning. |
+| **Pre-Commit Scan** | Attempt to commit a file containing `sk-` followed by 32 or more letters or digits | Commit is aborted with a warning. |
 | **Manual QA (Onboarding)** | Clear API key in Settings, relaunch app. | Settings sheet automatically opens. |
 | **Manual QA (Assistant)** | Create assistant "QA Bot", select model, tap Save. | Assistant appears in picker list. |
 | **Manual QA (Chat)** | Type "Hello" inside "QA Bot" thread, send message. | Run lifecycle states progress to completed; text renders. |
+
+The Assistant and Chat rows need the Assistants API, which OpenAI shut down on August 26, 2026.
 
 ---
 
 ## Privacy & Security
 
-- **Local Storage Sandbox**: API keys and message histories reside inside the app container's sandbox. Files copied to the app's `tmp/` folder are purged immediately upon upload.
+- **Local Storage Sandbox**: API keys and message histories reside inside the app container's sandbox. Picked files are read in place through security-scoped access and uploaded from memory.
 - **Network Protection**: App Transport Security defaults require TLS 1.2 or later, and all API traffic goes directly to OpenAI (`api.openai.com`). Requests are sent directly from the app to the API without a custom proxy server.
 - **Pre-Commit Hook**: Scans changed files locally for keys before staging commits to avoid remote exposure.
 - For detailed information, review [SECURITY.md](SECURITY.md) and [PRIVACY.md](PRIVACY.md).
