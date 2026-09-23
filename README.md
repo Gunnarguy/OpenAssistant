@@ -19,7 +19,7 @@
 
 ## Overview
 
-OpenAssistant is a native iOS client built using **SwiftUI** and the **Combine framework** that provides a mobile dashboard for interacting with the stateful **OpenAI Assistants API (v2)**. The app enables users to manage custom AI assistants, thread histories, and vector store knowledge bases directly from an iPhone or iPad.
+OpenAssistant is a native iOS client built using **SwiftUI** and the **Combine framework** that provides a mobile dashboard for interacting with the stateful **OpenAI Assistants API (v2)**. The app enables users to manage custom AI assistants, thread histories, and vector store knowledge bases directly from an iPhone (or an iPad, in iPhone compatibility mode).
 
 This repository now represents the legacy Assistants API line in Gunnar Hostetler's product catalog. The active direct-API successor is **OpenResponses**, which moved the product focus to the Responses API.
 

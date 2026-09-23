@@ -55,4 +55,4 @@ This project is licensed under the MIT License. See LICENSE file for details.
 - API usage charges are the user's responsibility
 - Respect rate limits and usage policies
 
-Last updated: July 31, 2025
+Last updated: September 23, 2026

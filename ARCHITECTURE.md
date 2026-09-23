@@ -43,7 +43,7 @@ flowchart TD
     end
 
     subgraph Cloud ["External API Boundary"]
-        S_API -->|TLS 1.3 POST/GET| E_OpenAI[OpenAI Assistants API]
+        S_API -->|HTTPS POST/GET, TLS 1.2 or later| E_OpenAI[OpenAI Assistants API]
     end
 
     %% State flow
@@ -133,7 +133,7 @@ The application uses local sandboxed memory:
 
 ## 📡 6. Service Boundary & API Specifications
 
-The application connects directly to OpenAI's server at `api.openai.com/v1` using TLS 1.3.
+The application connects directly to OpenAI's server at `api.openai.com/v1` over HTTPS under default App Transport Security (TLS 1.2 or later).
 
 ### Required HTTP Headers
 ```http

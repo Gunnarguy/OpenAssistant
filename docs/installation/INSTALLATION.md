@@ -54,7 +54,7 @@ If the developer has published to TestFlight, you can install via:
 ### Build Issues
 - Ensure you're using Xcode 15+
 - Clean build folder (Product → Clean Build Folder)
-- Check that iOS deployment target is 15.0+
+- Check that iOS deployment target is 16.0+
 
 ### Runtime Issues
 - Verify your API key is valid

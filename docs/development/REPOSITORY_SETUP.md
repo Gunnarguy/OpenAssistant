@@ -71,7 +71,7 @@ git push -u origin feature/my-new-feature
 Add these to your README.md:
 
 ```markdown
-![iOS](https://img.shields.io/badge/iOS-15.0+-blue)
+![iOS](https://img.shields.io/badge/iOS-16.0+-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9+-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![GitHub issues](https://img.shields.io/github/issues/Gunnarguy/OpenAssistant)

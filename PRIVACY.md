@@ -1,5 +1,5 @@
 # Privacy Policy
-> **Last updated: May 29, 2026**
+> **Last updated: September 23, 2026**
 <p align="center">
   <strong>Transparency report detailing data residency, local sandboxing, network transmissions, and SDK exclusions.</strong>
 </p>
@@ -8,16 +8,15 @@
 
 ## 📱 1. On-Device Data Sandboxing
 
-OpenAssistant is engineered with a **local-first data sovereignty** model. We minimize external data transmission by caching resources strictly within iOS-managed application boundaries:
+OpenAssistant is engineered with a **data sovereignty** model. We minimize external data transmission by caching resources strictly within iOS-managed application boundaries:
 
 - **UserDefaults Configs**:
   - The OpenAI API Key is persisted locally using the key `"OpenAI_API_Key"`.
   - Preferred UI appearance selection is saved under `"appearanceMode"`.
 - **Chat Persistence**:
   - Thread history lists are JSON-serialized and stored in `UserDefaults` under the key `"savedMessages"`. No external database engines or remote syncing layers are used.
-- **Local Temporary Directory**:
-  - Selected files (HEIC images, RTF notes, etc.) are temporarily written into the app container's `tmp/` folder to run strategy format conversions.
-  - Processed files are uploaded immediately, and their temporary locally compiled binaries are purged from disk.
+- **Picked Files**:
+  - Selected files (HEIC images, RTF notes, etc.) are read in place through security-scoped access; format conversions and uploads run from memory, so nothing is written to the app's `tmp/` folder.
 
 ---
 

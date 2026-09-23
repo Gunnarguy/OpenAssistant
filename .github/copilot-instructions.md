@@ -63,7 +63,7 @@
 ## 🔒 7. Security and Data sovereignty Rules
 
 - **Credential Safety**: Always store API keys in `UserDefaults` (`@AppStorage("OpenAI_API_Key")`) locally. Never hardcode credentials in code blocks or configuration parameters.
-- **Purge Temporary Files**: Ensure any media binaries written to `tmp/` during conversions are deleted immediately after the network transaction completes.
+- **Purge Temporary Files**: Conversions and uploads run from memory today; if a change writes media to `tmp/`, delete it immediately after the network transaction completes.
 - **TLS Enforcements**: Do not bypass App Transport Security (ATS) rules. Only TLS 1.3/1.2 connections to OpenAI are allowed.
 
 ---

@@ -15,7 +15,7 @@ OpenAssistant is an active native iOS/SwiftUI application. We welcome contributi
 
 ### Requirements
 - **macOS** with Xcode 15.0+
-- **iOS 15.0+** deployment target
+- **iOS 16.0+** deployment target
 - **CocoaPods** installed (`brew install cocoapods` or ruby gem)
 - A valid **OpenAI API Key** for runtime testing
 

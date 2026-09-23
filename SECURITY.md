@@ -23,8 +23,8 @@ Conversation history is saved as a JSON string inside `UserDefaults` under the k
 ## 📡 2. Network Boundary Controls
 
 To guarantee data sovereignty and privacy, OpenAssistant strictly restricts network communication:
-1. **Direct TLS 1.3 Communication**: The application talks directly to OpenAI's server (`api.openai.com`). No intermediate proxy servers or developer-owned servers are used.
-2. **ATS Rules Enforced**: App Transport Security (ATS) rules configured in `Info.plist` block cleartext HTTP traffic. Only secure HTTPS communication is permitted.
+1. **Direct HTTPS Communication**: The application talks directly to OpenAI's server (`api.openai.com`) under default App Transport Security (TLS 1.2 or later). No intermediate proxy servers or developer-owned servers are used.
+2. **ATS Rules Enforced**: App Transport Security (ATS) defaults, with no exceptions in `Info.plist`, block cleartext HTTP traffic. Only secure HTTPS communication is permitted.
 3. **Telemetry Restrictions**: Anonymized crash logs and device metrics are sent to Google Firebase (`firebasestate.google.com`). Firebase configuration parameters contain no custom developer keys or user identification data.
 
 ---
@@ -54,7 +54,7 @@ Build configuration variables (such as Apple Developer Team IDs and Bundle Ident
 
 When modifying the codebase, developers must adhere to the following:
 - **No API Key Storage in Code**: Never commit mock API keys, raw strings, or test tokens. Use on-device input forms only.
-- **Background Purge of Files**: Ensure any temporary files stored in the sandbox `tmp/` folder during file processing are deleted immediately after transmission.
+- **Background Purge of Files**: Picked files are read in place and uploaded from memory today; any temporary file a change adds to the sandbox `tmp/` folder must be deleted immediately after transmission.
 - **No Console Key Leakage**: Never print raw API keys, thread authorization tokens, or decrypted user payloads in console logging commands.
 - **Dependencies Verification**: Run `pod update` regularly to scan CocoaPods dependencies (Firebase Core/Analytics) for vulnerabilities.
 

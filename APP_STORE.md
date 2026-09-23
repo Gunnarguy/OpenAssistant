@@ -22,6 +22,7 @@ Enter your personal OpenAI API key and start orchestrating your custom AI assist
 - **On-Device File Processing**: Upload files (PDFs, TXT, DOCX) directly. Features local, on-device conversion of unsupported types (HEIC to JPEG, RTF to TXT, and audio files to plain text placeholders) before transmission to save bandwidth.
 - **Interactive Markdown Chat**: Chat with your assistants in a conversational interface featuring Markdown formatting, persistent local history cache (`MessageStore`), and automatic thread execution run polling.
 - **Privacy-First Architecture**: Direct TLS communication with OpenAI. Your API key and chats reside locally inside your device’s sandbox (`UserDefaults`). No third-party servers, tracking pixels, or advertising SDKs.
+  (Correction, 2026-09-23: chats also live in OpenAI threads, because the Assistants API stores threads on OpenAI's servers; builds from the current source also include Firebase Analytics.)
 
 ### Keywords
 `openai,assistant,ai,agent,vector,rag,chatgpt,gpt4o,o1,developer,playground,swiftui,ios`
