@@ -8,7 +8,7 @@
 
 ## 🚦 1. Current Status
 
-OpenAssistant completed its core migration to the **OpenAI Assistants API (v2)** before the project was archived. The application remains a functional reference build for Xcode 15.0+ and iOS 16.0+ environments, but current product work has moved to **OpenResponses**, which targets the Responses API directly.
+OpenAssistant completed its core migration to the **OpenAI Assistants API (v2)** before the project was archived. The application remains an archived reference build for Xcode 15.0+ and iOS 16.0+ environments; the Assistants API it needs was shut down on August 26, 2026, and current product work has moved to **OpenResponses**, which targets the Responses API directly.
 
 ---
 

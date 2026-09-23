@@ -7,7 +7,7 @@
 
 ## 📍 1. Project Status & Vision
 
-OpenAssistant is an active native iOS/SwiftUI application. We welcome contributions that improve features, upgrade stability, and maintain clean architectural compliance with our **MVVM-S** design patterns.
+OpenAssistant is an archived native iOS/SwiftUI application; the Assistants API it needs was shut down on August 26, 2026. We welcome contributions that improve features, upgrade stability, and maintain clean architectural compliance with our **MVVM-S** design patterns.
 
 ---
 

@@ -22,7 +22,7 @@ OpenAssistant is engineered with a **data sovereignty** model. We minimize exter
 
 ## 📡 2. Data Sent Off-Device (Transparency Catalog)
 
-The application contacts external services only to perform core AI thread execution, fetch custom assistant parameters, and monitor application crashes. No advertising or commercial marketing trackers are present.
+The application contacts external services only to perform core AI thread execution, fetch custom assistant parameters, and, in builds from the current source, send Firebase Analytics events to Google's Firebase servers. No advertising or commercial marketing trackers are present.
 
 | Destination / SDK | Target Endpoint | Data Transmitted | Purpose of Transmission | User Control / Opt-Out |
 |---|---|---|---|---|
@@ -44,7 +44,7 @@ We explicitly declare the absence of third-party tracking components:
 
 To assist with App Store review submissions, the app's privacy label requires the following disclosures:
 - **Data Linked to You**: None. The app does not host user accounts.
-- **Diagnostics**: Anonymized crash logs and performance metrics are collected for quality assurance.
+- **Diagnostics**: No crash logs are collected. The only third-party SDK is Firebase Analytics, which in builds from the current source sends analytics events to Google's Firebase servers; the App Store build (3.2) did not include it.
 - **User Content**: Chat inputs and file uploads are processed directly by OpenAI. They are not sent to developer servers.
 
 ---

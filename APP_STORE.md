@@ -42,6 +42,7 @@ OpenAssistant is a **Bring-Your-Own-Key (BYOK)** client. The application require
 > **For the Apple App Review Team:**
 > - To review the app's functionality, please input a valid OpenAI API key in the **Settings** view when prompted on first launch.
 > - We recommend using a key restricted to low usage limits for safety. No credentials are transmitted to any servers other than OpenAI (`api.openai.com`) and Firebase telemetry (`firebasestate.google.com`).
+>   (Correction, 2026-09-23: Firebase Analytics sends its events to Google's Firebase servers; `firebasestate.google.com` does not appear in the code, and the App Store build (3.2) did not include Firebase.)
 
 ---
 

@@ -25,7 +25,7 @@ Conversation history is saved as a JSON string inside `UserDefaults` under the k
 To guarantee data sovereignty and privacy, OpenAssistant strictly restricts network communication:
 1. **Direct HTTPS Communication**: The application talks directly to OpenAI's server (`api.openai.com`) under default App Transport Security (TLS 1.2 or later). No intermediate proxy servers or developer-owned servers are used.
 2. **ATS Rules Enforced**: App Transport Security (ATS) defaults, with no exceptions in `Info.plist`, block cleartext HTTP traffic. Only secure HTTPS communication is permitted.
-3. **Telemetry Restrictions**: Anonymized crash logs and device metrics are sent to Google Firebase (`firebasestate.google.com`). Firebase configuration parameters contain no custom developer keys or user identification data.
+3. **Telemetry Restrictions**: Builds from the current source send Firebase Analytics events and basic device information to Google's Firebase servers; no crash logs are collected, and the App Store build (3.2) did not include Firebase. Firebase configuration parameters contain no custom developer keys or user identification data.
 
 ---
 
