@@ -28,7 +28,7 @@ The application contacts external services only to perform core AI thread execut
 | Destination / SDK | Target Endpoint | Data Transmitted | Purpose of Transmission | User Control / Opt-Out |
 |---|---|---|---|---|
 | **OpenAI API** | `api.openai.com` | OpenAI API Key, user-entered chat prompts, assistant configurations, and uploaded vector file binaries. | Core functionality: manages assistants, files, threads, and executes runs. | Users can disconnect immediately by deleting their API key from Settings, clearing messages, or deleting files from vector stores. |
-| **Firebase Analytics & Crashlytics** | `firebasestate.google.com` | Anonymized device metrics (device model, iOS version, run loop timings) and stack traces. | Quality assurance: detects application crashes, monitors run loop speed, and checks OS version distributions. | Controlled via system-level iOS settings: *Settings → Privacy & Security → Analytics & Improvements*. |
+| **Firebase Analytics** (added to the source after 3.2) | Google's Firebase servers | Analytics events and basic device information collected by the Firebase Analytics SDK. The App Store build (3.2) does not include Firebase. | Usage measurement for builds made from this source. | No in-app switch. iOS's *Analytics & Improvements* setting does not control it. |
 
 ---
 

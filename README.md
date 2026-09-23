@@ -12,11 +12,13 @@
     <img alt="Download on the App Store" src="https://img.shields.io/badge/App%20Store-Download-0D96F6?style=for-the-badge&logo=appstore&logoColor=white">
   </a>
   <img alt="Swift" src="https://img.shields.io/badge/Swift-5.9-F05138?style=for-the-badge&logo=swift&logoColor=white">
-  <img alt="iOS" src="https://img.shields.io/badge/iOS-15.0%2B-111827?style=for-the-badge&logo=apple&logoColor=white">
+  <img alt="iOS" src="https://img.shields.io/badge/iOS-16.0%2B-111827?style=for-the-badge&logo=apple&logoColor=white">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge">
 </p>
 
 ---
+
+> **Status:** OpenAI shut down the Assistants API on August 26, 2026 ([OpenAI deprecations](https://developers.openai.com/api/docs/deprecations)), so this app can no longer reach it. The code stays here for reference; [OpenResponses](https://github.com/Gunnarguy/OpenResponses) is its successor on the Responses API.
 
 ## Overview
 
@@ -35,7 +37,7 @@ Additionally, because the Assistants API rejects common mobile formats (like HEI
 
 | Dimension | Detail |
 |---|---|
-| Platform | iOS 15.0+ / iPadOS 15.0+ |
+| Platform | iOS 16.0+, iPhone (runs on iPad in iPhone compatibility mode) |
 | Language | Swift |
 | UI | SwiftUI |
 | Architecture | MVVM-S |
@@ -50,9 +52,9 @@ Additionally, because the Assistants API rejects common mobile formats (like HEI
 ## Key Capabilities
 
 - **Asynchronous Run Orchestration**: Active polling pipeline (2.0s interval) with memory-safe `[weak self]` captures and explicit timer invalidation to prevent reference cycles.
-- **Strategy-Driven File Preprocessing**: Local, on-device conversion strategies (HEIC to JPEG, RTF to UTF-8 plain text, and voice memo transcription routing) executing off the main thread.
+- **Strategy-Driven File Preprocessing**: Local, on-device conversion strategies (HEIC to JPEG and RTF to UTF-8 plain text) executing off the main thread. Audio files are not transcribed yet: the app uploads a placeholder note in their place (see Roadmap).
 - **Decoupled State Synchronization**: Cross-module notifications using `NotificationCenter` to synchronize lists (Assistants, Vector Stores) across tab views without direct ViewModel coupling.
-- **Data Sovereignty**: All API credentials reside in local user storage (`UserDefaults`) and connect directly to OpenAI via TLS 1.3, bypassing external proxy servers.
+- **Data Sovereignty**: All API credentials reside in local user storage (`UserDefaults`) and connect directly to OpenAI over HTTPS, bypassing external proxy servers.
 - **Adaptive UI & Design System**: Responsive SwiftUI layouts utilizing dark/light/system appearance modes and custom feedback states (creating thread, running assistant, processing, completing).
 - **Security Pre-Commit Hooks**: Automated script verification preventing accidental commits of hardcoded developer API keys.
 - **Successor Path**: The repo remains useful as a reference for Assistants API-era mobile orchestration, but current product work now lives in OpenResponses.
@@ -157,7 +159,7 @@ flowchart TD
         Tmp[Temporary File in tmp/]
     end
     subgraph Transport ["Network Transport"]
-        TLS[TLS 1.3 Encryption]
+        TLS[TLS Encryption]
     end
     subgraph Cloud ["External Services"]
         OpenAI[OpenAI Servers]
@@ -219,7 +221,7 @@ The app's environment is parameterized by the following values:
    - Navigate to the **OpenAssistant** target.
    - Under **Signing & Capabilities**, select your developer team and modify the Bundle Identifier.
 4. **Build and Run:**
-   - Select an iOS 15.0+ Simulator or physical device.
+   - Select an iOS 16.0+ Simulator or physical device.
    - Press `⌘+R` to build and execute the application.
 
 ---
@@ -241,7 +243,7 @@ The repository does not currently contain automated unit test targets. All valid
 ## Privacy & Security
 
 - **Local Storage Sandbox**: API keys and message histories reside inside the app container's sandbox. Files copied to the app's `tmp/` folder are purged immediately upon upload.
-- **Network Protection**: App Transport Security (ATS) rules restrict all API traffic to TLS 1.3 connections directly to OpenAI (`api.openai.com`). Requests are sent directly from the app to the API without a custom proxy server.
+- **Network Protection**: App Transport Security defaults require TLS 1.2 or later, and all API traffic goes directly to OpenAI (`api.openai.com`). Requests are sent directly from the app to the API without a custom proxy server.
 - **Pre-Commit Hook**: Scans changed files locally for keys before staging commits to avoid remote exposure.
 - For detailed information, review [SECURITY.md](SECURITY.md) and [PRIVACY.md](PRIVACY.md).
 
