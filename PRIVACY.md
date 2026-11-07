@@ -53,4 +53,3 @@ To assist with App Store review submissions, the app's privacy label requires th
 
 - **GDPR / CCPA Compliance**: Because the application uses direct client-to-API communication, the developer does not host user profiles. To request the removal of support tickets or feedback communications, contact the support team:
   - **Email**: [gunnarguy@me.com](mailto:gunnarguy@me.com)
-  - **Mailing Address**: OpenAssistant Support, 548 Market St PMB 32110, San Francisco, CA 94104, USA.
