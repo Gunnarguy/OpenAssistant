@@ -63,5 +63,5 @@ When modifying the codebase, developers must adhere to the following:
 ## 📣 5. Vulnerability Reporting Process
 
 If you discover a potential security vulnerability in this repository, please do not file a public issue. Email the developer directly:
-- **Email**: [security@fascinaiting.me](mailto:security@fascinaiting.me)
+- **Email**: [gunnarguy@me.com](mailto:gunnarguy@me.com)
 - **Mailing Address**: OpenAssistant Security Team, 548 Market St PMB 32110, San Francisco, CA 94104, USA.

@@ -28,8 +28,8 @@ Enter your personal OpenAI API key and start orchestrating your custom AI assist
 `openai,assistant,ai,agent,vector,rag,chatgpt,gpt4o,o1,developer,playground,swiftui,ios`
 
 ### Support & Privacy URLs
-- **Support URL**: [https://gunzino.me/openassistant/support/](https://gunzino.me/openassistant/support/)
-- **Privacy Policy URL**: [https://gunzino.me/openassistant/privacy/](https://gunzino.me/openassistant/privacy/)
+- **Support URL**: [https://gunndamental.com/openassistant/support/](https://gunndamental.com/openassistant/support/)
+- **Privacy Policy URL**: [https://gunndamental.com/openassistant/privacy/](https://gunndamental.com/openassistant/privacy/)
 
 ---
 
